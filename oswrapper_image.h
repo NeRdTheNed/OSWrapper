@@ -33,6 +33,14 @@ if (image_data != NULL) {
 
 #ifndef OSWRAPPER_INCLUDE_OSWRAPPER_IMAGE_H
 #define OSWRAPPER_INCLUDE_OSWRAPPER_IMAGE_H
+#ifndef OSWRAPPER_IMAGE_DEF
+#ifdef OSWRAPPER_IMAGE_STATIC
+#define OSWRAPPER_IMAGE_DEF static
+#else
+#define OSWRAPPER_IMAGE_DEF extern
+#endif
+#endif /* OSWRAPPER_IMAGE_DEF */
+
 #ifdef OSWRAPPER_IMAGE_EXPERIMENTAL
 /* Unstable-ish API */
 typedef struct OSWrapper_image_decoded_data {
@@ -40,15 +48,15 @@ typedef struct OSWrapper_image_decoded_data {
     unsigned char* image_data;
 } OSWrapper_image_decoded_data;
 
-void oswrapper_image_free_nocopy(OSWrapper_image_decoded_data* decoded_data);
-OSWrapper_image_decoded_data* oswrapper_image_load_from_memory_nocopy(unsigned char* image, int length, int* width, int* height, int* channels);
-OSWrapper_image_decoded_data* oswrapper_image_load_from_path_nocopy(const char* path, int* width, int* height, int* channels);
+OSWRAPPER_IMAGE_DEF void oswrapper_image_free_nocopy(OSWrapper_image_decoded_data* decoded_data);
+OSWRAPPER_IMAGE_DEF OSWrapper_image_decoded_data* oswrapper_image_load_from_memory_nocopy(unsigned char* image, int length, int* width, int* height, int* channels);
+OSWRAPPER_IMAGE_DEF OSWrapper_image_decoded_data* oswrapper_image_load_from_path_nocopy(const char* path, int* width, int* height, int* channels);
 #endif
 
 /* Stable-ish API */
-void oswrapper_image_free(unsigned char* image_data);
-unsigned char* oswrapper_image_load_from_memory(unsigned char* image, int length, int* width, int* height, int* channels);
-unsigned char* oswrapper_image_load_from_path(const char* path, int* width, int* height, int* channels);
+OSWRAPPER_IMAGE_DEF void oswrapper_image_free(unsigned char* image_data);
+OSWRAPPER_IMAGE_DEF unsigned char* oswrapper_image_load_from_memory(unsigned char* image, int length, int* width, int* height, int* channels);
+OSWRAPPER_IMAGE_DEF unsigned char* oswrapper_image_load_from_path(const char* path, int* width, int* height, int* channels);
 
 #ifdef OSWRAPPER_IMAGE_IMPLEMENTATION
 #ifndef OSWRAPPER_IMAGE_NO_INCLUDE_STDLIB
@@ -156,7 +164,7 @@ static OSWrapper_image_decoded_data* oswrapper__create_decoded_data(id bitmap) {
     return NULL;
 }
 
-void oswrapper_image_free_nocopy(OSWrapper_image_decoded_data* decoded_data) {
+OSWRAPPER_IMAGE_DEF void oswrapper_image_free_nocopy(OSWrapper_image_decoded_data* decoded_data) {
     if (decoded_data != NULL) {
         id bitmap = (id) decoded_data->internal_data;
 
@@ -169,7 +177,7 @@ void oswrapper_image_free_nocopy(OSWrapper_image_decoded_data* decoded_data) {
     }
 }
 
-OSWrapper_image_decoded_data* oswrapper_image_load_from_memory_nocopy(unsigned char* image, int length, int* width, int* height, int* channels) {
+OSWRAPPER_IMAGE_DEF OSWrapper_image_decoded_data* oswrapper_image_load_from_memory_nocopy(unsigned char* image, int length, int* width, int* height, int* channels) {
     CFDataRef image_data_cf = CFDataCreateWithBytesNoCopy(NULL, image, length, kCFAllocatorNull);
     id bitmap = oswrapper__setup_image_from_memory((id) image_data_cf, width, height, channels);
     CFRelease(image_data_cf);
@@ -181,7 +189,7 @@ OSWrapper_image_decoded_data* oswrapper_image_load_from_memory_nocopy(unsigned c
     return oswrapper__create_decoded_data(bitmap);
 }
 
-OSWrapper_image_decoded_data* oswrapper_image_load_from_path_nocopy(const char* path, int* width, int* height, int* channels) {
+OSWRAPPER_IMAGE_DEF OSWrapper_image_decoded_data* oswrapper_image_load_from_path_nocopy(const char* path, int* width, int* height, int* channels) {
     id bitmap = oswrapper__setup_image_from_path(path, width, height, channels);
 
     if (bitmap == nil) {
@@ -192,13 +200,13 @@ OSWrapper_image_decoded_data* oswrapper_image_load_from_path_nocopy(const char* 
 }
 #endif
 
-void oswrapper_image_free(unsigned char* image_data) {
+OSWRAPPER_IMAGE_DEF void oswrapper_image_free(unsigned char* image_data) {
     if (image_data != NULL) {
         OSWRAPPER_IMAGE_FREE(image_data);
     }
 }
 
-unsigned char* oswrapper_image_load_from_memory(unsigned char* image, int length, int* width, int* height, int* channels) {
+OSWRAPPER_IMAGE_DEF unsigned char* oswrapper_image_load_from_memory(unsigned char* image, int length, int* width, int* height, int* channels) {
     CFDataRef image_data_cf = CFDataCreateWithBytesNoCopy(NULL, image, length, kCFAllocatorNull);
     id bitmap = oswrapper__setup_image_from_memory((id) image_data_cf, width, height, channels);
     CFRelease(image_data_cf);
@@ -211,7 +219,7 @@ unsigned char* oswrapper_image_load_from_memory(unsigned char* image, int length
     return oswrapper__create_decoded_data_copied(bitmap, dataSize);
 }
 
-unsigned char* oswrapper_image_load_from_path(const char* path, int* width, int* height, int* channels) {
+OSWRAPPER_IMAGE_DEF unsigned char* oswrapper_image_load_from_path(const char* path, int* width, int* height, int* channels) {
     id bitmap = oswrapper__setup_image_from_path(path, width, height, channels);
 
     if (bitmap == nil) {
@@ -225,34 +233,34 @@ unsigned char* oswrapper_image_load_from_path(const char* path, int* width, int*
 #else
 /* No image loader implementation */
 #ifdef OSWRAPPER_IMAGE_EXPERIMENTAL
-void oswrapper_image_free_nocopy(OSWrapper_image_decoded_data* decoded_data) {
+OSWRAPPER_IMAGE_DEF void oswrapper_image_free_nocopy(OSWrapper_image_decoded_data* decoded_data) {
     if (decoded_data != NULL) {
         /* ??? */
         OSWRAPPER_IMAGE_FREE(decoded_data);
     }
 }
 
-OSWrapper_image_decoded_data* oswrapper_image_load_from_memory_nocopy(unsigned char* image, int length, int* width, int* height, int* channels) {
+OSWRAPPER_IMAGE_DEF OSWrapper_image_decoded_data* oswrapper_image_load_from_memory_nocopy(unsigned char* image, int length, int* width, int* height, int* channels) {
     return NULL;
 }
 
-OSWrapper_image_decoded_data* oswrapper_image_load_from_path_nocopy(const char* path, int* width, int* height, int* channels) {
+OSWRAPPER_IMAGE_DEF OSWrapper_image_decoded_data* oswrapper_image_load_from_path_nocopy(const char* path, int* width, int* height, int* channels) {
     return NULL;
 }
 #endif
 
-void oswrapper_image_free(unsigned char* image_data) {
+OSWRAPPER_IMAGE_DEF void oswrapper_image_free(unsigned char* image_data) {
     if (image_data != NULL) {
         /* ??? */
         OSWRAPPER_IMAGE_FREE(image_data);
     }
 }
 
-unsigned char* oswrapper_image_load_from_memory(unsigned char* image, int length, int* width, int* height, int* channels) {
+OSWRAPPER_IMAGE_DEF unsigned char* oswrapper_image_load_from_memory(unsigned char* image, int length, int* width, int* height, int* channels) {
     return NULL;
 }
 
-unsigned char* oswrapper_image_load_from_path(const char* path, int* width, int* height, int* channels) {
+OSWRAPPER_IMAGE_DEF unsigned char* oswrapper_image_load_from_path(const char* path, int* width, int* height, int* channels) {
     return NULL;
 }
 /* End no image loader implementation */
