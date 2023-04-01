@@ -1,7 +1,7 @@
 /*
 OSWrapper image: Load images with the built in OS image decoders.
 
-Useage:
+Usage:
 
 OSWrapper image has 2 ways of loading an image: from a path, or from memory.
 In both cases, you also pass pointers to 3 integers, which get set to the
