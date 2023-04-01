@@ -1,0 +1,6 @@
+INCLUDES = -I..
+CFLAGS += -Wall
+LDFLAGS += -lobjc -framework CoreFoundation -framework Foundation -framework AppKit
+
+all:
+	$(CC) $(INCLUDES) $(CFLAGS) $(LDFLAGS) test_oswrapper_image.c -o test_oswrapper_image
