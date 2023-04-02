@@ -335,7 +335,7 @@ OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* aud
     ExtAudioFileRead(internal_data->audio_file_ext, &frames, &buffer_list);
     return frames;
 }
-/* End macOS implementation */
+/* End macOS AudioToolbox implementation */
 #else
 /* No audio loader implementation */
 OSWRAPPER_AUDIO_DEF OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio_free_context(OSWrapper_audio_spec* audio) {
