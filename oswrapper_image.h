@@ -113,7 +113,7 @@ typedef unsigned int NSUInteger;
 extern id objc_alloc(Class class);
 #define oswrapper__objc_alloc(class) objc_alloc(class)
 #else
-#define oswrapper__objc_alloc(class) objc_msgSend_id((id) class, sel_registerName("alloc"))
+#define oswrapper__objc_alloc(class) oswrapper__objc_msgSend_t(id)((id) class, sel_registerName("alloc"))
 #endif
 
 static id oswrapper__setup_image_from_memory(id imageData, int* width, int* height, int* channels) {

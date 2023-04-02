@@ -122,6 +122,10 @@ OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* aud
 
 #include <AvailabilityMacros.h>
 
+#if !defined(MAC_OS_X_VERSION_10_6) || MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_6
+#define kAudioFileReadPermission 0x01
+#endif
+
 typedef struct oswrapper_audio__callback_data_mac {
     size_t data_size;
     const unsigned char* data;
