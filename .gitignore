@@ -1,2 +1,6 @@
 # macOS junk files
 .DS_Store
+
+# Test executables
+test/demo_oswrapper_audio_mac
+test/test_oswrapper_image
