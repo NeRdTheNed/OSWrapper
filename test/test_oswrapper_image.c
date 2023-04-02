@@ -3,9 +3,7 @@
 #include <stdlib.h>
 
 int main(int argc, char** argv) {
-    (void)argc;
-    (void)argv;
-    const char* path = "face.png";
+    const char* path = argc < 2 ? "face.png" : argv[argc - 1];
     int width, height, channels;
     unsigned char* image_data = oswrapper_image_load_from_path(path, &width, &height, &channels);
 
