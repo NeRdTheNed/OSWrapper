@@ -34,4 +34,4 @@ Issues and PRs are welcome.
 
 ## License
 
-All OSWrapper libraries are licensed under the BSD Zero Clause License.
+All OSWrapper libraries and test / demo applications are licensed under the BSD Zero Clause License.
