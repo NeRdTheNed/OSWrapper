@@ -114,7 +114,7 @@ OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* aud
 #define OSWRAPPER_AUDIO_USE_AUDIOTOOLBOX_IMPL
 #endif /* !defined(OSWRAPPER_AUDIO_USE_AUDIOTOOLBOX_IMPL) && !defined(OSWRAPPER_AUDIO_NO_USE_AUDIOTOOLBOX_IMPL) */
 #endif /* defined(MAC_OS_X_VERSION_10_4) && MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_4 */
-#endif
+#endif /* __APPLE__ */
 
 #ifdef OSWRAPPER_AUDIO_USE_AUDIOTOOLBOX_IMPL
 /* Start macOS AudioToolbox implementation */
