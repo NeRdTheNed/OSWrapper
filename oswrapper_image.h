@@ -116,6 +116,25 @@ extern id objc_alloc(Class class);
 #define oswrapper__objc_alloc(class) oswrapper__objc_msgSend_t(id)((id) class, sel_registerName("alloc"))
 #endif
 
+#define oswrapper__objc_init(x) oswrapper__objc_msgSend_t(id)(x, sel_registerName("init"))
+
+#if defined(MAC_OS_X_VERSION_10_14) && MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_14
+extern id objc_alloc_init(Class class);
+#define oswrapper__objc_alloc_init(class) objc_alloc_init(class)
+#else
+#define oswrapper__objc_alloc_init(class) oswrapper__objc_init(oswrapper__objc_alloc(class))
+#endif
+
+#if defined(MAC_OS_X_VERSION_10_7) && MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_7
+extern void objc_autoreleasePoolPop(void *pool);
+extern void *objc_autoreleasePoolPush(void);
+#define OSWRAPPER_IMAGE__OBJC_AUTORELEASE_POOL_POP(pool) objc_autoreleasePoolPop(pool)
+#define OSWRAPPER_IMAGE__OBJC_AUTORELEASE_POOL_PUSH() objc_autoreleasePoolPush()
+#else
+#define OSWRAPPER_IMAGE__OBJC_AUTORELEASE_POOL_POP(pool) oswrapper__objc_msgSend_t(void)(pool, sel_registerName("drain"))
+#define OSWRAPPER_IMAGE__OBJC_AUTORELEASE_POOL_PUSH() oswrapper__objc_alloc_init(objc_getClass("NSAutoreleasePool"))
+#endif
+
 static id oswrapper__setup_image_from_memory(id imageData, int* width, int* height, int* channels) {
     id bitmap = oswrapper__objc_alloc(objc_getClass("NSBitmapImageRep"));
     bitmap = oswrapper__objc_msgSend_t(id, id)(bitmap, sel_registerName("initWithData:"), imageData);
@@ -184,26 +203,34 @@ OSWRAPPER_IMAGE_DEF void oswrapper_image_free_nocopy(OSWrapper_image_decoded_dat
 }
 
 OSWRAPPER_IMAGE_DEF OSWrapper_image_decoded_data* oswrapper_image_load_from_memory_nocopy(unsigned char* image, int length, int* width, int* height, int* channels) {
+    void* autorelease_pool = OSWRAPPER_IMAGE__OBJC_AUTORELEASE_POOL_PUSH();
     CFDataRef image_data_cf = CFDataCreateWithBytesNoCopy(NULL, image, length, kCFAllocatorNull);
     id bitmap = oswrapper__setup_image_from_memory((id) image_data_cf, width, height, channels);
     CFRelease(image_data_cf);
 
     if (bitmap == nil) {
+        OSWRAPPER_IMAGE__OBJC_AUTORELEASE_POOL_POP(autorelease_pool);
         return NULL;
     }
 
-    return oswrapper__create_decoded_data(bitmap);
+    OSWrapper_image_decoded_data* decoded_data = oswrapper__create_decoded_data(bitmap);
+    OSWRAPPER_IMAGE__OBJC_AUTORELEASE_POOL_POP(autorelease_pool);
+    return decoded_data;
 }
 
 #ifndef OSWRAPPER_IMAGE_NO_LOAD_FROM_PATH
 OSWRAPPER_IMAGE_DEF OSWrapper_image_decoded_data* oswrapper_image_load_from_path_nocopy(const char* path, int* width, int* height, int* channels) {
+    void* autorelease_pool = OSWRAPPER_IMAGE__OBJC_AUTORELEASE_POOL_PUSH();
     id bitmap = oswrapper__setup_image_from_path(path, width, height, channels);
 
     if (bitmap == nil) {
+        OSWRAPPER_IMAGE__OBJC_AUTORELEASE_POOL_POP(autorelease_pool);
         return NULL;
     }
 
-    return oswrapper__create_decoded_data(bitmap);
+    OSWrapper_image_decoded_data* decoded_data = oswrapper__create_decoded_data(bitmap);
+    OSWRAPPER_IMAGE__OBJC_AUTORELEASE_POOL_POP(autorelease_pool);
+    return decoded_data;
 }
 #endif /* OSWRAPPER_IMAGE_NO_LOAD_FROM_PATH */
 #endif
@@ -215,28 +242,36 @@ OSWRAPPER_IMAGE_DEF void oswrapper_image_free(unsigned char* image_data) {
 }
 
 OSWRAPPER_IMAGE_DEF unsigned char* oswrapper_image_load_from_memory(unsigned char* image, int length, int* width, int* height, int* channels) {
+    void* autorelease_pool = OSWRAPPER_IMAGE__OBJC_AUTORELEASE_POOL_PUSH();
     CFDataRef image_data_cf = CFDataCreateWithBytesNoCopy(NULL, image, length, kCFAllocatorNull);
     id bitmap = oswrapper__setup_image_from_memory((id) image_data_cf, width, height, channels);
     CFRelease(image_data_cf);
 
     if (bitmap == nil) {
+        OSWRAPPER_IMAGE__OBJC_AUTORELEASE_POOL_POP(autorelease_pool);
         return NULL;
     }
 
     size_t dataSize = ((size_t) * width) * ((size_t) * height) * ((size_t) * channels);
-    return oswrapper__create_decoded_data_copied(bitmap, dataSize);
+    unsigned char* decoded_data = oswrapper__create_decoded_data_copied(bitmap, dataSize);
+    OSWRAPPER_IMAGE__OBJC_AUTORELEASE_POOL_POP(autorelease_pool);
+    return decoded_data;
 }
 
 #ifndef OSWRAPPER_IMAGE_NO_LOAD_FROM_PATH
 OSWRAPPER_IMAGE_DEF unsigned char* oswrapper_image_load_from_path(const char* path, int* width, int* height, int* channels) {
+    void* autorelease_pool = OSWRAPPER_IMAGE__OBJC_AUTORELEASE_POOL_PUSH();
     id bitmap = oswrapper__setup_image_from_path(path, width, height, channels);
 
     if (bitmap == nil) {
+        OSWRAPPER_IMAGE__OBJC_AUTORELEASE_POOL_POP(autorelease_pool);
         return NULL;
     }
 
     size_t dataSize = ((size_t) * width) * ((size_t) * height) * ((size_t) * channels);
-    return oswrapper__create_decoded_data_copied(bitmap, dataSize);
+    unsigned char* decoded_data = oswrapper__create_decoded_data_copied(bitmap, dataSize);
+    OSWRAPPER_IMAGE__OBJC_AUTORELEASE_POOL_POP(autorelease_pool);
+    return decoded_data;
 }
 #endif /* OSWRAPPER_IMAGE_NO_LOAD_FROM_PATH */
 /* End macOS implementation */
