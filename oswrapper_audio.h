@@ -108,7 +108,16 @@ OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* aud
 #endif /* OSWRAPPER_AUDIO_MEMCPY */
 
 #ifdef __APPLE__
-/* Start macOS implementation */
+#include <AvailabilityMacros.h>
+#if defined(MAC_OS_X_VERSION_10_4) && MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_4
+#if !defined(OSWRAPPER_AUDIO_USE_AUDIOTOOLBOX_IMPL) && !defined(OSWRAPPER_AUDIO_NO_USE_AUDIOTOOLBOX_IMPL)
+#define OSWRAPPER_AUDIO_USE_AUDIOTOOLBOX_IMPL
+#endif /* !defined(OSWRAPPER_AUDIO_USE_AUDIOTOOLBOX_IMPL) && !defined(OSWRAPPER_AUDIO_NO_USE_AUDIOTOOLBOX_IMPL) */
+#endif /* defined(MAC_OS_X_VERSION_10_4) && MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_4 */
+#endif
+
+#ifdef OSWRAPPER_AUDIO_USE_AUDIOTOOLBOX_IMPL
+/* Start macOS AudioToolbox implementation */
 #include <AudioToolbox/AudioToolbox.h>
 
 #include <AvailabilityMacros.h>
