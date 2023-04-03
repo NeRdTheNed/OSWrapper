@@ -54,6 +54,7 @@ static OSStatus Callback(void *inRefCon, AudioUnitRenderActionFlags *ioActionFla
 }
 
 int main(int argc, char** argv) {
+    FAIL_WITH_MESSAGE_ON_COND(!oswrapper_audio_init(), "Could not initialise oswrapper_audio!");
     /* Allocate memory for an OSWrapper_audio_spec */
     OSWrapper_audio_spec* audio_spec = (OSWrapper_audio_spec*) calloc(1, sizeof(OSWrapper_audio_spec));
     FAIL_WITH_MESSAGE_ON_COND((audio_spec == NULL), "calloc failed!");
@@ -161,6 +162,7 @@ int main(int argc, char** argv) {
     /* Free audio file */
     int did_close = oswrapper_audio_free_context(audio_spec);
     FAIL_WITH_MESSAGE_ON_COND((!did_close), "Failed to free sound context!");
+    FAIL_WITH_MESSAGE_ON_COND(!oswrapper_audio_uninit(), "Could not uninitialise oswrapper_audio!");
     return EXIT_SUCCESS;
 }
 

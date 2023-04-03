@@ -3,6 +3,9 @@ OSWrapper audio: Load audio files with the built in OS audio decoders.
 
 Usage:
 TODO, see comments on API function declarations, and demo_oswrapper_audio_mac.c in test folder.
+
+Make sure to call oswrapper_audio_init() before using the library.
+Call oswrapper_audio_uninit() after you no longer need to use oswrapper_audio.
 */
 
 #ifndef OSWRAPPER_INCLUDE_OSWRAPPER_AUDIO_H
@@ -51,6 +54,11 @@ typedef struct OSWrapper_audio_spec {
     unsigned int channel_count;
     unsigned int bits_per_channel;
 } OSWrapper_audio_spec;
+
+/* Call oswrapper_audio_init() before using the library,
+and call oswrapper_audio_uninit() after you're done using the library. */
+OSWRAPPER_AUDIO_DEF OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio_init(void);
+OSWRAPPER_AUDIO_DEF OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio_uninit(void);
 
 /* Free resources associated with the given OSWrapper_audio_spec.
 Returns 1 on success, or 0 on failure. */
@@ -159,6 +167,14 @@ static OSStatus oswrapper_audio__audio_file_read_callback(void* inClientData, SI
 static SInt64 oswrapper_audio__audio_file_get_size_callback(void* inClientData) {
     oswrapper_audio__callback_data_mac* callback_data = (oswrapper_audio__callback_data_mac*) inClientData;
     return callback_data->data_size;
+}
+
+OSWRAPPER_AUDIO_DEF OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio_init(void) {
+    return OSWRAPPER_AUDIO_RESULT_SUCCESS;
+}
+
+OSWRAPPER_AUDIO_DEF OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio_uninit(void) {
+    return OSWRAPPER_AUDIO_RESULT_SUCCESS;
 }
 
 OSWRAPPER_AUDIO_DEF OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio_free_context(OSWrapper_audio_spec* audio) {
@@ -342,6 +358,14 @@ OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* aud
 /* End macOS AudioToolbox implementation */
 #else
 /* No audio loader implementation */
+OSWRAPPER_AUDIO_DEF OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio_init(void) {
+    return OSWRAPPER_AUDIO_RESULT_FAILURE;
+}
+
+OSWRAPPER_AUDIO_DEF OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio_uninit(void) {
+    return OSWRAPPER_AUDIO_RESULT_SUCCESS;
+}
+
 OSWRAPPER_AUDIO_DEF OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio_free_context(OSWrapper_audio_spec* audio) {
     return OSWRAPPER_AUDIO_RESULT_SUCCESS;
 }
@@ -374,7 +398,7 @@ OSWRAPPER_AUDIO_DEF void oswrapper_audio_rewind(OSWrapper_audio_spec* audio) {
 OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* audio, short* buffer, size_t frames_to_do) {
     return 0;
 }
-/* End no image loader implementation */
+/* End no audio loader implementation */
 #endif
 #endif /* OSWRAPPER_AUDIO_IMPLEMENTATION */
 #endif /* OSWRAPPER_INCLUDE_OSWRAPPER_AUDIO_H */
