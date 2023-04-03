@@ -1,8 +1,16 @@
 #define OSWRAPPER_IMAGE_IMPLEMENTATION
 #include "oswrapper_image.h"
 #include <stdlib.h>
+#include <stdio.h>
 
 int main(int argc, char** argv) {
+    int returnVal = EXIT_FAILURE;
+
+    if (!oswrapper_image_init()) {
+        puts("Could not initialise oswrapper_image!");
+        goto exit;
+    }
+
     const char* path = argc < 2 ? "face.png" : argv[argc - 1];
     int width, height, channels;
     unsigned char* image_data = oswrapper_image_load_from_path(path, &width, &height, &channels);
@@ -10,11 +18,18 @@ int main(int argc, char** argv) {
     if (image_data != NULL) {
         oswrapper_image_free(image_data);
         printf("Path: %s\nWidth: %d\nHeight: %d\nChannels: %d\n", path, width, height, channels);
-        return EXIT_SUCCESS;
+        returnVal = EXIT_SUCCESS;
+    } else {
+        puts("Could not decode image!");
     }
 
-    puts("Could not decode image!");
-    return EXIT_FAILURE;
+    if (!oswrapper_image_uninit()) {
+        puts("Could not uninitialise oswrapper_image!");
+        returnVal = EXIT_FAILURE;
+    }
+
+exit:
+    return returnVal;
 }
 
 /*

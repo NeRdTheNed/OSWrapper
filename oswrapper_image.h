@@ -29,6 +29,9 @@ if (image_data != NULL) {
   (do something with image_data)
   oswrapper_image_free(image_data);
 }
+
+Make sure to call oswrapper_image_init() before using the library.
+Call oswrapper_image_uninit() after you no longer need to use oswrapper_image.
 */
 
 #ifndef OSWRAPPER_INCLUDE_OSWRAPPER_IMAGE_H
@@ -40,6 +43,23 @@ if (image_data != NULL) {
 #define OSWRAPPER_IMAGE_DEF extern
 #endif
 #endif /* OSWRAPPER_IMAGE_DEF */
+
+/* You can make these functions return actual booleans if you want */
+#ifndef OSWRAPPER_IMAGE_RESULT_TYPE
+#define OSWRAPPER_IMAGE_RESULT_TYPE int
+#endif
+
+#ifndef OSWRAPPER_IMAGE_RESULT_SUCCESS
+#define OSWRAPPER_IMAGE_RESULT_SUCCESS 1
+#endif
+#ifndef OSWRAPPER_IMAGE_RESULT_FAILURE
+#define OSWRAPPER_IMAGE_RESULT_FAILURE 0
+#endif
+
+/* Call oswrapper_image_init() before using the library,
+and call oswrapper_image_uninit() after you're done using the library. */
+OSWRAPPER_IMAGE_DEF OSWRAPPER_IMAGE_RESULT_TYPE oswrapper_image_init(void);
+OSWRAPPER_IMAGE_DEF OSWRAPPER_IMAGE_RESULT_TYPE oswrapper_image_uninit(void);
 
 #ifdef OSWRAPPER_IMAGE_EXPERIMENTAL
 /* Unstable-ish API */
@@ -75,6 +95,12 @@ OSWRAPPER_IMAGE_DEF unsigned char* oswrapper_image_load_from_path(const char* pa
 #endif /* OSWRAPPER_IMAGE_FREE */
 
 #ifdef __APPLE__
+#if !defined(OSWRAPPER_IMAGE_USE_MAC_OBJC_IMPL) && !defined(OSWRAPPER_IMAGE_NO_USE_MAC_OBJC_IMPL)
+#define OSWRAPPER_IMAGE_USE_MAC_OBJC_IMPL
+#endif /* !defined(OSWRAPPER_IMAGE_USE_MAC_OBJC_IMPL) && !defined(OSWRAPPER_IMAGE_NO_USE_MAC_OBJC_IMPL) */
+#endif /* __APPLE__ */
+
+#ifdef OSWRAPPER_IMAGE_USE_MAC_OBJC_IMPL
 /* Start macOS implementation */
 #include <CoreFoundation/CoreFoundation.h>
 #include <objc/objc-runtime.h>
@@ -172,6 +198,14 @@ static unsigned char* oswrapper__create_decoded_data_copied(id bitmap, size_t da
 
     oswrapper__objc_msgSend_t(void)(bitmap, sel_registerName("release"));
     return decoded_data;
+}
+
+OSWRAPPER_IMAGE_DEF OSWRAPPER_IMAGE_RESULT_TYPE oswrapper_image_init(void) {
+    return OSWRAPPER_IMAGE_RESULT_SUCCESS;
+}
+
+OSWRAPPER_IMAGE_DEF OSWRAPPER_IMAGE_RESULT_TYPE oswrapper_image_uninit(void) {
+    return OSWRAPPER_IMAGE_RESULT_SUCCESS;
 }
 
 #ifdef OSWRAPPER_IMAGE_EXPERIMENTAL
@@ -277,6 +311,14 @@ OSWRAPPER_IMAGE_DEF unsigned char* oswrapper_image_load_from_path(const char* pa
 /* End macOS implementation */
 #else
 /* No image loader implementation */
+OSWRAPPER_IMAGE_DEF OSWRAPPER_IMAGE_RESULT_TYPE oswrapper_image_init(void) {
+    return OSWRAPPER_IMAGE_RESULT_FAILURE;
+}
+
+OSWRAPPER_IMAGE_DEF OSWRAPPER_IMAGE_RESULT_TYPE oswrapper_image_uninit(void) {
+    return OSWRAPPER_IMAGE_RESULT_SUCCESS;
+}
+
 #ifdef OSWRAPPER_IMAGE_EXPERIMENTAL
 OSWRAPPER_IMAGE_DEF void oswrapper_image_free_nocopy(OSWrapper_image_decoded_data* decoded_data) {
     if (decoded_data != NULL) {
