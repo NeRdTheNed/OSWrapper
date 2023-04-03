@@ -100,6 +100,12 @@ OSWRAPPER_IMAGE_DEF unsigned char* oswrapper_image_load_from_path(const char* pa
 #endif /* !defined(OSWRAPPER_IMAGE_USE_MAC_OBJC_IMPL) && !defined(OSWRAPPER_IMAGE_NO_USE_MAC_OBJC_IMPL) */
 #endif /* __APPLE__ */
 
+#if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
+#if !defined(OSWRAPPER_IMAGE_USE_WIN_IMCOM_IMPL) && !defined(OSWRAPPER_IMAGE_NO_USE_WIN_IMCOM_IMPL)
+#define OSWRAPPER_IMAGE_USE_WIN_IMCOM_IMPL
+#endif /* !defined(OSWRAPPER_IMAGE_USE_WIN_IMCOM_IMPL) && !defined(OSWRAPPER_IMAGE_NO_USE_WIN_IMCOM_IMPL) */
+#endif
+
 #ifdef OSWRAPPER_IMAGE_USE_MAC_OBJC_IMPL
 /* Start macOS implementation */
 #include <CoreFoundation/CoreFoundation.h>
@@ -309,6 +315,201 @@ OSWRAPPER_IMAGE_DEF unsigned char* oswrapper_image_load_from_path(const char* pa
 }
 #endif /* OSWRAPPER_IMAGE_NO_LOAD_FROM_PATH */
 /* End macOS implementation */
+#elif defined(OSWRAPPER_IMAGE_USE_WIN_IMCOM_IMPL)
+/* Start Win32 WIC implementation */
+#define COBJMACROS
+#define WIN32_LEAN_AND_MEAN
+#include "wincodec.h"
+
+#if defined(WINCODEC_SDK_VERSION2) && WINCODEC_SDK_VERSION >= WINCODEC_SDK_VERSION2
+#define OSWRAPPER_IMAGE__USING_WINCODEC_SDK_VERSION2
+#define OSWRAPPER_IMAGE__FIRST_CLSID CLSID_WICImagingFactory2
+#define OSWRAPPER_IMAGE__FIRST_IID IID_IWICImagingFactory2
+#else
+#define OSWRAPPER_IMAGE__FIRST_CLSID CLSID_WICImagingFactory
+#define OSWRAPPER_IMAGE__FIRST_IID IID_IWICImagingFactory
+#endif
+
+static IWICImagingFactory* oswrapper_image__factory;
+
+OSWRAPPER_IMAGE_DEF OSWRAPPER_IMAGE_RESULT_TYPE oswrapper_image_init(void) {
+    HRESULT result;
+
+    if (oswrapper_image__factory != NULL) {
+        return OSWRAPPER_IMAGE_RESULT_SUCCESS;
+    }
+
+    result = CoCreateInstance(&OSWRAPPER_IMAGE__FIRST_CLSID, NULL, CLSCTX_INPROC_SERVER, &OSWRAPPER_IMAGE__FIRST_IID, &oswrapper_image__factory);
+
+    if (SUCCEEDED(result)) {
+        return OSWRAPPER_IMAGE_RESULT_SUCCESS;
+    } else {
+#ifdef OSWRAPPER_IMAGE__USING_WINCODEC_SDK_VERSION2
+        result = CoCreateInstance(&CLSID_WICImagingFactory1, NULL, CLSCTX_INPROC_SERVER, &IID_IWICImagingFactory, &oswrapper_image__factory);
+
+        if (SUCCEEDED(result)) {
+            return OSWRAPPER_IMAGE_RESULT_SUCCESS;
+        }
+
+#endif
+    }
+
+    return OSWRAPPER_IMAGE_RESULT_FAILURE;
+}
+
+OSWRAPPER_IMAGE_DEF OSWRAPPER_IMAGE_RESULT_TYPE oswrapper_image_uninit(void) {
+    if (oswrapper_image__factory != NULL) {
+        IWICImagingFactory_Release(oswrapper_image__factory);
+    }
+
+    return OSWRAPPER_IMAGE_RESULT_SUCCESS;
+}
+
+OSWRAPPER_IMAGE_DEF void oswrapper_image_free(unsigned char* image_data) {
+    if (image_data != NULL) {
+        OSWRAPPER_IMAGE_FREE(image_data);
+    }
+}
+
+static unsigned char* oswrapper__setup_image_from_decoder(IWICBitmapDecoder* decoder, int* width, int* height, int* channels) {
+    IWICBitmapFrameDecode* frame;
+    unsigned char* decoded_data;
+    HRESULT result = IWICBitmapDecoder_GetFrame(decoder, 0, &frame);
+    decoded_data = NULL;
+
+    if (SUCCEEDED(result)) {
+        IWICFormatConverter* converter;
+        result = IWICImagingFactory_CreateFormatConverter(oswrapper_image__factory, &converter);
+
+        if (SUCCEEDED(result)) {
+            /* TODO Get original format / bit depth */
+            result = IWICFormatConverter_Initialize(converter, (IWICBitmapSource*) frame, &GUID_WICPixelFormat32bppPRGBA, WICBitmapDitherTypeNone, NULL, 0.0f, WICBitmapPaletteTypeCustom);
+
+            if (SUCCEEDED(result)) {
+                result = IWICBitmapFrameDecode_GetSize(frame, width, height);
+
+                if (SUCCEEDED(result)) {
+                    *channels = 4;
+                    {
+                        size_t data_size = ((size_t) * width) * ((size_t) * height) * ((size_t) * channels);
+                        decoded_data = (unsigned char*) OSWRAPPER_IMAGE_MALLOC(data_size);
+
+                        if (decoded_data != NULL) {
+                            IWICFormatConverter_CopyPixels(converter, NULL, (*width) * (*channels), data_size, decoded_data);
+                        }
+                    }
+                }
+            }
+
+            IWICFormatConverter_Release(converter);
+        }
+
+        IWICBitmapFrameDecode_Release(frame);
+    }
+
+    IWICBitmapDecoder_Release(decoder);
+    return decoded_data;
+}
+
+OSWRAPPER_IMAGE_DEF unsigned char* oswrapper_image_load_from_memory(unsigned char* image, int length, int* width, int* height, int* channels) {
+    unsigned char* decoded_data = NULL;
+
+    if (oswrapper_image__factory != NULL) {
+        IWICStream* stream;
+        HRESULT result = IWICImagingFactory_CreateStream(oswrapper_image__factory, &stream);
+
+        if (SUCCEEDED(result)) {
+            result = IWICStream_InitializeFromMemory(stream, image, length);
+
+            if (SUCCEEDED(result)) {
+                IWICBitmapDecoder* decoder;
+                result = IWICImagingFactory_CreateDecoderFromStream(oswrapper_image__factory, (IStream*) stream, NULL, WICDecodeMetadataCacheOnDemand, &decoder);
+
+                if (SUCCEEDED(result)) {
+                    decoded_data = oswrapper__setup_image_from_decoder(decoder, width, height, channels);
+                }
+            }
+
+            IWICStream_Release(stream);
+        }
+    }
+
+    return decoded_data;
+}
+
+#ifndef OSWRAPPER_IMAGE_NO_LOAD_FROM_PATH
+OSWRAPPER_IMAGE_DEF unsigned char* oswrapper_image_load_from_path(const char* path, int* width, int* height, int* channels) {
+    unsigned char* decoded_data = NULL;
+
+    if (oswrapper_image__factory != NULL) {
+        /* TODO Handle string conversion */
+        HANDLE file = CreateFile(path, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+
+        if (file != INVALID_HANDLE_VALUE) {
+            IWICBitmapDecoder* decoder;
+            HRESULT result = IWICImagingFactory_CreateDecoderFromFileHandle(oswrapper_image__factory, (ULONG_PTR) file, NULL, WICDecodeMetadataCacheOnDemand, &decoder);
+
+            if (SUCCEEDED(result)) {
+                decoded_data = oswrapper__setup_image_from_decoder(decoder, width, height, channels);
+            }
+
+            CloseHandle(file);
+        }
+    }
+
+    return decoded_data;
+}
+#endif /* OSWRAPPER_IMAGE_NO_LOAD_FROM_PATH */
+
+#ifdef OSWRAPPER_IMAGE_EXPERIMENTAL
+/* TODO This actually copies more than the alternative */
+OSWRAPPER_IMAGE_DEF void oswrapper_image_free_nocopy(OSWrapper_image_decoded_data* decoded_data) {
+    if (decoded_data != NULL) {
+        if (decoded_data->image_data != NULL) {
+            oswrapper_image_free(decoded_data->image_data);
+        }
+
+        OSWRAPPER_IMAGE_FREE(decoded_data);
+    }
+}
+
+/* TODO This actually copies more than the alternative */
+OSWRAPPER_IMAGE_DEF OSWrapper_image_decoded_data* oswrapper_image_load_from_memory_nocopy(unsigned char* image, int length, int* width, int* height, int* channels) {
+    unsigned char* image_data = oswrapper_image_load_from_memory(image, length, width, height, channels);
+
+    if (image_data != NULL) {
+        OSWrapper_image_decoded_data* decoded_data = (OSWrapper_image_decoded_data*) OSWRAPPER_IMAGE_MALLOC(sizeof(OSWrapper_image_decoded_data));
+
+        if (decoded_data != NULL) {
+            decoded_data->internal_data = NULL;
+            decoded_data->image_data = image_data;
+            return decoded_data;
+        }
+    }
+
+    return NULL;
+}
+
+#ifndef OSWRAPPER_IMAGE_NO_LOAD_FROM_PATH
+/* TODO This actually copies more than the alternative */
+OSWRAPPER_IMAGE_DEF OSWrapper_image_decoded_data* oswrapper_image_load_from_path_nocopy(const char* path, int* width, int* height, int* channels) {
+    unsigned char* image_data = oswrapper_image_load_from_path(path, width, height, channels);
+
+    if (image_data != NULL) {
+        OSWrapper_image_decoded_data* decoded_data = (OSWrapper_image_decoded_data*) OSWRAPPER_IMAGE_MALLOC(sizeof(OSWrapper_image_decoded_data));
+
+        if (decoded_data != NULL) {
+            decoded_data->internal_data = NULL;
+            decoded_data->image_data = image_data;
+            return decoded_data;
+        }
+    }
+
+    return NULL;
+}
+#endif /* OSWRAPPER_IMAGE_NO_LOAD_FROM_PATH */
+#endif
+/* End Win32 WIC implementation */
 #else
 /* No image loader implementation */
 OSWRAPPER_IMAGE_DEF OSWRAPPER_IMAGE_RESULT_TYPE oswrapper_image_init(void) {

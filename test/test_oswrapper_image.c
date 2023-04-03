@@ -3,6 +3,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
+#include <objbase.h>
+#pragma comment(lib, "windowscodecs.lib")
+#pragma comment(lib, "Ole32.lib")
+#endif
+
 unsigned char face_png[] = {
     0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d,
     0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x08, 0x00, 0x00, 0x00, 0x08,
@@ -17,6 +23,15 @@ unsigned char face_png[] = {
 unsigned int face_png_len = 90;
 
 int main(int argc, char** argv) {
+#if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
+    HRESULT result = CoInitialize(NULL);
+
+    if (FAILED(result)) {
+        puts("CoInitialize failed!");
+        return EXIT_FAILURE;
+    }
+
+#endif
     int returnVal = EXIT_FAILURE;
 
     if (!oswrapper_image_init()) {
@@ -49,6 +64,9 @@ int main(int argc, char** argv) {
     }
 
 exit:
+#if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
+    CoUninitialize();
+#endif
     return returnVal;
 }
 

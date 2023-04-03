@@ -2,10 +2,10 @@
 
 > Single-header file libraries to wrap OS-specific functionality.
 
-| Library           | Description                      | Platform implementations |
-| ----------------- | -------------------------------- | ------------------------ |
-| oswrapper_image.h | Image decoder using OS libraries | macOS                    |
-| oswrapper_audio.h | Audio decoder using OS libraries | macOS (10.4 and higher)  |
+| Library           | Description                      | Platform implementations          |
+| ----------------- | -------------------------------- | --------------------------------- |
+| oswrapper_image.h | Image decoder using OS libraries | macOS, Windows (Vista and higher) |
+| oswrapper_audio.h | Audio decoder using OS libraries | macOS (10.4 and higher)           |
 
 ## Usage
 
@@ -24,14 +24,13 @@ link against a system library to use these libraries,
 or perform some platform-specific initialisation action before using them.
 Here's the requirements:
 
-| Library           | macOS                             |
-| ----------------- | --------------------------------- |
-| oswrapper_image.h | Link with -framework AppKit       |
-| oswrapper_audio.h | Link with -framework AudioToolbox |
+| Library           | macOS                             | Windows                                                 |
+| ----------------- | --------------------------------- | ------------------------------------------------------- |
+| oswrapper_image.h | Link with -framework AppKit       | Initialise the COM library, link with windowscodecs.lib |
+| oswrapper_audio.h | Link with -framework AudioToolbox | N/A                                                     |
 
 ## Future work
 
-- Windows GDI+ image decoding
 - Windows audio decoding
 - Emscripten image / audio decoding
 

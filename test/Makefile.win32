@@ -1,0 +1,8 @@
+INCLUDES = -I..
+CFLAGS = /Wall
+
+all:
+	$(CC) $(INCLUDES) $(CFLAGS) $(LDFLAGS) test_oswrapper_image.c -o test_oswrapper_image.exe
+
+clean:
+	del test_oswrapper_image.obj test_oswrapper_image.exe
