@@ -20,12 +20,14 @@ Include them in exactly one C file as such:
 Replace `libraryname` with the name of the library.
 
 Unlike standard single-header file libraries, you'll generally need to
-link against a system library to use these libraries. Here's the linker requirements:
+link against a system library to use these libraries,
+or perform some platform-specific initialisation action before using them.
+Here's the requirements:
 
-| Library           | macOS                   |
-| ----------------- | ----------------------- |
-| oswrapper_image.h | -framework AppKit       |
-| oswrapper_audio.h | -framework AudioToolbox |
+| Library           | macOS                             |
+| ----------------- | --------------------------------- |
+| oswrapper_image.h | Link with -framework AppKit       |
+| oswrapper_audio.h | Link with -framework AudioToolbox |
 
 ## Future work
 
