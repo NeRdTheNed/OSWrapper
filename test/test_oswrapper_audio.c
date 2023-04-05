@@ -68,7 +68,7 @@ int main(int argc, char** argv) {
 
     if (oswrapper_audio_load_from_path(path, audio_spec)) {
         printf("Path: %s\nOutput path: %s\nSample rate: %lu\nChannels: %d\nBit depth: %d\n", path, output_path, audio_spec->sample_rate, audio_spec->channel_count, audio_spec->bits_per_channel);
-        size_t frame_size = (audio_spec->bits_per_channel / (8 * sizeof(short))) * (audio_spec->channel_count);
+        size_t frame_size = (audio_spec->bits_per_channel / 8) * (audio_spec->channel_count);
         buffer = (short*) calloc(TEST_PROGRAM_BUFFER_SIZE, frame_size);
 
         if (buffer == NULL) {
@@ -79,13 +79,13 @@ int main(int argc, char** argv) {
         size_t frames_done = 0;
 
         while (1) {
-            size_t this_iter = oswrapper_audio_get_samples(audio_spec, buffer, TEST_PROGRAM_BUFFER_SIZE / sizeof(short));
+            size_t this_iter = oswrapper_audio_get_samples(audio_spec, buffer, TEST_PROGRAM_BUFFER_SIZE);
 
             if (this_iter == 0) {
                 break;
             }
 
-            fwrite(buffer, sizeof buffer[0], this_iter * frame_size, output_file);
+            fwrite(buffer, frame_size, this_iter, output_file);
             frames_done += this_iter;
         }
 
