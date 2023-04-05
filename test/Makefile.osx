@@ -6,7 +6,8 @@ LDFLAGS_AUDIO += -framework AudioToolbox -framework AudioUnit -framework CoreSer
 
 all:
 	$(CC) $(INCLUDES) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_IMAGE) test_oswrapper_image.c -o test_oswrapper_image
+	$(CC) $(INCLUDES) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_AUDIO) test_oswrapper_audio.c -o test_oswrapper_audio
 	$(CC) $(INCLUDES) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_AUDIO) demo_oswrapper_audio_mac.c -o demo_oswrapper_audio_mac
 
 clean:
-	rm -f test_oswrapper_image demo_oswrapper_audio_mac
+	rm -f test_oswrapper_image test_oswrapper_audio demo_oswrapper_audio_mac

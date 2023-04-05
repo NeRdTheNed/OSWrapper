@@ -6,3 +6,6 @@ test/demo_oswrapper_audio_mac
 test/test_oswrapper_image
 test/test_oswrapper_image.exe
 test/test_oswrapper_image.obj
+test/test_oswrapper_audio
+test/test_oswrapper_audio.exe
+test/test_oswrapper_audio.obj
