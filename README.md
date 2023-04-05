@@ -1,11 +1,11 @@
-# OSWrapper
+# OSWrapper DEV BRANCH
 
-> Single-header file libraries to wrap OS-specific functionality.
+> Don't use this branch in your programs, but feel free to fix or improve code here! Single-header file libraries to wrap OS-specific functionality.
 
-| Library           | Description                      | Platform implementations          |
-| ----------------- | -------------------------------- | --------------------------------- |
-| oswrapper_image.h | Image decoder using OS libraries | macOS, Windows (Vista and higher) |
-| oswrapper_audio.h | Audio decoder using OS libraries | macOS (10.4 and higher)           |
+| Library           | Description                      | Platform implementations                        |
+| ----------------- | -------------------------------- | ----------------------------------------------- |
+| oswrapper_image.h | Image decoder using OS libraries | macOS, Windows (Vista and higher)               |
+| oswrapper_audio.h | Audio decoder using OS libraries | macOS (10.4 and higher), Windows (7 and higher) |
 
 ## Usage
 
@@ -24,10 +24,10 @@ link against a system library to use these libraries,
 or perform some platform-specific initialisation action before using them.
 Here's the requirements:
 
-| Library           | macOS                             | Windows                                                 |
-| ----------------- | --------------------------------- | ------------------------------------------------------- |
-| oswrapper_image.h | Link with -framework AppKit       | Initialise the COM library, link with windowscodecs.lib |
-| oswrapper_audio.h | Link with -framework AudioToolbox | N/A                                                     |
+| Library           | macOS                             | Windows                                                                              |
+| ----------------- | --------------------------------- | ------------------------------------------------------------------------------------ |
+| oswrapper_image.h | Link with -framework AppKit       | Initialise the COM library, link with windowscodecs.lib                              |
+| oswrapper_audio.h | Link with -framework AudioToolbox | Initialise the COM library, link with mfplat.lib, mfreadwrite.lib, and shlwapi.lib   |
 
 ## Future work
 

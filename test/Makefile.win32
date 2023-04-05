@@ -1,8 +1,9 @@
 INCLUDES = -I..
-CFLAGS = /Wall
+CFLAGS = /MTd /RTC1 /Wall
 
 all:
 	$(CC) $(INCLUDES) $(CFLAGS) $(LDFLAGS) test_oswrapper_image.c -o test_oswrapper_image.exe
+	$(CC) $(INCLUDES) $(CFLAGS) $(LDFLAGS) test_oswrapper_audio.c -o test_oswrapper_audio.exe
 
 clean:
-	del test_oswrapper_image.obj test_oswrapper_image.exe
+	del test_oswrapper_image.obj test_oswrapper_image.exe test_oswrapper_audio.obj test_oswrapper_audio.exe

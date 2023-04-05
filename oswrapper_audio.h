@@ -108,6 +108,12 @@ OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* aud
 #ifndef OSWRAPPER_AUDIO_MALLOC
 #define OSWRAPPER_AUDIO_MALLOC(x) malloc(x)
 #endif /* OSWRAPPER_AUDIO_MALLOC */
+#ifndef OSWRAPPER_AUDIO_CALLOC
+#define OSWRAPPER_AUDIO_CALLOC(size, x) calloc(size, x)
+#endif /* OSWRAPPER_AUDIO_CALLOC */
+#ifndef OSWRAPPER_AUDIO_REALLOC
+#define OSWRAPPER_AUDIO_REALLOC(buf, size) realloc(buf, size)
+#endif /* OSWRAPPER_AUDIO_REALLOC */
 #ifndef OSWRAPPER_AUDIO_FREE
 #define OSWRAPPER_AUDIO_FREE(x) free(x)
 #endif /* OSWRAPPER_AUDIO_FREE */
@@ -123,6 +129,12 @@ OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* aud
 #endif /* !defined(OSWRAPPER_AUDIO_USE_AUDIOTOOLBOX_IMPL) && !defined(OSWRAPPER_AUDIO_NO_USE_AUDIOTOOLBOX_IMPL) */
 #endif /* defined(MAC_OS_X_VERSION_10_4) && MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_4 */
 #endif /* __APPLE__ */
+
+#if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
+#if !defined(OSWRAPPER_AUDIO_USE_WIN_MF_IMPL) && !defined(OSWRAPPER_AUDIO_NO_USE_WIN_MF_IMPL)
+#define OSWRAPPER_AUDIO_USE_WIN_MF_IMPL
+#endif /* !defined(OSWRAPPER_AUDIO_USE_WIN_MF_IMPL) && !defined(OSWRAPPER_AUDIO_NO_USE_WIN_MF_IMPL) */
+#endif
 
 #ifdef OSWRAPPER_AUDIO_USE_AUDIOTOOLBOX_IMPL
 /* Start macOS AudioToolbox implementation */
@@ -356,6 +368,292 @@ OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* aud
     return frames;
 }
 /* End macOS AudioToolbox implementation */
+#elif defined(OSWRAPPER_AUDIO_USE_WIN_MF_IMPL)
+/* WIP: THIS CODE DOESN'T WORK, AND CORRUPTS YOUR MEMORY */
+/* Start Win32 MF implementation */
+#define COBJMACROS
+#define WIN32_LEAN_AND_MEAN
+#include <initguid.h>
+#include <windows.h>
+#include <mfapi.h>
+#include <mfidl.h>
+#include <mfreadwrite.h>
+#include <stdio.h>
+#include <shlwapi.h>
+
+/* TODO linking bodge */
+extern const IID GUID_NULL;
+
+/* TODO Ugly hack */
+#ifndef OSWRAPPER_AUDIO_PATH_MAX
+#define OSWRAPPER_AUDIO_PATH_MAX MAX_PATH
+#endif
+
+#ifndef OSWRAPPER_AUDIO__INTERNAL_BUFFER_SIZE
+/* TODO The program seems to crash unless realloc is called later??? 0x20000 might be a good size */
+#define OSWRAPPER_AUDIO__INTERNAL_BUFFER_SIZE 0x40
+#endif
+
+typedef struct oswrapper_audio__internal_data_win {
+    IMFSourceReader* reader;
+    short* internal_buffer;
+    size_t internal_buffer_size;
+    size_t internal_buffer_pos;
+} oswrapper_audio__internal_data_win;
+
+OSWRAPPER_AUDIO_DEF OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio_init(void) {
+    return SUCCEEDED(MFStartup(MF_VERSION, MFSTARTUP_LITE)) ? OSWRAPPER_AUDIO_RESULT_SUCCESS : OSWRAPPER_AUDIO_RESULT_FAILURE;
+}
+
+OSWRAPPER_AUDIO_DEF OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio_uninit(void) {
+    return SUCCEEDED(MFShutdown()) ? OSWRAPPER_AUDIO_RESULT_SUCCESS : OSWRAPPER_AUDIO_RESULT_FAILURE;
+}
+
+OSWRAPPER_AUDIO_DEF OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio_free_context(OSWrapper_audio_spec* audio) {
+    oswrapper_audio__internal_data_win* internal_data = (oswrapper_audio__internal_data_win*) audio->internal_data;
+    IMFSourceReader_Release(internal_data->reader);
+
+    if (internal_data->internal_buffer != NULL) {
+        OSWRAPPER_AUDIO_FREE(internal_data->internal_buffer);
+    }
+
+    return OSWRAPPER_AUDIO_RESULT_SUCCESS;
+}
+
+#define OSWRAPPER_AUDIO__END_FAIL_FALSE(cond) if(!cond) { return_val = OSWRAPPER_AUDIO_RESULT_FAILURE; goto cleanup; }
+#define OSWRAPPER_AUDIO__END_FAIL(hres) OSWRAPPER_AUDIO__END_FAIL_FALSE(SUCCEEDED(hres))
+
+static OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio__configure_stream(IMFSourceReader* reader, OSWrapper_audio_spec* audio) {
+    OSWRAPPER_AUDIO_RESULT_TYPE return_val;
+    HRESULT result;
+    UINT32 sample_rate, channel_count, bits_per_channel;
+    IMFMediaType* media_type = NULL;
+    result = S_OK;
+    return_val = OSWRAPPER_AUDIO_RESULT_SUCCESS;
+    channel_count = audio->channel_count;
+    sample_rate = audio->sample_rate;
+    bits_per_channel = audio->bits_per_channel;
+    OSWRAPPER_AUDIO__END_FAIL(IMFSourceReader_SetStreamSelection(reader, MF_SOURCE_READER_ALL_STREAMS, FALSE));
+    OSWRAPPER_AUDIO__END_FAIL(IMFSourceReader_SetStreamSelection(reader, MF_SOURCE_READER_FIRST_AUDIO_STREAM, TRUE));
+
+    /* Get / set the format */
+    if ((sample_rate == 0) || (channel_count == 0) || (bits_per_channel == 0)) {
+        OSWRAPPER_AUDIO__END_FAIL(IMFSourceReader_GetNativeMediaType(reader, MF_SOURCE_READER_FIRST_AUDIO_STREAM, 0, &media_type));
+
+        if (channel_count == 0) {
+            IMFMediaType_GetUINT32(media_type, &MF_MT_AUDIO_NUM_CHANNELS, &channel_count);
+
+            /* Sanity check */
+            if (channel_count == 0) {
+                channel_count = 2;
+            }
+
+            audio->channel_count = channel_count;
+        }
+
+        if (sample_rate == 0) {
+            IMFMediaType_GetUINT32(media_type, &MF_MT_AUDIO_SAMPLES_PER_SECOND, &sample_rate);
+
+            /* Sanity check */
+            if (sample_rate == 0) {
+                sample_rate = 44100;
+            }
+
+            audio->sample_rate = sample_rate;
+        }
+
+        if (bits_per_channel == 0) {
+            IMFMediaType_GetUINT32(media_type, &MF_MT_AUDIO_BITS_PER_SAMPLE, &bits_per_channel);
+
+            /* Sanity check */
+            if (bits_per_channel == 0) {
+                bits_per_channel = 16;
+            }
+
+            audio->bits_per_channel = bits_per_channel;
+        }
+
+        IMFMediaType_Release(media_type);
+    }
+
+    OSWRAPPER_AUDIO__END_FAIL(MFCreateMediaType(&media_type));
+    OSWRAPPER_AUDIO__END_FAIL(IMFMediaType_SetGUID(media_type, &MF_MT_MAJOR_TYPE, &MFMediaType_Audio));
+    OSWRAPPER_AUDIO__END_FAIL(IMFMediaType_SetGUID(media_type, &MF_MT_SUBTYPE, &MFAudioFormat_PCM));
+    OSWRAPPER_AUDIO__END_FAIL(IMFMediaType_SetUINT32(media_type, &MF_MT_AUDIO_BITS_PER_SAMPLE, audio->bits_per_channel));
+    OSWRAPPER_AUDIO__END_FAIL(IMFMediaType_SetUINT32(media_type, &MF_MT_AUDIO_SAMPLES_PER_SECOND, audio->sample_rate));
+    OSWRAPPER_AUDIO__END_FAIL(IMFMediaType_SetUINT32(media_type, &MF_MT_AUDIO_NUM_CHANNELS, audio->channel_count));
+    OSWRAPPER_AUDIO__END_FAIL(IMFSourceReader_SetCurrentMediaType(reader, MF_SOURCE_READER_FIRST_AUDIO_STREAM, NULL, media_type));
+    OSWRAPPER_AUDIO__END_FAIL(IMFSourceReader_SetStreamSelection(reader, MF_SOURCE_READER_FIRST_AUDIO_STREAM, TRUE));
+cleanup:
+
+    if (media_type != NULL) {
+        IMFMediaType_Release(media_type);
+    }
+
+    return return_val;
+}
+
+OSWRAPPER_AUDIO_DEF OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio__load_from_reader(IMFSourceReader* reader, OSWrapper_audio_spec* audio) {
+    if (oswrapper_audio__configure_stream(reader, audio)) {
+        oswrapper_audio__internal_data_win* internal_data = (oswrapper_audio__internal_data_win*) OSWRAPPER_AUDIO_MALLOC(sizeof(oswrapper_audio__internal_data_win));
+
+        if (internal_data != NULL) {
+            audio->internal_data = (void*) internal_data;
+            internal_data->reader = reader;
+            /* TODO rework */
+            internal_data->internal_buffer = (short*) OSWRAPPER_AUDIO_CALLOC(sizeof(short), OSWRAPPER_AUDIO__INTERNAL_BUFFER_SIZE);
+            internal_data->internal_buffer_pos = 0;
+            internal_data->internal_buffer_size = internal_data->internal_buffer == NULL ? 0 : OSWRAPPER_AUDIO__INTERNAL_BUFFER_SIZE * sizeof(short);
+            return OSWRAPPER_AUDIO_RESULT_SUCCESS;
+        }
+    }
+
+    IMFSourceReader_Release(reader);
+    return OSWRAPPER_AUDIO_RESULT_FAILURE;
+}
+
+OSWRAPPER_AUDIO_DEF OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio_load_from_memory(const unsigned char* data, size_t data_size, OSWrapper_audio_spec* audio) {
+    IStream* memory_stream = SHCreateMemStream(data, data_size);
+
+    if (memory_stream != NULL) {
+        HRESULT result;
+        IMFByteStream* byte_stream = NULL;
+        result = MFCreateMFByteStreamOnStream(memory_stream, &byte_stream);
+
+        if (SUCCEEDED(result)) {
+            IMFSourceReader* reader = NULL;
+            result = MFCreateSourceReaderFromByteStream(byte_stream, NULL, &reader);
+
+            if (SUCCEEDED(result)) {
+                return oswrapper_audio__load_from_reader(reader, audio);
+            }
+        }
+    }
+
+    return OSWRAPPER_AUDIO_RESULT_FAILURE;
+}
+
+#ifndef OSWRAPPER_AUDIO_NO_LOAD_FROM_PATH
+OSWRAPPER_AUDIO_DEF OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio_load_from_path(const char* path, OSWrapper_audio_spec* audio) {
+    /* TODO Ugly hack */
+    wchar_t path_buffer[OSWRAPPER_AUDIO_PATH_MAX];
+    HRESULT result = MultiByteToWideChar(CP_UTF8, 0, path, -1, path_buffer, OSWRAPPER_AUDIO_PATH_MAX);
+
+    if (SUCCEEDED(result)) {
+        IMFSourceReader* reader = NULL;
+        result = MFCreateSourceReaderFromURL(path_buffer, NULL, &reader);
+
+        if (SUCCEEDED(result)) {
+            return oswrapper_audio__load_from_reader(reader, audio);
+        }
+    }
+
+    return OSWRAPPER_AUDIO_RESULT_FAILURE;
+}
+#endif /* OSWRAPPER_AUDIO_NO_LOAD_FROM_PATH */
+
+#ifdef OSWRAPPER_AUDIO_EXPERIMENTAL
+/* Unstable-ish API */
+OSWRAPPER_AUDIO_DEF OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio_get_pos(OSWrapper_audio_spec* audio, OSWRAPPER_AUDIO_SEEK_TYPE* pos) {
+    /* TODO
+    oswrapper_audio__internal_data_win* internal_data = (oswrapper_audio__internal_data_win*) audio->internal_data;
+    IMFSourceReader* reader = internal_data->reader; */
+    return OSWRAPPER_AUDIO_RESULT_FAILURE;
+}
+
+OSWRAPPER_AUDIO_DEF void oswrapper_audio_seek(OSWrapper_audio_spec* audio, OSWRAPPER_AUDIO_SEEK_TYPE pos) {
+    HRESULT result = S_OK;
+    PROPVARIANT pos_propvariant = { 0 };
+    oswrapper_audio__internal_data_win* internal_data = (oswrapper_audio__internal_data_win*) audio->internal_data;
+    pos_propvariant.vt = VT_I8;
+    pos_propvariant.hVal.QuadPart = pos;
+    IMFSourceReader_SetCurrentPosition(internal_data->reader, &GUID_NULL, &pos_propvariant);
+    PropVariantClear(&pos_propvariant);
+}
+#endif /* OSWRAPPER_AUDIO_EXPERIMENTAL */
+
+OSWRAPPER_AUDIO_DEF void oswrapper_audio_rewind(OSWrapper_audio_spec* audio) {
+    HRESULT result = S_OK;
+    PROPVARIANT pos_propvariant = { 0 };
+    oswrapper_audio__internal_data_win* internal_data = (oswrapper_audio__internal_data_win*) audio->internal_data;
+    pos_propvariant.vt = VT_I8;
+    pos_propvariant.hVal.QuadPart = 0;
+    IMFSourceReader_SetCurrentPosition(internal_data->reader, &GUID_NULL, &pos_propvariant);
+    PropVariantClear(&pos_propvariant);
+}
+
+OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* audio, short* buffer, size_t frames_to_do) {
+    /* We have to buffer decoding ourselves */
+    oswrapper_audio__internal_data_win* internal_data = (oswrapper_audio__internal_data_win*) audio->internal_data;
+    size_t remaining_samples = internal_data->internal_buffer_size - internal_data->internal_buffer_pos;
+    size_t frame_size = (audio->bits_per_channel / 8) * audio->channel_count;
+
+    if (remaining_samples == 0) {
+        DWORD current_length, max_length = 0;
+        DWORD pdwActualStreamIndex;
+        DWORD pdwStreamFlags;
+        LONGLONG pllTimestamp;
+        IMFSample* sample = NULL;
+        HRESULT result = IMFSourceReader_ReadSample(internal_data->reader, MF_SOURCE_READER_FIRST_AUDIO_STREAM, 0, &pdwActualStreamIndex, &pdwStreamFlags, &pllTimestamp, &sample);
+
+        /* TODO handle flags */
+        if (SUCCEEDED(result) && (sample != NULL)) {
+            IMFMediaBuffer* media_buffer;
+            result = IMFSample_ConvertToContiguousBuffer(sample, &media_buffer);
+
+            if (SUCCEEDED(result)) {
+                BYTE* sample_audio_data = NULL;
+                result = IMFMediaBuffer_Lock(media_buffer, &sample_audio_data, &max_length, &current_length);
+
+                if (SUCCEEDED(result)) {
+                    if (internal_data->internal_buffer_size < current_length) {
+                        short* realloc_buffer = (short*) OSWRAPPER_AUDIO_REALLOC(internal_data->internal_buffer, current_length);
+
+                        if (realloc_buffer == NULL) {
+                            current_length = internal_data->internal_buffer_size;
+                        } else {
+                            internal_data->internal_buffer = realloc_buffer;
+                            internal_data->internal_buffer_size = current_length;
+                        }
+                    }
+
+                    if ((internal_data->internal_buffer_size - current_length) < 0) {
+                        /* TODO? */
+                    }
+
+                    size_t offset = internal_data->internal_buffer_size - current_length;
+                    /* TODO This doesn't work, uncomment for garbage output
+                    OSWRAPPER_AUDIO_MEMCPY(internal_data->internal_buffer + offset, sample_audio_data, current_length); */
+                    internal_data->internal_buffer_pos = offset;
+                    result = IMFMediaBuffer_Unlock(media_buffer);
+
+                    if (FAILED(result)) {
+                        /* TODO what do you even do here */
+                    }
+                }
+
+                IMFMediaBuffer_Release(media_buffer);
+            }
+        }
+    }
+
+    remaining_samples = internal_data->internal_buffer_size - internal_data->internal_buffer_pos;
+
+    if (frames_to_do > remaining_samples) {
+        frames_to_do = remaining_samples;
+    }
+
+    /* TODO This doens't work, uncomment for garbage output
+    OSWRAPPER_AUDIO_MEMCPY(buffer, internal_data->internal_buffer + internal_data->internal_buffer_pos, frames_to_do * frame_size); */
+    internal_data->internal_buffer_pos += frames_to_do * frame_size;
+
+    if (internal_data->internal_buffer_pos > internal_data->internal_buffer_size) {
+        internal_data->internal_buffer_pos = internal_data->internal_buffer_size;
+    }
+
+    return frames_to_do;
+}
+/* End Win32 MF implementation */
 #else
 /* No audio loader implementation */
 OSWRAPPER_AUDIO_DEF OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio_init(void) {
