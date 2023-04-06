@@ -367,8 +367,12 @@ OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* aud
 /* End macOS AudioToolbox implementation */
 #elif defined(OSWRAPPER_AUDIO_USE_WIN_MF_IMPL)
 /* Start Win32 MF implementation */
+#ifndef COBJMACROS
 #define COBJMACROS
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
+#endif
 #include <windows.h>
 #include <cguid.h>
 #include <initguid.h>
