@@ -389,6 +389,11 @@ OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* aud
 #define OSWRAPPER_AUDIO_PATH_MAX MAX_PATH
 #endif
 
+/* The startup flags forMFStartup  */
+#ifndef OSWRAPPER_AUDIO__MF_STARTUP_VAL
+#define OSWRAPPER_AUDIO__MF_STARTUP_VAL MFSTARTUP_LITE
+#endif
+
 #ifndef OSWRAPPER_AUDIO__INTERNAL_BUFFER_SIZE
 /* TODO Not sure what a good size is for this.
 This is the largest value I've seen on my system so far. */
@@ -409,7 +414,7 @@ typedef struct oswrapper_audio__internal_data_win {
 } oswrapper_audio__internal_data_win;
 
 OSWRAPPER_AUDIO_DEF OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio_init(void) {
-    return SUCCEEDED(MFStartup(MF_VERSION, MFSTARTUP_LITE)) ? OSWRAPPER_AUDIO_RESULT_SUCCESS : OSWRAPPER_AUDIO_RESULT_FAILURE;
+    return SUCCEEDED(MFStartup(MF_VERSION, OSWRAPPER_AUDIO__MF_STARTUP_VAL)) ? OSWRAPPER_AUDIO_RESULT_SUCCESS : OSWRAPPER_AUDIO_RESULT_FAILURE;
 }
 
 OSWRAPPER_AUDIO_DEF OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio_uninit(void) {
