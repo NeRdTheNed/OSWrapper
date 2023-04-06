@@ -372,7 +372,8 @@ OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* aud
 }
 /* End macOS AudioToolbox implementation */
 #elif defined(OSWRAPPER_AUDIO_USE_WIN_MF_IMPL)
-/* WIP: This code half-works, and by that, I mean it gives you half the samples you want */
+/* WIP: Mostly working, needs polish & C89 compliance.
+There's artifacts at the end of decoding, need to fix that. */
 /* Start Win32 MF implementation */
 #define COBJMACROS
 #define WIN32_LEAN_AND_MEAN
@@ -393,8 +394,8 @@ extern const IID GUID_NULL;
 #endif
 
 #ifndef OSWRAPPER_AUDIO__INTERNAL_BUFFER_SIZE
-/* TODO 0x20000 might be a good size */
-#define OSWRAPPER_AUDIO__INTERNAL_BUFFER_SIZE 0x40
+/* TODO Not sure what a good size is for this */
+#define OSWRAPPER_AUDIO__INTERNAL_BUFFER_SIZE 0x20000
 #endif
 
 typedef struct oswrapper_audio__internal_data_win {
@@ -726,8 +727,8 @@ OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* aud
         internal_data->internal_buffer_remaining -= internal_data->internal_buffer_remaining;
     } else {
         OSWRAPPER_AUDIO_MEMCPY(buffer, internal_data->internal_buffer + internal_data->internal_buffer_pos, frames_to_do * frame_size);
-        internal_data->internal_buffer_pos += (frames_to_do * frame_size / audio->channel_count);
-        internal_data->internal_buffer_remaining -= (frames_to_do * frame_size / audio->channel_count);
+        internal_data->internal_buffer_pos += (frames_to_do * frame_size / sizeof(short));
+        internal_data->internal_buffer_remaining -= (frames_to_do * frame_size / sizeof(short));
     }
 
     return frames_to_do;
