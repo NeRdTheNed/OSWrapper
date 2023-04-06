@@ -120,6 +120,9 @@ OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* aud
 #ifndef OSWRAPPER_AUDIO_MEMCPY
 #define OSWRAPPER_AUDIO_MEMCPY(x, y, amount) memcpy(x, y, amount)
 #endif /* OSWRAPPER_AUDIO_MEMCPY */
+#ifndef OSWRAPPER_AUDIO_MEMMOVE
+#define OSWRAPPER_AUDIO_MEMMOVE(x, y, amount) memmove(x, y, amount)
+#endif /* OSWRAPPER_AUDIO_MEMMOVE */
 
 #ifdef __APPLE__
 #include <AvailabilityMacros.h>
@@ -369,7 +372,7 @@ OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* aud
 }
 /* End macOS AudioToolbox implementation */
 #elif defined(OSWRAPPER_AUDIO_USE_WIN_MF_IMPL)
-/* WIP: THIS CODE DOESN'T WORK, AND CORRUPTS YOUR MEMORY */
+/* WIP: This code half-works, and by that, I mean it gives you half the samples you want */
 /* Start Win32 MF implementation */
 #define COBJMACROS
 #define WIN32_LEAN_AND_MEAN
@@ -397,8 +400,14 @@ extern const IID GUID_NULL;
 typedef struct oswrapper_audio__internal_data_win {
     IMFSourceReader* reader;
     short* internal_buffer;
+    /* Real size */
     size_t internal_buffer_size;
+    /* Remaining samples TODO optimise */
+    size_t internal_buffer_remaining;
+    /* Current position */
     size_t internal_buffer_pos;
+    /* Has the reader thrown an error? */
+    OSWRAPPER_AUDIO_RESULT_TYPE no_reader_error;
 } oswrapper_audio__internal_data_win;
 
 OSWRAPPER_AUDIO_DEF OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio_init(void) {
@@ -424,9 +433,17 @@ OSWRAPPER_AUDIO_DEF OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio_free_context(OSW
 #define OSWRAPPER_AUDIO__END_FAIL(hres) OSWRAPPER_AUDIO__END_FAIL_FALSE(SUCCEEDED(hres))
 
 static OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio__configure_stream(IMFSourceReader* reader, OSWrapper_audio_spec* audio) {
+    oswrapper_audio__internal_data_win* internal_data;
     OSWRAPPER_AUDIO_RESULT_TYPE return_val;
     HRESULT result;
     UINT32 sample_rate, channel_count, bits_per_channel;
+    internal_data = (oswrapper_audio__internal_data_win*) audio->internal_data;
+
+    if ((internal_data != NULL) && (internal_data->no_reader_error == OSWRAPPER_AUDIO_RESULT_FAILURE)) {
+        /* IMFSourceReader methods can no longer be called */
+        return OSWRAPPER_AUDIO_RESULT_FAILURE;
+    }
+
     IMFMediaType* media_type = NULL;
     result = S_OK;
     return_val = OSWRAPPER_AUDIO_RESULT_SUCCESS;
@@ -503,7 +520,9 @@ OSWRAPPER_AUDIO_DEF OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio__load_from_reade
             /* TODO rework */
             internal_data->internal_buffer = (short*) OSWRAPPER_AUDIO_CALLOC(sizeof(short), OSWRAPPER_AUDIO__INTERNAL_BUFFER_SIZE);
             internal_data->internal_buffer_pos = 0;
-            internal_data->internal_buffer_size = internal_data->internal_buffer == NULL ? 0 : OSWRAPPER_AUDIO__INTERNAL_BUFFER_SIZE * sizeof(short);
+            internal_data->internal_buffer_remaining = 0;
+            internal_data->internal_buffer_size = internal_data->internal_buffer == NULL ? 0 : OSWRAPPER_AUDIO__INTERNAL_BUFFER_SIZE;
+            internal_data->no_reader_error = OSWRAPPER_AUDIO_RESULT_SUCCESS;
             return OSWRAPPER_AUDIO_RESULT_SUCCESS;
         }
     }
@@ -555,16 +574,31 @@ OSWRAPPER_AUDIO_DEF OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio_load_from_path(c
 #ifdef OSWRAPPER_AUDIO_EXPERIMENTAL
 /* Unstable-ish API */
 OSWRAPPER_AUDIO_DEF OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio_get_pos(OSWrapper_audio_spec* audio, OSWRAPPER_AUDIO_SEEK_TYPE* pos) {
-    /* TODO
     oswrapper_audio__internal_data_win* internal_data = (oswrapper_audio__internal_data_win*) audio->internal_data;
+
+    if (internal_data->no_reader_error == OSWRAPPER_AUDIO_RESULT_FAILURE) {
+        /* IMFSourceReader methods can no longer be called */
+        return OSWRAPPER_AUDIO_RESULT_FAILURE;
+    }
+
+    /* TODO
     IMFSourceReader* reader = internal_data->reader; */
     return OSWRAPPER_AUDIO_RESULT_FAILURE;
 }
 
 OSWRAPPER_AUDIO_DEF void oswrapper_audio_seek(OSWrapper_audio_spec* audio, OSWRAPPER_AUDIO_SEEK_TYPE pos) {
-    HRESULT result = S_OK;
+    oswrapper_audio__internal_data_win* internal_data;
+    HRESULT result;
     PROPVARIANT pos_propvariant = { 0 };
-    oswrapper_audio__internal_data_win* internal_data = (oswrapper_audio__internal_data_win*) audio->internal_data;
+    internal_data = (oswrapper_audio__internal_data_win*) audio->internal_data;
+
+    if (internal_data->no_reader_error == OSWRAPPER_AUDIO_RESULT_FAILURE) {
+        /* IMFSourceReader methods can no longer be called */
+        return OSWRAPPER_AUDIO_RESULT_FAILURE;
+    }
+
+    /* TODO reset buffers */
+    result = S_OK;
     pos_propvariant.vt = VT_I8;
     pos_propvariant.hVal.QuadPart = pos;
     IMFSourceReader_SetCurrentPosition(internal_data->reader, &GUID_NULL, &pos_propvariant);
@@ -573,82 +607,125 @@ OSWRAPPER_AUDIO_DEF void oswrapper_audio_seek(OSWrapper_audio_spec* audio, OSWRA
 #endif /* OSWRAPPER_AUDIO_EXPERIMENTAL */
 
 OSWRAPPER_AUDIO_DEF void oswrapper_audio_rewind(OSWrapper_audio_spec* audio) {
-    HRESULT result = S_OK;
+    oswrapper_audio__internal_data_win* internal_data;
+    HRESULT result;
     PROPVARIANT pos_propvariant = { 0 };
-    oswrapper_audio__internal_data_win* internal_data = (oswrapper_audio__internal_data_win*) audio->internal_data;
+    internal_data = (oswrapper_audio__internal_data_win*) audio->internal_data;
+
+    if (internal_data->no_reader_error == OSWRAPPER_AUDIO_RESULT_FAILURE) {
+        /* IMFSourceReader methods can no longer be called */
+        return;
+    }
+
+    /* TODO reset buffers */
+    result = S_OK;
     pos_propvariant.vt = VT_I8;
     pos_propvariant.hVal.QuadPart = 0;
     IMFSourceReader_SetCurrentPosition(internal_data->reader, &GUID_NULL, &pos_propvariant);
     PropVariantClear(&pos_propvariant);
 }
 
-OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* audio, short* buffer, size_t frames_to_do) {
-    /* We have to buffer decoding ourselves */
+/* TODO This code isn't optimised. If you're brave enough, you can probably speed it up and save memory. */
+static void oswrapper_audio__get_new_samples(OSWrapper_audio_spec* audio, size_t frames_to_do) {
     oswrapper_audio__internal_data_win* internal_data = (oswrapper_audio__internal_data_win*) audio->internal_data;
-    size_t remaining_samples = internal_data->internal_buffer_size - internal_data->internal_buffer_pos;
-    size_t frame_size = (audio->bits_per_channel / 8) * audio->channel_count;
 
-    if (remaining_samples == 0) {
-        DWORD current_length, max_length = 0;
-        DWORD pdwActualStreamIndex;
-        DWORD pdwStreamFlags;
-        LONGLONG pllTimestamp;
-        IMFSample* sample = NULL;
-        HRESULT result = IMFSourceReader_ReadSample(internal_data->reader, MF_SOURCE_READER_FIRST_AUDIO_STREAM, 0, &pdwActualStreamIndex, &pdwStreamFlags, &pllTimestamp, &sample);
+    /* Move any remaining samples to the start of the buffer, if they're not at the start of the buffer */
+    if (internal_data->internal_buffer_remaining > 0 && (internal_data->internal_buffer_pos != 0)) {
+        OSWRAPPER_AUDIO_MEMMOVE(internal_data->internal_buffer, internal_data->internal_buffer + internal_data->internal_buffer_pos, internal_data->internal_buffer_remaining * (sizeof internal_data->internal_buffer[0]));
+    }
 
-        /* TODO handle flags */
-        if (SUCCEEDED(result) && (sample != NULL)) {
-            IMFMediaBuffer* media_buffer;
-            result = IMFSample_ConvertToContiguousBuffer(sample, &media_buffer);
+    /* Reset the buffer position to 0 */
+    internal_data->internal_buffer_pos = 0;
+
+    /* Get new samples */
+    while (frames_to_do > internal_data->internal_buffer_remaining) {
+        size_t new_target_frames = 0;
+
+        if (internal_data->no_reader_error == OSWRAPPER_AUDIO_RESULT_SUCCESS) {
+            IMFSample* sample;
+            DWORD flags;
+            HRESULT result;
+            sample = NULL;
+            result = IMFSourceReader_ReadSample(internal_data->reader, MF_SOURCE_READER_FIRST_AUDIO_STREAM, 0, NULL, &flags, NULL, &sample);
 
             if (SUCCEEDED(result)) {
-                BYTE* sample_audio_data = NULL;
-                result = IMFMediaBuffer_Lock(media_buffer, &sample_audio_data, &max_length, &current_length);
+                /* TODO handle more flags */
+                if (flags & MF_SOURCE_READERF_ERROR) {
+                    /* IMFSourceReader methods can no longer be called */
+                    internal_data->no_reader_error = OSWRAPPER_AUDIO_RESULT_FAILURE;
+                } else if ((flags & MF_SOURCE_READERF_ENDOFSTREAM) || (flags & MF_SOURCE_READERF_CURRENTMEDIATYPECHANGED) || (sample == NULL)) {
+                    /* TODO handle these better */
+                } else {
+                    IMFMediaBuffer* media_buffer;
+                    result = IMFSample_ConvertToContiguousBuffer(sample, &media_buffer);
 
-                if (SUCCEEDED(result)) {
-                    if (internal_data->internal_buffer_size < current_length) {
-                        short* realloc_buffer = (short*) OSWRAPPER_AUDIO_REALLOC(internal_data->internal_buffer, current_length);
+                    if (SUCCEEDED(result)) {
+                        DWORD current_length;
+                        BYTE* sample_audio_data = NULL;
+                        result = IMFMediaBuffer_Lock(media_buffer, &sample_audio_data, NULL, &current_length);
 
-                        if (realloc_buffer == NULL) {
-                            current_length = internal_data->internal_buffer_size;
-                        } else {
-                            internal_data->internal_buffer = realloc_buffer;
-                            internal_data->internal_buffer_size = current_length;
+                        if (SUCCEEDED(result)) {
+                            new_target_frames = current_length;
+                            size_t new_target_size = internal_data->internal_buffer_remaining + new_target_frames;
+
+                            if (new_target_size > internal_data->internal_buffer_size) {
+                                short* realloc_buffer = (short*) OSWRAPPER_AUDIO_MALLOC(new_target_size * sizeof(short));
+
+                                if (realloc_buffer == NULL) {
+                                    /* Couldn't alloc any more memory, just work with what we have */
+                                    new_target_frames = internal_data->internal_buffer_size - internal_data->internal_buffer_remaining;
+                                    frames_to_do = internal_data->internal_buffer_remaining + new_target_frames;
+                                } else {
+                                    OSWRAPPER_AUDIO_FREE(internal_data->internal_buffer);
+                                    internal_data->internal_buffer = realloc_buffer;
+                                    internal_data->internal_buffer_size = new_target_size;
+                                }
+                            }
+
+                            if (new_target_frames > 0) {
+                                OSWRAPPER_AUDIO_MEMCPY((BYTE*)(internal_data->internal_buffer + internal_data->internal_buffer_remaining), sample_audio_data, new_target_frames);
+                            }
+
+                            result = IMFMediaBuffer_Unlock(media_buffer);
+
+                            if (FAILED(result)) {
+                                /* TODO what do you even do here */
+                            }
                         }
-                    }
 
-                    if ((internal_data->internal_buffer_size - current_length) < 0) {
-                        /* TODO? */
-                    }
-
-                    size_t offset = internal_data->internal_buffer_size - current_length;
-                    /* TODO This doesn't work, uncomment for garbage output
-                    OSWRAPPER_AUDIO_MEMCPY(internal_data->internal_buffer + offset, sample_audio_data, current_length); */
-                    internal_data->internal_buffer_pos = offset;
-                    result = IMFMediaBuffer_Unlock(media_buffer);
-
-                    if (FAILED(result)) {
-                        /* TODO what do you even do here */
+                        IMFMediaBuffer_Release(media_buffer);
                     }
                 }
-
-                IMFMediaBuffer_Release(media_buffer);
             }
         }
+
+        if (new_target_frames == 0) {
+            frames_to_do = internal_data->internal_buffer_remaining;
+        } else {
+            internal_data->internal_buffer_remaining += new_target_frames;
+        }
+    }
+}
+
+OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* audio, short* buffer, size_t frames_to_do) {
+    oswrapper_audio__internal_data_win* internal_data = (oswrapper_audio__internal_data_win*) audio->internal_data;
+    size_t frame_size = (audio->bits_per_channel / 8) * audio->channel_count;
+
+    /* We have to buffer decoding ourselves */
+    if (internal_data->internal_buffer_remaining < (frames_to_do * frame_size)) {
+        oswrapper_audio__get_new_samples(audio, frames_to_do * frame_size);
     }
 
-    remaining_samples = internal_data->internal_buffer_size - internal_data->internal_buffer_pos;
-
-    if (frames_to_do > remaining_samples) {
-        frames_to_do = remaining_samples;
-    }
-
-    /* TODO This doens't work, uncomment for garbage output
-    OSWRAPPER_AUDIO_MEMCPY(buffer, internal_data->internal_buffer + internal_data->internal_buffer_pos, frames_to_do * frame_size); */
-    internal_data->internal_buffer_pos += frames_to_do * frame_size;
-
-    if (internal_data->internal_buffer_pos > internal_data->internal_buffer_size) {
-        internal_data->internal_buffer_pos = internal_data->internal_buffer_size;
+    /* TODO cleanup */
+    if (internal_data->internal_buffer_remaining < (frames_to_do * frame_size)) {
+        frames_to_do = internal_data->internal_buffer_remaining;
+        OSWRAPPER_AUDIO_MEMCPY(buffer, internal_data->internal_buffer + internal_data->internal_buffer_pos, internal_data->internal_buffer_remaining);
+        internal_data->internal_buffer_pos += internal_data->internal_buffer_remaining;
+        internal_data->internal_buffer_remaining -= internal_data->internal_buffer_remaining;
+    } else {
+        OSWRAPPER_AUDIO_MEMCPY(buffer, internal_data->internal_buffer + internal_data->internal_buffer_pos, frames_to_do * frame_size);
+        internal_data->internal_buffer_pos += (frames_to_do * frame_size);
+        internal_data->internal_buffer_remaining -= (frames_to_do * frame_size);
     }
 
     return frames_to_do;
