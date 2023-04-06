@@ -1,6 +1,6 @@
-# OSWrapper DEV BRANCH
+# OSWrapper
 
-> Don't use this branch in your programs, but feel free to fix or improve code here! Single-header file libraries to wrap OS-specific functionality.
+> Single-header file libraries to wrap OS-specific functionality.
 
 | Library           | Description                      | Platform implementations                        |
 | ----------------- | -------------------------------- | ----------------------------------------------- |
@@ -31,7 +31,6 @@ Here's the requirements:
 
 ## Future work
 
-- Windows audio decoding
 - Emscripten image / audio decoding
 
 Issues and PRs are welcome.
