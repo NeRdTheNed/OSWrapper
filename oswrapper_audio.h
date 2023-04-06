@@ -108,12 +108,6 @@ OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* aud
 #ifndef OSWRAPPER_AUDIO_MALLOC
 #define OSWRAPPER_AUDIO_MALLOC(x) malloc(x)
 #endif /* OSWRAPPER_AUDIO_MALLOC */
-#ifndef OSWRAPPER_AUDIO_CALLOC
-#define OSWRAPPER_AUDIO_CALLOC(size, x) calloc(size, x)
-#endif /* OSWRAPPER_AUDIO_CALLOC */
-#ifndef OSWRAPPER_AUDIO_REALLOC
-#define OSWRAPPER_AUDIO_REALLOC(buf, size) realloc(buf, size)
-#endif /* OSWRAPPER_AUDIO_REALLOC */
 #ifndef OSWRAPPER_AUDIO_FREE
 #define OSWRAPPER_AUDIO_FREE(x) free(x)
 #endif /* OSWRAPPER_AUDIO_FREE */
