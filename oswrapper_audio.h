@@ -705,6 +705,10 @@ static void oswrapper_audio__get_new_samples(OSWrapper_audio_spec* audio, size_t
                     }
                 }
             }
+
+            if (sample != NULL) {
+                IMFSample_Release(sample);
+            }
         }
 
         if (new_target_frames == 0) {

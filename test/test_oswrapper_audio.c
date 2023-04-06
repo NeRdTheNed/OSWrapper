@@ -21,7 +21,7 @@
 #define BITS_PER_CHANNEL 0
 #endif
 
-#define TEST_PROGRAM_BUFFER_SIZE 2048
+#define TEST_PROGRAM_BUFFER_SIZE 0x50
 
 /* Decodes a given audio file to raw PCM data */
 int main(int argc, char** argv) {
