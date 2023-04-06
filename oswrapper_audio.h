@@ -394,8 +394,9 @@ extern const IID GUID_NULL;
 #endif
 
 #ifndef OSWRAPPER_AUDIO__INTERNAL_BUFFER_SIZE
-/* TODO Not sure what a good size is for this */
-#define OSWRAPPER_AUDIO__INTERNAL_BUFFER_SIZE 0x20000
+/* TODO Not sure what a good size is for this.
+This is the largest value I've seen on my system so far. */
+#define OSWRAPPER_AUDIO__INTERNAL_BUFFER_SIZE 0x84E0
 #endif
 
 typedef struct oswrapper_audio__internal_data_win {
