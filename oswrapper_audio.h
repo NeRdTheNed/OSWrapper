@@ -512,14 +512,20 @@ OSWRAPPER_AUDIO_DEF OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio__load_from_reade
         oswrapper_audio__internal_data_win* internal_data = (oswrapper_audio__internal_data_win*) OSWRAPPER_AUDIO_MALLOC(sizeof(oswrapper_audio__internal_data_win));
 
         if (internal_data != NULL) {
-            audio->internal_data = (void*) internal_data;
-            internal_data->reader = reader;
-            internal_data->internal_buffer = (short*) OSWRAPPER_AUDIO_MALLOC(OSWRAPPER_AUDIO__DEFAULT_INTERNAL_BUFFER_SIZE * sizeof(short));
-            internal_data->internal_buffer_pos = 0;
-            internal_data->internal_buffer_remaining = 0;
-            internal_data->internal_buffer_size = internal_data->internal_buffer == NULL ? 0 : OSWRAPPER_AUDIO__DEFAULT_INTERNAL_BUFFER_SIZE;
-            internal_data->no_reader_error = OSWRAPPER_AUDIO_RESULT_SUCCESS;
-            return OSWRAPPER_AUDIO_RESULT_SUCCESS;
+            short* initial_buffer = (short*) OSWRAPPER_AUDIO_MALLOC(OSWRAPPER_AUDIO__DEFAULT_INTERNAL_BUFFER_SIZE * sizeof(short));
+
+            if (initial_buffer != NULL) {
+                audio->internal_data = (void*) internal_data;
+                internal_data->reader = reader;
+                internal_data->internal_buffer = initial_buffer;
+                internal_data->internal_buffer_pos = 0;
+                internal_data->internal_buffer_remaining = 0;
+                internal_data->internal_buffer_size = OSWRAPPER_AUDIO__DEFAULT_INTERNAL_BUFFER_SIZE;
+                internal_data->no_reader_error = OSWRAPPER_AUDIO_RESULT_SUCCESS;
+                return OSWRAPPER_AUDIO_RESULT_SUCCESS;
+            }
+
+            OSWRAPPER_AUDIO_FREE(internal_data);
         }
     }
 
