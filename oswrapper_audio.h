@@ -451,12 +451,12 @@ static OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio__configure_stream(IMFSourceRe
     channel_count = audio->channel_count;
     sample_rate = audio->sample_rate;
     bits_per_channel = audio->bits_per_channel;
-    OSWRAPPER_AUDIO__END_FAIL(IMFSourceReader_SetStreamSelection(reader, MF_SOURCE_READER_ALL_STREAMS, FALSE));
-    OSWRAPPER_AUDIO__END_FAIL(IMFSourceReader_SetStreamSelection(reader, MF_SOURCE_READER_FIRST_AUDIO_STREAM, TRUE));
+    OSWRAPPER_AUDIO__END_FAIL(IMFSourceReader_SetStreamSelection(reader, (DWORD) MF_SOURCE_READER_ALL_STREAMS, FALSE));
+    OSWRAPPER_AUDIO__END_FAIL(IMFSourceReader_SetStreamSelection(reader, (DWORD) MF_SOURCE_READER_FIRST_AUDIO_STREAM, TRUE));
 
     /* Get / set the format */
     if ((sample_rate == 0) || (channel_count == 0) || (bits_per_channel == 0)) {
-        OSWRAPPER_AUDIO__END_FAIL(IMFSourceReader_GetNativeMediaType(reader, MF_SOURCE_READER_FIRST_AUDIO_STREAM, 0, &media_type));
+        OSWRAPPER_AUDIO__END_FAIL(IMFSourceReader_GetNativeMediaType(reader, (DWORD) MF_SOURCE_READER_FIRST_AUDIO_STREAM, 0, &media_type));
 
         if (channel_count == 0) {
             IMFMediaType_GetUINT32(media_type, &MF_MT_AUDIO_NUM_CHANNELS, &channel_count);
@@ -500,8 +500,8 @@ static OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio__configure_stream(IMFSourceRe
     OSWRAPPER_AUDIO__END_FAIL(IMFMediaType_SetUINT32(media_type, &MF_MT_AUDIO_BITS_PER_SAMPLE, audio->bits_per_channel));
     OSWRAPPER_AUDIO__END_FAIL(IMFMediaType_SetUINT32(media_type, &MF_MT_AUDIO_SAMPLES_PER_SECOND, audio->sample_rate));
     OSWRAPPER_AUDIO__END_FAIL(IMFMediaType_SetUINT32(media_type, &MF_MT_AUDIO_NUM_CHANNELS, audio->channel_count));
-    OSWRAPPER_AUDIO__END_FAIL(IMFSourceReader_SetCurrentMediaType(reader, MF_SOURCE_READER_FIRST_AUDIO_STREAM, NULL, media_type));
-    OSWRAPPER_AUDIO__END_FAIL(IMFSourceReader_SetStreamSelection(reader, MF_SOURCE_READER_FIRST_AUDIO_STREAM, TRUE));
+    OSWRAPPER_AUDIO__END_FAIL(IMFSourceReader_SetCurrentMediaType(reader, (DWORD) MF_SOURCE_READER_FIRST_AUDIO_STREAM, NULL, media_type));
+    OSWRAPPER_AUDIO__END_FAIL(IMFSourceReader_SetStreamSelection(reader, (DWORD) MF_SOURCE_READER_FIRST_AUDIO_STREAM, TRUE));
 cleanup:
 
     if (media_type != NULL) {
@@ -651,7 +651,7 @@ static void oswrapper_audio__get_new_samples(OSWrapper_audio_spec* audio, size_t
             DWORD flags;
             HRESULT result;
             sample = NULL;
-            result = IMFSourceReader_ReadSample(internal_data->reader, MF_SOURCE_READER_FIRST_AUDIO_STREAM, 0, NULL, &flags, NULL, &sample);
+            result = IMFSourceReader_ReadSample(internal_data->reader, (DWORD) MF_SOURCE_READER_FIRST_AUDIO_STREAM, 0, NULL, &flags, NULL, &sample);
 
             if (SUCCEEDED(result)) {
                 /* TODO handle more flags */
