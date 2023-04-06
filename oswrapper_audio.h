@@ -599,12 +599,14 @@ OSWRAPPER_AUDIO_DEF void oswrapper_audio_seek(OSWrapper_audio_spec* audio, OSWRA
         return OSWRAPPER_AUDIO_RESULT_FAILURE;
     }
 
-    /* TODO reset buffers */
     result = S_OK;
     pos_propvariant.vt = VT_I8;
     pos_propvariant.hVal.QuadPart = pos;
     IMFSourceReader_SetCurrentPosition(internal_data->reader, &GUID_NULL, &pos_propvariant);
     PropVariantClear(&pos_propvariant);
+    /* Reset buffers*/
+    internal_data->internal_buffer_remaining = 0;
+    internal_data->internal_buffer_pos = 0;
 }
 #endif /* OSWRAPPER_AUDIO_EXPERIMENTAL */
 
@@ -619,12 +621,14 @@ OSWRAPPER_AUDIO_DEF void oswrapper_audio_rewind(OSWrapper_audio_spec* audio) {
         return;
     }
 
-    /* TODO reset buffers */
     result = S_OK;
     pos_propvariant.vt = VT_I8;
     pos_propvariant.hVal.QuadPart = 0;
     IMFSourceReader_SetCurrentPosition(internal_data->reader, &GUID_NULL, &pos_propvariant);
     PropVariantClear(&pos_propvariant);
+    /* Reset buffers*/
+    internal_data->internal_buffer_remaining = 0;
+    internal_data->internal_buffer_pos = 0;
 }
 
 /* TODO This code isn't optimised. If you're brave enough, you can probably speed it up and save memory. */
