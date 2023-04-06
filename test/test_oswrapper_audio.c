@@ -1,7 +1,7 @@
 #define OSWRAPPER_AUDIO_IMPLEMENTATION
 #include "oswrapper_audio.h"
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
 #include <objbase.h>
