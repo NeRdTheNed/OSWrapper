@@ -1,7 +1,15 @@
 #define OSWRAPPER_AUDIO_IMPLEMENTATION
 #include "oswrapper_audio.h"
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
+
+#if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
+#include <objbase.h>
+#pragma comment(lib, "mfplat.lib")
+#pragma comment(lib, "mfreadwrite.lib")
+#pragma comment(lib, "shlwapi.lib")
+#pragma comment(lib, "Ole32.lib")
+#endif
 
 #ifdef HINT_OUTPUT_FORMAT
 #define SAMPLE_RATE 44100
@@ -13,10 +21,19 @@
 #define BITS_PER_CHANNEL 0
 #endif
 
-#define TEST_PROGRAM_BUFFER_SIZE 2048
+#define TEST_PROGRAM_BUFFER_SIZE 0x50
 
 /* Decodes a given audio file to raw PCM data */
 int main(int argc, char** argv) {
+#if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
+    HRESULT result = CoInitialize(NULL);
+
+    if (FAILED(result)) {
+        puts("CoInitialize failed!");
+        return EXIT_FAILURE;
+    }
+
+#endif
     int returnVal = EXIT_FAILURE;
     FILE* output_file = NULL;
     OSWrapper_audio_spec* audio_spec = NULL;
@@ -108,6 +125,9 @@ audio_cleanup:
     }
 
 exit:
+#if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
+    CoUninitialize();
+#endif
 
     if (output_file != NULL) {
         fclose(output_file);
