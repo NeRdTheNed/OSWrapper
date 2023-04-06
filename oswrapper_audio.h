@@ -372,8 +372,7 @@ OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* aud
 }
 /* End macOS AudioToolbox implementation */
 #elif defined(OSWRAPPER_AUDIO_USE_WIN_MF_IMPL)
-/* WIP: Mostly working, needs polish & C89 compliance.
-There's artifacts at the end of decoding, need to fix that. */
+/* WIP: Mostly working, needs polish & C89 compliance. */
 /* Start Win32 MF implementation */
 #define COBJMACROS
 #define WIN32_LEAN_AND_MEAN
@@ -730,7 +729,7 @@ OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* aud
 
     /* TODO cleanup */
     if (internal_data->internal_buffer_remaining < (frames_to_do * frame_size)) {
-        frames_to_do = internal_data->internal_buffer_remaining;
+        frames_to_do = internal_data->internal_buffer_remaining / frame_size;
         OSWRAPPER_AUDIO_MEMCPY(buffer, internal_data->internal_buffer + internal_data->internal_buffer_pos, internal_data->internal_buffer_remaining);
         internal_data->internal_buffer_pos += internal_data->internal_buffer_remaining;
         internal_data->internal_buffer_remaining -= internal_data->internal_buffer_remaining;
