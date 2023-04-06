@@ -533,7 +533,7 @@ OSWRAPPER_AUDIO_DEF OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio__load_from_reade
 }
 
 OSWRAPPER_AUDIO_DEF OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio_load_from_memory(const unsigned char* data, size_t data_size, OSWrapper_audio_spec* audio) {
-    IStream* memory_stream = SHCreateMemStream(data, data_size);
+    IStream* memory_stream = SHCreateMemStream(data, (UINT) data_size);
 
     if (memory_stream != NULL) {
         HRESULT result;
@@ -679,7 +679,7 @@ static void oswrapper_audio__get_new_samples(OSWrapper_audio_spec* audio, size_t
                                 if (realloc_buffer == NULL) {
                                     /* Couldn't alloc any more memory, just work with what we have */
                                     new_target_frames = internal_data->internal_buffer_size - internal_data->internal_buffer_remaining;
-                                    current_length = new_target_frames / sizeof(short);
+                                    current_length = (DWORD) (new_target_frames / sizeof(short));
                                     frames_to_do = internal_data->internal_buffer_remaining + new_target_frames;
                                 } else {
                                     OSWRAPPER_AUDIO_MEMCPY(realloc_buffer, internal_data->internal_buffer, internal_data->internal_buffer_size);
