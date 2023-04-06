@@ -393,7 +393,7 @@ extern const IID GUID_NULL;
 #endif
 
 #ifndef OSWRAPPER_AUDIO__INTERNAL_BUFFER_SIZE
-/* TODO The program seems to crash unless realloc is called later??? 0x20000 might be a good size */
+/* TODO 0x20000 might be a good size */
 #define OSWRAPPER_AUDIO__INTERNAL_BUFFER_SIZE 0x40
 #endif
 
