@@ -677,6 +677,7 @@ static void oswrapper_audio__get_new_samples(OSWrapper_audio_spec* audio, size_t
                                     current_length = new_target_frames / sizeof(short);
                                     frames_to_do = internal_data->internal_buffer_remaining + new_target_frames;
                                 } else {
+                                    OSWRAPPER_AUDIO_MEMCPY(realloc_buffer, internal_data->internal_buffer, internal_data->internal_buffer_size);
                                     OSWRAPPER_AUDIO_FREE(internal_data->internal_buffer);
                                     internal_data->internal_buffer = realloc_buffer;
                                     internal_data->internal_buffer_size = new_target_size;
