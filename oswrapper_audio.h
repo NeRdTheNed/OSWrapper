@@ -383,9 +383,7 @@ OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* aud
 #include <mfreadwrite.h>
 #include <stdio.h>
 #include <shlwapi.h>
-
-/* TODO linking bodge */
-extern const IID GUID_NULL;
+#include <cguid.h>
 
 /* TODO Ugly hack */
 #ifndef OSWRAPPER_AUDIO_PATH_MAX
