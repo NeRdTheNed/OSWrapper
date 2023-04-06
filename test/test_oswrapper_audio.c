@@ -96,8 +96,6 @@ int main(int argc, char** argv) {
         size_t frames_done = 0;
 
         while (1) {
-            /* Debug
-            memset(buffer, 0, TEST_PROGRAM_BUFFER_SIZE * frame_size); */
             size_t this_iter = oswrapper_audio_get_samples(audio_spec, buffer, TEST_PROGRAM_BUFFER_SIZE);
 
             if (this_iter == 0) {
