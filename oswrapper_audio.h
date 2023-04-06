@@ -400,7 +400,7 @@ typedef struct oswrapper_audio__internal_data_win {
     short* internal_buffer;
     /* Real size */
     size_t internal_buffer_size;
-    /* Remaining samples TODO optimise */
+    /* Remaining samples */
     size_t internal_buffer_remaining;
     /* Current position */
     size_t internal_buffer_pos;
