@@ -29,6 +29,8 @@ Here's the requirements:
 | oswrapper_image.h | Link with -framework AppKit       | Initialise the COM library, link with windowscodecs.lib                              |
 | oswrapper_audio.h | Link with -framework AudioToolbox | Initialise the COM library, link with mfplat.lib, mfreadwrite.lib, and shlwapi.lib   |
 
+Full examples of linking and using OSWrapper libraries can be found in the test folder.
+
 ## Future work
 
 - Emscripten image / audio decoding

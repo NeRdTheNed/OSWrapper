@@ -3,7 +3,7 @@ OSWrapper audio: Load audio files with the built in OS audio decoders.
 Currently decodes to PCM, format customisation will be added in a future version.
 
 Usage:
-TODO, see comments on API function declarations, and demo_oswrapper_audio_mac.c in test folder.
+TODO, see comments on API function declarations, and test_oswrapper_audio.c in test folder.
 
 Make sure to call oswrapper_audio_init() before using the library.
 Call oswrapper_audio_uninit() after you no longer need to use oswrapper_audio.
