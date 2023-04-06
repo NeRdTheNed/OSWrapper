@@ -388,10 +388,10 @@ OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* aud
 #define OSWRAPPER_AUDIO__MF_STARTUP_VAL MFSTARTUP_LITE
 #endif
 
-#ifndef OSWRAPPER_AUDIO__INTERNAL_BUFFER_SIZE
+#ifndef OSWRAPPER_AUDIO__DEFAULT_INTERNAL_BUFFER_SIZE
 /* TODO Not sure what a good size is for this.
 This is the largest value I've seen on my system so far. */
-#define OSWRAPPER_AUDIO__INTERNAL_BUFFER_SIZE 0x84E0
+#define OSWRAPPER_AUDIO__DEFAULT_INTERNAL_BUFFER_SIZE 0x84E0
 #endif
 
 typedef struct oswrapper_audio__internal_data_win {
@@ -515,10 +515,10 @@ OSWRAPPER_AUDIO_DEF OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio__load_from_reade
         if (internal_data != NULL) {
             audio->internal_data = (void*) internal_data;
             internal_data->reader = reader;
-            internal_data->internal_buffer = (short*) OSWRAPPER_AUDIO_MALLOC(OSWRAPPER_AUDIO__INTERNAL_BUFFER_SIZE * sizeof(short));
+            internal_data->internal_buffer = (short*) OSWRAPPER_AUDIO_MALLOC(OSWRAPPER_AUDIO__DEFAULT_INTERNAL_BUFFER_SIZE * sizeof(short));
             internal_data->internal_buffer_pos = 0;
             internal_data->internal_buffer_remaining = 0;
-            internal_data->internal_buffer_size = internal_data->internal_buffer == NULL ? 0 : OSWRAPPER_AUDIO__INTERNAL_BUFFER_SIZE;
+            internal_data->internal_buffer_size = internal_data->internal_buffer == NULL ? 0 : OSWRAPPER_AUDIO__DEFAULT_INTERNAL_BUFFER_SIZE;
             internal_data->no_reader_error = OSWRAPPER_AUDIO_RESULT_SUCCESS;
             return OSWRAPPER_AUDIO_RESULT_SUCCESS;
         }
