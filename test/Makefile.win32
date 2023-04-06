@@ -1,5 +1,5 @@
 INCLUDES = -I..
-CFLAGS = /MTd /RTC1 /Wall
+CFLAGS = /MT /Wall
 
 all:
 	$(CC) $(INCLUDES) $(CFLAGS) $(LDFLAGS) test_oswrapper_image.c -o test_oswrapper_image.exe
