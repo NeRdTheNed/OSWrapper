@@ -389,7 +389,7 @@ OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* aud
 #define OSWRAPPER_AUDIO_PATH_MAX MAX_PATH
 #endif
 
-/* The startup flags forMFStartup  */
+/* The startup flags forMFStartup */
 #ifndef OSWRAPPER_AUDIO__MF_STARTUP_VAL
 #define OSWRAPPER_AUDIO__MF_STARTUP_VAL MFSTARTUP_LITE
 #endif
