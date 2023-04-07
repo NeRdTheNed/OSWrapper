@@ -3,6 +3,7 @@
 #define OSWRAPPER_IMAGE_MALLOC(x) HeapAlloc(GetProcessHeap(), 0, x)
 #define OSWRAPPER_IMAGE_FREE(x) HeapFree(GetProcessHeap(), 0, x)
 #endif
+#define OSWRAPPER_IMAGE_STATIC
 #define OSWRAPPER_IMAGE_IMPLEMENTATION
 #include "oswrapper_image.h"
 

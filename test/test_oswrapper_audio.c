@@ -1,3 +1,4 @@
+#define OSWRAPPER_AUDIO_STATIC
 #define OSWRAPPER_AUDIO_IMPLEMENTATION
 #include "oswrapper_audio.h"
 

@@ -42,6 +42,7 @@ static void* bad_memmove(void* destination, const void* source, size_t num) {
 #define OSWRAPPER_AUDIO_MEMCPY(x, y, amount) bad_memcpy(x, y, amount)
 #define OSWRAPPER_AUDIO_MEMMOVE(x, y, amount) bad_memmove(x, y, amount)
 #endif
+#define OSWRAPPER_AUDIO_STATIC
 #define OSWRAPPER_AUDIO_IMPLEMENTATION
 #include "oswrapper_audio.h"
 
