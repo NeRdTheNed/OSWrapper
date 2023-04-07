@@ -1,0 +1,21 @@
+name: Build on push or pull request
+
+on: [ push, pull_request ]
+
+jobs:
+  build_macOS:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Build examples
+        working-directory: test
+        run: make -f Makefile.osx
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: Examples-macOS
+          path: |
+            test/test_oswrapper_image
+            test/test_oswrapper_audio
+            test/demo_oswrapper_audio_mac
