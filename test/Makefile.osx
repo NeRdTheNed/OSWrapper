@@ -1,8 +1,8 @@
 INCLUDES = -I..
-CFLAGS += -Wall -Wextra
+CFLAGS += -Wall -Wextra -Os -Wl,-S -Wl,-x -Wl,-dead_strip
 LDFLAGS += -lobjc -framework CoreFoundation -framework Foundation
 LDFLAGS_IMAGE += -framework AppKit
-LDFLAGS_AUDIO += -framework AudioToolbox -framework AudioUnit -framework CoreServices
+LDFLAGS_AUDIO += -framework AudioToolbox -framework AudioUnit -framework CoreServices -Wl,-dead_strip_dylibs
 
 all:
 	$(CC) $(INCLUDES) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_IMAGE) test_oswrapper_image.c -o test_oswrapper_image
