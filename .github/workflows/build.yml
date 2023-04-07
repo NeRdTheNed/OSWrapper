@@ -35,4 +35,5 @@ jobs:
           name: Examples-windows
           path: |
             test/test_oswrapper_image.exe
+            test/test_oswrapper_image_no_crt.exe
             test/test_oswrapper_audio.exe

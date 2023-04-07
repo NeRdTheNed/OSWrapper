@@ -1,9 +1,12 @@
 INCLUDES = -I..
-CFLAGS = /MT /Wall
+CFLAGS = /O1 /MT /Wall
+CFLAGS_NO_CRT = /O1 /Wall /Zl
+LDFLAGS_NO_CRT = /NODEFAULTLIB
 
 all:
 	$(CC) $(INCLUDES) $(CFLAGS) $(LDFLAGS) test_oswrapper_image.c -o test_oswrapper_image.exe
+	$(CC) $(INCLUDES) $(CFLAGS_NO_CRT) $(LDFLAGS_NO_CRT) test_oswrapper_image.c -o test_oswrapper_image_no_crt.exe
 	$(CC) $(INCLUDES) $(CFLAGS) $(LDFLAGS) test_oswrapper_audio.c -o test_oswrapper_audio.exe
 
 clean:
-	del test_oswrapper_image.obj test_oswrapper_image.exe test_oswrapper_audio.obj test_oswrapper_audio.exe
+	del test_oswrapper_image.obj test_oswrapper_image.exe test_oswrapper_image_no_crt.obj test_oswrapper_image_no_crt.exe test_oswrapper_audio.obj test_oswrapper_audio.exe

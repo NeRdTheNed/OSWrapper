@@ -1,12 +1,44 @@
+#if (defined(_WIN32) || defined(__WIN32__) || defined(WIN32)) && defined(_VC_NODEFAULTLIB)
+/* If we're not using the Windows CRT, use Win32 functions instead */
+#define OSWRAPPER_IMAGE_MALLOC(x) HeapAlloc(GetProcessHeap(), 0, x)
+#define OSWRAPPER_IMAGE_FREE(x) HeapFree(GetProcessHeap(), 0, x)
+#endif
 #define OSWRAPPER_IMAGE_IMPLEMENTATION
 #include "oswrapper_image.h"
-#include <stdio.h>
-#include <stdlib.h>
 
 #if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
+/* Include headers for CoInit, and link with image decoding libraries */
 #include <objbase.h>
 #pragma comment(lib, "windowscodecs.lib")
 #pragma comment(lib, "Ole32.lib")
+
+#ifdef _VC_NODEFAULTLIB
+/* If we're not using the Windows CRT, use Win32 functions instead */
+/* Link with libraries to replace CRT functions. */
+#pragma comment(lib, "kernel32.lib")
+#pragma comment(lib, "user32.lib")
+/* Linking bodge */
+int _fltused = 0;
+#define IMAGE_DEMO_CONSOLE_OUTPUT(x) WriteConsole(GetStdHandle(STD_OUTPUT_HANDLE), x, lstrlen(x), NULL, NULL)
+/* HACK: The maximum characters this function writes to a buffer is 1025,
+so as long as the buffer is at least 1025 characters, it's "safe" to use. */
+#define IMAGE_DEMO_SNPRINTF(buffer, len, format, ...) wsprintfA(buffer, format, __VA_ARGS__)
+#endif
+#endif
+
+#ifndef _VC_NODEFAULTLIB
+/* If we are using the Windows CRT or we're not on Windows,
+include headers for standard C functions. */
+#include <stdio.h>
+#include <stdlib.h>
+#endif
+
+/* Standard C functions for printing output, and buffering formatted strings. */
+#ifndef IMAGE_DEMO_CONSOLE_OUTPUT
+#define IMAGE_DEMO_CONSOLE_OUTPUT(x) fputs(x, stdout)
+#endif
+#ifndef IMAGE_DEMO_SNPRINTF
+#define IMAGE_DEMO_SNPRINTF(buffer, len, format, ...) snprintf(buffer, len, format, __VA_ARGS__)
 #endif
 
 unsigned char face_png[] = {
@@ -22,12 +54,24 @@ unsigned char face_png[] = {
 
 unsigned int face_png_len = 90;
 
+#define IMAGE_DEMO_PRINT_BUFFER_SIZE 1025
+static char print_buffer[IMAGE_DEMO_PRINT_BUFFER_SIZE] = "";
+
+#ifdef _VC_NODEFAULTLIB
+int main(int argc, char** argv);
+
+int mainCRTStartup(void) {
+    /* TODO Get command line arguments */
+    ExitProcess(main(0, NULL));
+}
+#endif
+
 int main(int argc, char** argv) {
 #if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
     HRESULT result = CoInitialize(NULL);
 
     if (FAILED(result)) {
-        puts("CoInitialize failed!");
+        IMAGE_DEMO_CONSOLE_OUTPUT("CoInitialize failed!");
         return EXIT_FAILURE;
     }
 
@@ -35,7 +79,7 @@ int main(int argc, char** argv) {
     int returnVal = EXIT_FAILURE;
 
     if (!oswrapper_image_init()) {
-        puts("Could not initialise oswrapper_image!");
+        IMAGE_DEMO_CONSOLE_OUTPUT("Could not initialise oswrapper_image!");
         goto exit;
     }
 
@@ -52,14 +96,15 @@ int main(int argc, char** argv) {
 
     if (image_data != NULL) {
         oswrapper_image_free(image_data);
-        printf("Path: %s\nWidth: %d\nHeight: %d\nChannels: %d\n", path, width, height, channels);
+        IMAGE_DEMO_SNPRINTF(print_buffer, IMAGE_DEMO_PRINT_BUFFER_SIZE, "Path: %s\nWidth: %d\nHeight: %d\nChannels: %d\n", path, width, height, channels);
+        IMAGE_DEMO_CONSOLE_OUTPUT(print_buffer);
         returnVal = EXIT_SUCCESS;
     } else {
-        puts("Could not decode image!");
+        IMAGE_DEMO_CONSOLE_OUTPUT("Could not decode image!");
     }
 
     if (!oswrapper_image_uninit()) {
-        puts("Could not uninitialise oswrapper_image!");
+        IMAGE_DEMO_CONSOLE_OUTPUT("Could not uninitialise oswrapper_image!");
         returnVal = EXIT_FAILURE;
     }
 
