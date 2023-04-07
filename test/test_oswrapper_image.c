@@ -14,9 +14,11 @@
 
 #ifdef _VC_NODEFAULTLIB
 /* If we're not using the Windows CRT, use Win32 functions instead */
+#include <shellapi.h>
 /* Link with libraries to replace CRT functions. */
 #pragma comment(lib, "kernel32.lib")
 #pragma comment(lib, "user32.lib")
+#pragma comment(lib, "shell32.lib")
 /* Linking bodge */
 int _fltused = 0;
 #define IMAGE_DEMO_CONSOLE_OUTPUT(x) WriteConsole(GetStdHandle(STD_OUTPUT_HANDLE), x, lstrlen(x), NULL, NULL)
@@ -57,12 +59,83 @@ unsigned int face_png_len = 90;
 #define IMAGE_DEMO_PRINT_BUFFER_SIZE 1025
 static char print_buffer[IMAGE_DEMO_PRINT_BUFFER_SIZE] = "";
 
+/* Windows specific code to allow compiling without the CRT */
 #ifdef _VC_NODEFAULTLIB
+/* TODO ugly hack */
+#define BODGE_ERROR_STR "Error"
+static char error_string[sizeof(BODGE_ERROR_STR)] = BODGE_ERROR_STR;
+static char* argv_error[2];
+
 int main(int argc, char** argv);
 
 int mainCRTStartup(void) {
-    /* TODO Get command line arguments */
-    ExitProcess(main(0, NULL));
+    /* TODO better argument parsing */
+    int argc = 0;
+    char** argv = NULL;
+    /* Get arguments as LPWSTR* */
+    LPWSTR* win_argv = CommandLineToArgvW(GetCommandLineW(), &argc);
+
+    if (win_argv != NULL && argc != 0) {
+        /* Allocate argv */
+        argv = (char**) OSWRAPPER_IMAGE_MALLOC((argc + 1) * sizeof(char*));
+
+        if (argv != NULL) {
+            for (int i = 0; i < argc; i++) {
+                /* Get needed size for argument string */
+                int wide_length = WideCharToMultiByte(CP_UTF8, 0, win_argv[i], -1, NULL, 0, NULL, NULL);
+
+                if (wide_length > 0) {
+                    argv[i] = OSWRAPPER_IMAGE_MALLOC(wide_length * sizeof(char));
+
+                    if (argv[i] != NULL) {
+                        /* Convert the LPWSTR argument */
+                        WideCharToMultiByte(CP_UTF8, 0, win_argv[i], -1, argv[i], wide_length, NULL, NULL);
+                    } else {
+                        /* Malloc failed, pretend this string is the real argument */
+                        argv[i] = error_string;
+                    }
+                } else {
+                    /* WideCharToMultiByte failed, pretend this string is the real argument */
+                    argv[i] = error_string;
+                }
+            }
+        } else {
+            /* Malloc failed, just pretend we didn't have any arguments */
+            argc = 0;
+            argv = argv_error;
+            argv_error[0] = error_string;
+            argv_error[1] = NULL;
+        }
+    } else {
+        /* CommandLineToArgvW failed, just pretend we didn't have any arguments */
+        argc = 0;
+        argv = argv_error;
+        argv_error[0] = error_string;
+        argv_error[1] = NULL;
+    }
+
+    /* Free the result of CommandLineToArgvW */
+    if (win_argv != NULL) {
+        LocalFree(win_argv);
+    }
+
+    int return_val = main(argc, argv);
+
+    /* Free argument strings */
+    if (argv != NULL && argc != 0) {
+        for (int i = 0; i < argc; i++) {
+            if (argv[i] != error_string) {
+                OSWRAPPER_IMAGE_FREE(argv[i]);
+            }
+        }
+    }
+
+    /* Free argv */
+    if (argv != NULL && argv != argv_error) {
+        OSWRAPPER_IMAGE_FREE(argv);
+    }
+
+    ExitProcess(return_val);
 }
 #endif
 
