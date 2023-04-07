@@ -32,6 +32,10 @@ if (image_data != NULL) {
 
 Make sure to call oswrapper_image_init() before using the library.
 Call oswrapper_image_uninit() after you no longer need to use oswrapper_image.
+
+Platform requirements:
+- On macOS, link with AppKit
+- On Windows, call CoInitialize before using the library, and link with windowscodecs.lib
 */
 
 #ifndef OSWRAPPER_INCLUDE_OSWRAPPER_IMAGE_H
