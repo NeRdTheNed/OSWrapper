@@ -1,7 +1,5 @@
 #define OSWRAPPER_AUDIO_IMPLEMENTATION
 #include "oswrapper_audio.h"
-#include <stdio.h>
-#include <stdlib.h>
 
 #if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
 #include <objbase.h>
@@ -10,6 +8,9 @@
 #pragma comment(lib, "shlwapi.lib")
 #pragma comment(lib, "Ole32.lib")
 #endif
+
+#include <stdio.h>
+#include <stdlib.h>
 
 #ifdef HINT_OUTPUT_FORMAT
 #define SAMPLE_RATE 44100

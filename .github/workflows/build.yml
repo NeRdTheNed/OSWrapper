@@ -37,3 +37,4 @@ jobs:
             test/test_oswrapper_image.exe
             test/test_oswrapper_image_no_crt.exe
             test/test_oswrapper_audio.exe
+            test/test_oswrapper_audio_no_crt.exe
