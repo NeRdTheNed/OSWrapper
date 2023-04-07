@@ -1,12 +1,79 @@
 /*
 OSWrapper audio: Load audio files with the built in OS audio decoders.
-Currently decodes to PCM, format customisation will be added in a future version.
+Currently decodes to integer PCM, format customisation will be added in a future version.
 
 Usage:
-TODO, see comments on API function declarations, and test_oswrapper_audio.c in test folder.
+OSWrapper audio has 2 ways of decoding audio: from a path, or from memory.
+In both cases, you pass a pointer to an OSWrapper_audio_spec struct,
+which acts as both a way to hint at the wanted audio format,
+and to receive the actual audio format and decoding context.
 
-Make sure to call oswrapper_audio_init() before using the library.
-Call oswrapper_audio_uninit() after you no longer need to use oswrapper_audio.
+Example:
+
+// Initialise the library
+if (!oswrapper_audio_init()) {
+    // Error handling here
+}
+
+// Allocate an OSWrapper_audio_spec struct
+OSWrapper_audio_spec* audio_spec = (OSWrapper_audio_spec*) malloc(sizeof(OSWrapper_audio_spec));
+
+if (audio_spec == NULL) {
+    // Error handling here
+}
+
+// Hint the desired format
+audio_spec->sample_rate = SAMPLE_RATE;
+audio_spec->channel_count = CHANNEL_COUNT;
+audio_spec->bits_per_channel = BITS_PER_CHANNEL;
+
+// Load audio from memory:
+// if (oswrapper_audio_load_from_memory(data, data_size, audio_spec)) {
+// Load audio from a path to a file:
+if (oswrapper_audio_load_from_path(path, audio_spec)) {
+    // audio_spec now contains the chosen format details (read-only, don't modify)
+    // Calculate the size of one frame of audio
+    size_t frame_size = (audio_spec->bits_per_channel / 8) * (audio_spec->channel_count);
+    // Allocate a buffer capable of containing 512 frames of audio
+    short* buffer = (short*) malloc(512 * frame_size);
+
+    if (buffer == NULL) {
+        // Error handling here
+    }
+
+    // Decode 512 frames of audio (or less, if the file is very small).
+    // OSWrapper audio will try to always give you as many frames as you request.
+    // 0 generally indicates EOF.
+    size_t decoded = oswrapper_audio_get_samples(audio_spec, buffer, 512);
+
+    // Do something with the frames of decoded audio
+
+    // Free the buffer
+    free(buffer);
+
+    // Free the decoding context
+    if (!oswrapper_audio_free_context(audio_spec)) {
+        // Error handling here
+    }
+}
+
+// Free the OSWrapper_audio_spec struct
+free(audio_spec);
+
+// Uninitialise the library
+if (!oswrapper_audio_uninit()) {
+    // Error handling
+}
+
+In a real scenario, you'd generally loop until there is no more audio to be decoded,
+or handle setting up callbacks for decoding audio as needed.
+See test_oswrapper_audio for an audio decoding program
+which fully decodes a file to PCM data, and writes it to a new file.
+
+Platform requirements:
+- On macOS, link with AudioToolbox
+- On Windows, call CoInitialize before using the library,
+  and link with mfplat.lib, mfreadwrite.lib, and shlwapi.lib
 */
 
 #ifndef OSWRAPPER_INCLUDE_OSWRAPPER_AUDIO_H
