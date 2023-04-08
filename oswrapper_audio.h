@@ -336,7 +336,11 @@ static OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio__load_from_open(AudioFileID a
 
             /* Sanity check */
             if (output_format.mBitsPerChannel == 0) {
-                output_format.mBitsPerChannel = 16;
+                if (input_file_format.mFormatFlags & kLinearPCMFormatFlagIsFloat) {
+                    output_format.mBitsPerChannel = 32;
+                } else {
+                    output_format.mBitsPerChannel = 16;
+                }
             }
 
             /* Use hinted channels */
@@ -599,17 +603,6 @@ static OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio__configure_stream(IMFSourceRe
             audio->sample_rate = sample_rate;
         }
 
-        if (bits_per_channel == 0) {
-            IMFMediaType_GetUINT32(media_type, &MF_MT_AUDIO_BITS_PER_SAMPLE, &bits_per_channel);
-
-            /* Sanity check */
-            if (bits_per_channel == 0) {
-                bits_per_channel = 16;
-            }
-
-            audio->bits_per_channel = bits_per_channel;
-        }
-
         if (audio->audio_type == OSWRAPPER_AUDIO_FORMAT_NOT_SET) {
             IMFAttributes_GetGUID(media_type, &MF_MT_SUBTYPE, &format_type);
 
@@ -623,6 +616,21 @@ static OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio__configure_stream(IMFSourceRe
                 format_type = MFAudioFormat_PCM;
                 audio->audio_type = OSWRAPPER_AUDIO_FORMAT_PCM_INTEGER;
             }
+        }
+
+        if (bits_per_channel == 0) {
+            IMFMediaType_GetUINT32(media_type, &MF_MT_AUDIO_BITS_PER_SAMPLE, &bits_per_channel);
+
+            /* Sanity check */
+            if (bits_per_channel == 0) {
+                if (audio->audio_type == OSWRAPPER_AUDIO_FORMAT_PCM_FLOAT) {
+                    bits_per_channel = 32;
+                } else {
+                    bits_per_channel = 16;
+                }
+            }
+
+            audio->bits_per_channel = bits_per_channel;
         }
 
         IMFMediaType_Release(media_type);
