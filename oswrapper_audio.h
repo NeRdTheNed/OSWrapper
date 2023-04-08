@@ -507,6 +507,7 @@ OSWRAPPER_AUDIO_DEF OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio_free_context(OSW
         OSWRAPPER_AUDIO_FREE(internal_data->internal_buffer);
     }
 
+    OSWRAPPER_AUDIO_FREE(audio->internal_data);
     return OSWRAPPER_AUDIO_RESULT_SUCCESS;
 }
 
