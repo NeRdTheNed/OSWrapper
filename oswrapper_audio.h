@@ -312,7 +312,7 @@ static OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio__load_from_open(AudioFileID a
                 output_format.mFormatFlags = kLinearPCMFormatFlagIsFloat;
             } else if (audio->audio_type == OSWRAPPER_AUDIO_FORMAT_PCM_INTEGER) {
                 output_format.mFormatFlags = kLinearPCMFormatFlagIsSignedInteger;
-            } else if (input_file_format.mFormatFlags & kLinearPCMFormatFlagIsFloat) {
+            } else if (input_file_format.mFormatID == kAudioFormatLinearPCM && input_file_format.mFormatFlags & kLinearPCMFormatFlagIsFloat) {
                 output_format.mFormatFlags = kLinearPCMFormatFlagIsFloat;
             } else {
                 output_format.mFormatFlags = kLinearPCMFormatFlagIsSignedInteger;
@@ -336,7 +336,7 @@ static OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio__load_from_open(AudioFileID a
 
             /* Sanity check */
             if (output_format.mBitsPerChannel == 0) {
-                if (input_file_format.mFormatFlags & kLinearPCMFormatFlagIsFloat) {
+                if (output_format.mFormatFlags & kLinearPCMFormatFlagIsFloat) {
                     output_format.mBitsPerChannel = 32;
                 } else {
                     output_format.mBitsPerChannel = 16;
