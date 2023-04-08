@@ -1,3 +1,12 @@
+/*
+This program uses oswrapper_image to decode an image file,
+and display some information about the decoded data.
+
+Usage: test_oswrapper_image (image_file.ext)
+If no input is provided, it will decode an embedded version of the file named
+face.png in this folder.
+*/
+
 #define OSWRAPPER_IMAGE_STATIC
 #define OSWRAPPER_IMAGE_IMPLEMENTATION
 #include "oswrapper_image.h"

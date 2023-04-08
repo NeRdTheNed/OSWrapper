@@ -1,3 +1,15 @@
+/*
+This program uses oswrapper_image to decode an image file,
+and display some information about the decoded data.
+
+This is a modified version of test_oswrapper_image to allow compiling on Windows
+without using a C runtime (abbreviated to CRT).
+
+Usage: test_oswrapper_image_no_crt (image_file.ext)
+If no input is provided, it will decode an embedded version of the file named
+face.png in this folder.
+*/
+
 #if (defined(_WIN32) || defined(__WIN32__) || defined(WIN32)) && defined(_VC_NODEFAULTLIB)
 /* If we're not using the Windows CRT, use Win32 functions instead */
 #define OSWRAPPER_IMAGE_MALLOC(x) HeapAlloc(GetProcessHeap(), 0, x)

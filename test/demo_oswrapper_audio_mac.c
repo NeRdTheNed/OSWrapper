@@ -1,3 +1,11 @@
+/*
+This program uses oswrapper_audio to decode and play an audio file twice,
+using macOS APIs for sound output.
+
+Usage: demo_oswrapper_audio_mac (audio_file.ext)
+If no input is provided, it will play the file named noise.wav in this folder.
+*/
+
 #define OSWRAPPER_AUDIO_IMPLEMENTATION
 #include "oswrapper_audio.h"
 #include <stdlib.h>

@@ -1,3 +1,12 @@
+/*
+This program uses oswrapper_audio to decode an audio file,
+and write the raw PCM data to a file with the same name with the extension .raw
+appended to it.
+
+Usage: test_oswrapper_audio (audio_file.ext)
+If no input is provided, it will decode the file named noise.wav in this folder.
+*/
+
 #define OSWRAPPER_AUDIO_STATIC
 #define OSWRAPPER_AUDIO_IMPLEMENTATION
 #include "oswrapper_audio.h"

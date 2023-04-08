@@ -1,3 +1,15 @@
+/*
+This program uses oswrapper_audio to decode an audio file,
+and write the raw PCM data to a file with the same name with the extension .raw
+appended to it.
+
+This is a modified version of test_oswrapper_audio to allow compiling on Windows
+without using a C runtime (abbreviated to CRT).
+
+Usage: test_oswrapper_audio_no_crt (audio_file.ext)
+If no input is provided, it will decode the file named noise.wav in this folder.
+*/
+
 #if (defined(_WIN32) || defined(__WIN32__) || defined(WIN32)) && defined(_VC_NODEFAULTLIB)
 /* If we're not using the Windows CRT, use Win32 functions instead */
 #define OSWRAPPER_AUDIO_MALLOC(x) HeapAlloc(GetProcessHeap(), 0, x)
