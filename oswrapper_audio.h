@@ -1,12 +1,14 @@
 /*
-OSWrapper audio: Load audio files with the built in OS audio decoders.
-Currently decodes to integer PCM, format customisation will be added in a future version.
+OSWrapper audio: Decode audio files with the built in OS audio decoders.
 
 Usage:
+
 OSWrapper audio has 2 ways of decoding audio: from a path, or from memory.
 In both cases, you pass a pointer to an OSWrapper_audio_spec struct,
 which acts as both a way to hint at the wanted audio format,
 and to receive the actual audio format and decoding context.
+Decoding to integer and floating point PCM is generally well supported.
+More output formats may be added in the future.
 
 Example:
 
@@ -26,6 +28,7 @@ if (audio_spec == NULL) {
 audio_spec->sample_rate = SAMPLE_RATE;
 audio_spec->channel_count = CHANNEL_COUNT;
 audio_spec->bits_per_channel = BITS_PER_CHANNEL;
+audio_spec->audio_type = AUDIO_FORMAT;
 
 // Load audio from memory:
 // if (oswrapper_audio_load_from_memory(data, data_size, audio_spec)) {
@@ -109,6 +112,13 @@ Platform requirements:
 
 /* Stable-ish API */
 
+/* What format the decoded audio is in. */
+typedef enum {
+    OSWRAPPER_AUDIO_FORMAT_NOT_SET = 0,
+    OSWRAPPER_AUDIO_FORMAT_PCM_INTEGER,
+    OSWRAPPER_AUDIO_FORMAT_PCM_FLOAT
+} OSWrapper_audio_type;
+
 /* The created audio context.
 The values can be set before creating an audio context
 with the oswrapper_audio_load_from_ functions,
@@ -121,6 +131,7 @@ typedef struct OSWrapper_audio_spec {
     unsigned long sample_rate;
     unsigned int channel_count;
     unsigned int bits_per_channel;
+    OSWrapper_audio_type audio_type;
 } OSWrapper_audio_spec;
 
 /* Call oswrapper_audio_init() before using the library,
@@ -185,6 +196,9 @@ OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* aud
 #ifndef OSWRAPPER_AUDIO_MEMMOVE
 #define OSWRAPPER_AUDIO_MEMMOVE(x, y, amount) memmove(x, y, amount)
 #endif /* OSWRAPPER_AUDIO_MEMMOVE */
+#ifndef OSWRAPPER_AUDIO_MEMCMP
+#define OSWRAPPER_AUDIO_MEMCMP(ptr1, ptr2, amount) memcmp(ptr1, ptr2, amount)
+#endif /* OSWRAPPER_AUDIO_MEMCMP */
 
 #ifdef __APPLE__
 #include <AvailabilityMacros.h>
@@ -292,11 +306,23 @@ static OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio__load_from_open(AudioFileID a
         if (!error) {
             AudioStreamBasicDescription output_format;
             output_format.mFormatID = kAudioFormatLinearPCM;
-            output_format.mFormatFlags = kLinearPCMFormatFlagIsSignedInteger | kLinearPCMFormatFlagIsPacked
+
+            /* Use hinted output format */
+            if (audio->audio_type == OSWRAPPER_AUDIO_FORMAT_PCM_FLOAT) {
+                output_format.mFormatFlags = kLinearPCMFormatFlagIsFloat;
+            } else if (audio->audio_type == OSWRAPPER_AUDIO_FORMAT_PCM_INTEGER) {
+                output_format.mFormatFlags = kLinearPCMFormatFlagIsSignedInteger;
+            } else if (input_file_format.mFormatFlags & kLinearPCMFormatFlagIsFloat) {
+                output_format.mFormatFlags = kLinearPCMFormatFlagIsFloat;
+            } else {
+                output_format.mFormatFlags = kLinearPCMFormatFlagIsSignedInteger;
+            }
+
+            output_format.mFormatFlags |= kLinearPCMFormatFlagIsPacked
 #if defined(__ppc64__) || defined(__ppc__)
-                                         | kAudioFormatFlagIsBigEndian
+                                          | kAudioFormatFlagIsBigEndian
 #endif
-                                         ;
+                                          ;
             /* Use hinted sample rate */
             output_format.mSampleRate = audio->sample_rate == 0 ? input_file_format.mSampleRate : audio->sample_rate;
 
@@ -336,6 +362,7 @@ static OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio__load_from_open(AudioFileID a
                     audio->sample_rate = output_format.mSampleRate;
                     audio->bits_per_channel = output_format.mBitsPerChannel;
                     audio->channel_count = output_format.mChannelsPerFrame;
+                    audio->audio_type = (output_format.mFormatFlags & kLinearPCMFormatFlagIsFloat) ? OSWRAPPER_AUDIO_FORMAT_PCM_FLOAT : OSWRAPPER_AUDIO_FORMAT_PCM_INTEGER;
                     audio->internal_data = (void*) internal_data;
                     internal_data->audio_file = audio_file;
                     internal_data->audio_file_ext = audio_file_ext;
@@ -518,6 +545,7 @@ static OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio__configure_stream(IMFSourceRe
     OSWRAPPER_AUDIO_RESULT_TYPE return_val;
     HRESULT result;
     UINT32 sample_rate, channel_count, bits_per_channel;
+    GUID format_type;
     IMFMediaType* media_type;
     oswrapper_audio__internal_data_win* internal_data = (oswrapper_audio__internal_data_win*) audio->internal_data;
 
@@ -532,11 +560,21 @@ static OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio__configure_stream(IMFSourceRe
     channel_count = audio->channel_count;
     sample_rate = audio->sample_rate;
     bits_per_channel = audio->bits_per_channel;
+
+    if (audio->audio_type == OSWRAPPER_AUDIO_FORMAT_PCM_FLOAT) {
+        format_type = MFAudioFormat_Float;
+    } else if (audio->audio_type == OSWRAPPER_AUDIO_FORMAT_PCM_INTEGER) {
+        format_type = MFAudioFormat_PCM;
+    } else {
+        /* Fallback */
+        format_type = MFAudioFormat_PCM;
+    }
+
     OSWRAPPER_AUDIO__END_FAIL(IMFSourceReader_SetStreamSelection(reader, (DWORD) MF_SOURCE_READER_ALL_STREAMS, FALSE));
     OSWRAPPER_AUDIO__END_FAIL(IMFSourceReader_SetStreamSelection(reader, (DWORD) MF_SOURCE_READER_FIRST_AUDIO_STREAM, TRUE));
 
     /* Get / set the format */
-    if ((sample_rate == 0) || (channel_count == 0) || (bits_per_channel == 0)) {
+    if ((sample_rate == 0) || (channel_count == 0) || (bits_per_channel == 0) || (audio->audio_type == OSWRAPPER_AUDIO_FORMAT_NOT_SET)) {
         OSWRAPPER_AUDIO__END_FAIL(IMFSourceReader_GetNativeMediaType(reader, (DWORD) MF_SOURCE_READER_FIRST_AUDIO_STREAM, 0, &media_type));
 
         if (channel_count == 0) {
@@ -572,12 +610,27 @@ static OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio__configure_stream(IMFSourceRe
             audio->bits_per_channel = bits_per_channel;
         }
 
+        if (audio->audio_type == OSWRAPPER_AUDIO_FORMAT_NOT_SET) {
+            IMFAttributes_GetGUID(media_type, &MF_MT_SUBTYPE, &format_type);
+
+            /* Sanity check */
+            if (!OSWRAPPER_AUDIO_MEMCMP(&format_type, &MFAudioFormat_PCM, sizeof(GUID))) {
+                audio->audio_type = OSWRAPPER_AUDIO_FORMAT_PCM_INTEGER;
+            } else if (!OSWRAPPER_AUDIO_MEMCMP(&format_type, &MFAudioFormat_Float, sizeof(GUID))) {
+                audio->audio_type = OSWRAPPER_AUDIO_FORMAT_PCM_FLOAT;
+            } else {
+                /* Fallback */
+                format_type = MFAudioFormat_PCM;
+                audio->audio_type = OSWRAPPER_AUDIO_FORMAT_PCM_INTEGER;
+            }
+        }
+
         IMFMediaType_Release(media_type);
     }
 
     OSWRAPPER_AUDIO__END_FAIL(MFCreateMediaType(&media_type));
     OSWRAPPER_AUDIO__END_FAIL(IMFMediaType_SetGUID(media_type, &MF_MT_MAJOR_TYPE, &MFMediaType_Audio));
-    OSWRAPPER_AUDIO__END_FAIL(IMFMediaType_SetGUID(media_type, &MF_MT_SUBTYPE, &MFAudioFormat_PCM));
+    OSWRAPPER_AUDIO__END_FAIL(IMFMediaType_SetGUID(media_type, &MF_MT_SUBTYPE, &format_type));
     OSWRAPPER_AUDIO__END_FAIL(IMFMediaType_SetUINT32(media_type, &MF_MT_AUDIO_BITS_PER_SAMPLE, audio->bits_per_channel));
     OSWRAPPER_AUDIO__END_FAIL(IMFMediaType_SetUINT32(media_type, &MF_MT_AUDIO_SAMPLES_PER_SECOND, audio->sample_rate));
     OSWRAPPER_AUDIO__END_FAIL(IMFMediaType_SetUINT32(media_type, &MF_MT_AUDIO_NUM_CHANNELS, audio->channel_count));

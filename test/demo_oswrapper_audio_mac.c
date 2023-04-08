@@ -23,10 +23,12 @@
 #define SAMPLE_RATE 44100
 #define CHANNEL_COUNT 2
 #define BITS_PER_CHANNEL 16
+#define AUDIO_FORMAT OSWRAPPER_AUDIO_FORMAT_PCM_INTEGER
 #else
 #define SAMPLE_RATE 0
 #define CHANNEL_COUNT 0
 #define BITS_PER_CHANNEL 0
+#define AUDIO_FORMAT OSWRAPPER_AUDIO_FORMAT_NOT_SET
 #endif
 
 #define FAIL_WITH_MESSAGE_ON_COND(cond, message) if ((cond)) { puts(message); return EXIT_FAILURE; }
@@ -62,6 +64,7 @@ int main(int argc, char** argv) {
     audio_spec->sample_rate = SAMPLE_RATE;
     audio_spec->channel_count = CHANNEL_COUNT;
     audio_spec->bits_per_channel = BITS_PER_CHANNEL;
+    audio_spec->audio_type = AUDIO_FORMAT;
     /* Or set these values to zero to use the input format's values.
     The values in audio_spec will always be set to the output format's values
     after initialising an OSWrapper_audio_spec. */
@@ -85,11 +88,21 @@ int main(int argc, char** argv) {
     /* macOS: Use a suitable output format */
     AudioStreamBasicDescription want;
     want.mFormatID = kAudioFormatLinearPCM;
-    want.mFormatFlags = kLinearPCMFormatFlagIsSignedInteger | kLinearPCMFormatFlagIsPacked
+
+    if (audio_spec->audio_type == OSWRAPPER_AUDIO_FORMAT_PCM_FLOAT) {
+        want.mFormatFlags = kLinearPCMFormatFlagIsFloat;
+    } else if (audio_spec->audio_type == OSWRAPPER_AUDIO_FORMAT_PCM_INTEGER) {
+        want.mFormatFlags = kLinearPCMFormatFlagIsSignedInteger;
+    } else {
+        puts("Unsupported audio format, was not float or integer!");
+        return EXIT_FAILURE;
+    }
+
+    want.mFormatFlags |= kLinearPCMFormatFlagIsPacked
 #if defined(__ppc64__) || defined(__ppc__)
-                        | kAudioFormatFlagIsBigEndian
+                         | kAudioFormatFlagIsBigEndian
 #endif
-                        ;
+                         ;
     want.mSampleRate = audio_spec->sample_rate;
     want.mBitsPerChannel = audio_spec->bits_per_channel;
     want.mChannelsPerFrame = audio_spec->channel_count;

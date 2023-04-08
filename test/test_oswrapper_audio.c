@@ -17,10 +17,12 @@
 #define SAMPLE_RATE 44100
 #define CHANNEL_COUNT 2
 #define BITS_PER_CHANNEL 16
+#define AUDIO_FORMAT OSWRAPPER_AUDIO_FORMAT_PCM_INTEGER
 #else
 #define SAMPLE_RATE 0
 #define CHANNEL_COUNT 0
 #define BITS_PER_CHANNEL 0
+#define AUDIO_FORMAT OSWRAPPER_AUDIO_FORMAT_NOT_SET
 #endif
 
 #define TEST_PROGRAM_BUFFER_SIZE 0x50
@@ -84,9 +86,17 @@ int main(int argc, char** argv) {
     audio_spec->sample_rate = SAMPLE_RATE;
     audio_spec->channel_count = CHANNEL_COUNT;
     audio_spec->bits_per_channel = BITS_PER_CHANNEL;
+    audio_spec->audio_type = AUDIO_FORMAT;
 
     if (oswrapper_audio_load_from_path(path, audio_spec)) {
         printf("Path: %s\nOutput path: %s\nSample rate: %lu\nChannels: %d\nBit depth: %d\n", path, output_path, audio_spec->sample_rate, audio_spec->channel_count, audio_spec->bits_per_channel);
+
+        if (audio_spec->audio_type == OSWRAPPER_AUDIO_FORMAT_PCM_FLOAT) {
+            puts("Output format: floating point PCM\n");
+        } else {
+            puts("Output format: integer PCM\n");
+        }
+
         size_t frame_size = (audio_spec->bits_per_channel / 8) * (audio_spec->channel_count);
         buffer = (short*) calloc(TEST_PROGRAM_BUFFER_SIZE, frame_size);
 
