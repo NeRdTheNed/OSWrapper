@@ -468,6 +468,8 @@ This is the largest value I've seen on my system so far. */
 
 typedef struct oswrapper_audio__internal_data_win {
     IMFSourceReader* reader;
+    IMFByteStream* byte_stream;
+    IStream* memory_stream;
     short* internal_buffer;
     /* Buffer size */
     size_t internal_buffer_size;
@@ -490,6 +492,16 @@ OSWRAPPER_AUDIO_DEF OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio_uninit(void) {
 OSWRAPPER_AUDIO_DEF OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio_free_context(OSWrapper_audio_spec* audio) {
     oswrapper_audio__internal_data_win* internal_data = (oswrapper_audio__internal_data_win*) audio->internal_data;
     IMFSourceReader_Release(internal_data->reader);
+
+    /* Only expected for in-memory decoding */
+    if (internal_data->byte_stream != NULL) {
+        IMFByteStream_Release(internal_data->byte_stream);
+    }
+
+    /* Only expected for in-memory decoding */
+    if (internal_data->memory_stream != NULL) {
+        IStream_Release(internal_data->memory_stream);
+    }
 
     if (internal_data->internal_buffer != NULL) {
         OSWRAPPER_AUDIO_FREE(internal_data->internal_buffer);
@@ -579,7 +591,7 @@ cleanup:
     return return_val;
 }
 
-OSWRAPPER_AUDIO_DEF OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio__load_from_reader(IMFSourceReader* reader, OSWrapper_audio_spec* audio) {
+OSWRAPPER_AUDIO_DEF OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio__load_from_reader(IMFSourceReader* reader, IMFByteStream* byte_stream, IStream* memory_stream, OSWrapper_audio_spec* audio) {
     if (oswrapper_audio__configure_stream(reader, audio)) {
         oswrapper_audio__internal_data_win* internal_data = (oswrapper_audio__internal_data_win*) OSWRAPPER_AUDIO_MALLOC(sizeof(oswrapper_audio__internal_data_win));
 
@@ -589,6 +601,8 @@ OSWRAPPER_AUDIO_DEF OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio__load_from_reade
             if (initial_buffer != NULL) {
                 audio->internal_data = (void*) internal_data;
                 internal_data->reader = reader;
+                internal_data->byte_stream = byte_stream;
+                internal_data->memory_stream = memory_stream;
                 internal_data->internal_buffer = initial_buffer;
                 internal_data->internal_buffer_pos = 0;
                 internal_data->internal_buffer_remaining = 0;
@@ -602,6 +616,17 @@ OSWRAPPER_AUDIO_DEF OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio__load_from_reade
     }
 
     IMFSourceReader_Release(reader);
+
+    /* Only expected for in-memory decoding */
+    if (byte_stream != NULL) {
+        IMFByteStream_Release(byte_stream);
+    }
+
+    /* Only expected for in-memory decoding */
+    if (memory_stream != NULL) {
+        IStream_Release(memory_stream);
+    }
+
     return OSWRAPPER_AUDIO_RESULT_FAILURE;
 }
 
@@ -618,9 +643,13 @@ OSWRAPPER_AUDIO_DEF OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio_load_from_memory
             result = MFCreateSourceReaderFromByteStream(byte_stream, NULL, &reader);
 
             if (SUCCEEDED(result)) {
-                return oswrapper_audio__load_from_reader(reader, audio);
+                return oswrapper_audio__load_from_reader(reader, byte_stream, memory_stream, audio);
             }
+
+            IMFByteStream_Release(byte_stream);
         }
+
+        IStream_Release(memory_stream);
     }
 
     return OSWRAPPER_AUDIO_RESULT_FAILURE;
@@ -638,7 +667,7 @@ OSWRAPPER_AUDIO_DEF OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio_load_from_path(c
         result = MFCreateSourceReaderFromURL(path_buffer, NULL, &reader);
 
         if (SUCCEEDED(result)) {
-            return oswrapper_audio__load_from_reader(reader, audio);
+            return oswrapper_audio__load_from_reader(reader, NULL, NULL, audio);
         }
     }
 
