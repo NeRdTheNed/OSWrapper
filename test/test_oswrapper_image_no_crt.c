@@ -8,6 +8,9 @@ without using a C runtime (abbreviated to CRT).
 Usage: test_oswrapper_image_no_crt (image_file.ext)
 If no input is provided, it will decode an embedded version of the file named
 face.png in this folder.
+
+The latest version of this file can be found at
+https://github.com/NeRdTheNed/OSWrapper/blob/main/test/test_oswrapper_image_no_crt.c
 */
 
 #if (defined(_WIN32) || defined(__WIN32__) || defined(WIN32)) && defined(_VC_NODEFAULTLIB)

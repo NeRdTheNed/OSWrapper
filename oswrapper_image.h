@@ -36,6 +36,9 @@ Call oswrapper_image_uninit() after you no longer need to use oswrapper_image.
 Platform requirements:
 - On macOS, link with AppKit
 - On Windows, call CoInitialize before using the library, and link with windowscodecs.lib
+
+The latest version of this file can be found at
+https://github.com/NeRdTheNed/OSWrapper/blob/main/oswrapper_image.h
 */
 
 #ifndef OSWRAPPER_INCLUDE_OSWRAPPER_IMAGE_H

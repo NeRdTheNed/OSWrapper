@@ -77,6 +77,9 @@ Platform requirements:
 - On macOS, link with AudioToolbox
 - On Windows, call CoInitialize before using the library,
   and link with mfplat.lib, mfreadwrite.lib, and shlwapi.lib
+
+The latest version of this file can be found at
+https://github.com/NeRdTheNed/OSWrapper/blob/main/oswrapper_audio.h
 */
 
 #ifndef OSWRAPPER_INCLUDE_OSWRAPPER_AUDIO_H

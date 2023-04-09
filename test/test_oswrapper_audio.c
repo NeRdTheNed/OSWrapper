@@ -5,6 +5,9 @@ appended to it.
 
 Usage: test_oswrapper_audio (audio_file.ext)
 If no input is provided, it will decode the file named noise.wav in this folder.
+
+The latest version of this file can be found at
+https://github.com/NeRdTheNed/OSWrapper/blob/main/test/test_oswrapper_audio.c
 */
 
 #define OSWRAPPER_AUDIO_STATIC

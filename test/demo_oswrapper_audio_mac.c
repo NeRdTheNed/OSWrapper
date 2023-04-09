@@ -4,6 +4,9 @@ using macOS APIs for sound output.
 
 Usage: demo_oswrapper_audio_mac (audio_file.ext)
 If no input is provided, it will play the file named noise.wav in this folder.
+
+The latest version of this file can be found at
+https://github.com/NeRdTheNed/OSWrapper/blob/main/test/demo_oswrapper_audio_mac.c
 */
 
 #define OSWRAPPER_AUDIO_IMPLEMENTATION

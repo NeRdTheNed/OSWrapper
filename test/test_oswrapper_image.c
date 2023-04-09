@@ -5,6 +5,9 @@ and display some information about the decoded data.
 Usage: test_oswrapper_image (image_file.ext)
 If no input is provided, it will decode an embedded version of the file named
 face.png in this folder.
+
+The latest version of this file can be found at
+https://github.com/NeRdTheNed/OSWrapper/blob/main/test/test_oswrapper_image.c
 */
 
 #define OSWRAPPER_IMAGE_STATIC
