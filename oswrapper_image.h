@@ -525,7 +525,7 @@ OSWRAPPER_IMAGE_DEF OSWrapper_image_decoded_data* oswrapper_image_load_from_path
 #endif
 /* End Win32 WIC implementation */
 #elif defined(OSWRAPPER_IMAGE_USE_EMSCRIPTEN_PRELOAD_IMPL)
-/* TODO: Requires Asyncify, multithreading isn't finished, load from memory isn't implemented. */
+/* TODO: Requires Asyncify, multithreading isn't finished. */
 /* Start Emscripten preloader implementation */
 #include <emscripten.h>
 #include <emscripten/atomic.h>
