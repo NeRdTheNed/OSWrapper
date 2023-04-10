@@ -590,7 +590,7 @@ OSWRAPPER_IMAGE_DEF unsigned char* oswrapper_image_load_from_memory(unsigned cha
         because calling emscripten_sleep will allow the main thread to run the preload plugins.
         TODO The sleep could allow another thread to acquire the lock before it finishes.
         This is mostly harmless, but it will lock until the other image has also finished decoding. */
-        emscripten_sleep(100);
+        emscripten_sleep(1);
         janky_lock_val = emscripten_atomic_load_u32((void*) &oswrapper_image__preload_janky_lock);
     } while (janky_lock_val == 1);
 
@@ -643,7 +643,7 @@ OSWRAPPER_IMAGE_DEF unsigned char* oswrapper_image_load_from_path(const char* pa
             because calling emscripten_sleep will allow the main thread to run the preload plugins.
             TODO The sleep could allow another thread to acquire the lock before it finishes.
             This is mostly harmless, but it will lock until the other image has also finished decoding. */
-            emscripten_sleep(100);
+            emscripten_sleep(1);
             janky_lock_val = emscripten_atomic_load_u32((void*) &oswrapper_image__preload_janky_lock);
         } while (janky_lock_val == 1);
 
