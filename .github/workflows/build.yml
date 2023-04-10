@@ -38,3 +38,24 @@ jobs:
             test/test_oswrapper_image_no_crt.exe
             test/test_oswrapper_audio.exe
             test/test_oswrapper_audio_no_crt.exe
+  build_emscripten:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Setup Emscripten SDK
+        uses: mymindstorm/setup-emsdk@v12
+        with:
+          version: 3.1.35
+          actions-cache-folder: 'emsdk-cache'
+      - name: Build examples
+        working-directory: test
+        run: make -f Makefile.em
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: Examples-Emscripten
+          path: |
+            test/test_oswrapper_image.html
+            test/test_oswrapper_image.js
+            test/test_oswrapper_image.wasm
