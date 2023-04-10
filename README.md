@@ -33,7 +33,7 @@ Full examples of linking and using OSWrapper libraries can be found in the test 
 
 ## Future work
 
-- Emscripten image / audio decoding
+- Emscripten audio decoding
 
 Issues and PRs are welcome.
 
