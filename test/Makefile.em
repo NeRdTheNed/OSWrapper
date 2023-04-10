@@ -1,6 +1,6 @@
 CC = emcc
 INCLUDES = -I..
-CFLAGS += -Wall -Wextra -sASYNCIFY
+CFLAGS += -Wall -Wextra -Os -flto --closure 1 -sASYNCIFY
 
 all:
 	$(CC) $(INCLUDES) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_IMAGE) test_oswrapper_image.c -o test_oswrapper_image.html
