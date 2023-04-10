@@ -2,6 +2,8 @@
 
 > Single-header file libraries to wrap OS-specific functionality.
 
+[![Build](https://github.com/NeRdTheNed/OSWrapper/actions/workflows/build.yml/badge.svg)](https://github.com/NeRdTheNed/OSWrapper/actions/workflows/build.yml)
+
 | Library           | Description                      | Platform implementations                        |
 | ----------------- | -------------------------------- | ----------------------------------------------- |
 | oswrapper_image.h | Image decoder using OS libraries | macOS, Windows (Vista and higher), Emscripten   |
