@@ -1,0 +1,9 @@
+CC = emcc
+INCLUDES = -I..
+CFLAGS += -Wall -Wextra -sASYNCIFY
+
+all:
+	$(CC) $(INCLUDES) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_IMAGE) test_oswrapper_image.c -o test_oswrapper_image
+
+clean:
+	rm -f test_oswrapper_image.wasm
