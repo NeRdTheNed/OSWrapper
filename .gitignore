@@ -4,6 +4,8 @@
 # Test executables
 test/demo_oswrapper_audio_mac
 test/test_oswrapper_image
+test/test_oswrapper_image.html
+test/test_oswrapper_image.js
 test/test_oswrapper_image.wasm
 test/test_oswrapper_image.exe
 test/test_oswrapper_image.obj

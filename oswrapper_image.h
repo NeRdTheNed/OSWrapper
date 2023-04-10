@@ -36,7 +36,7 @@ Call oswrapper_image_uninit() after you no longer need to use oswrapper_image.
 Platform requirements:
 - On macOS, link with AppKit
 - On Windows, call CoInitialize before using the library, and link with windowscodecs.lib
-- On Emscripten platforms, compile with Asyncify.
+- On Emscripten platforms, compile with Asyncify
 
 The latest version of this file can be found at
 https://github.com/NeRdTheNed/OSWrapper/blob/main/oswrapper_image.h
@@ -532,6 +532,26 @@ OSWRAPPER_IMAGE_DEF OSWrapper_image_decoded_data* oswrapper_image_load_from_path
 
 /* TODO Unfinished multithreading */
 static volatile uint32_t oswrapper_image__preload_janky_lock = 0;
+/* TODO Refactor to avoid issues with multithreading */
+static const char* current_fakename = NULL;
+
+static unsigned char* oswrapper_image__load_from_path_post_preload(const char* path, int* width, int* height, int* channels) {
+    unsigned char* try_get_preloaded_data = (unsigned char*) emscripten_get_preloaded_image_data(path, width, height);
+
+    /* TODO Refactor to avoid issues with multithreading */
+    if (current_fakename == path && current_fakename != NULL) {
+        free((void*) current_fakename);
+        current_fakename = NULL;
+    }
+
+    if (try_get_preloaded_data != NULL) {
+        /* TODO Currently only returns 4 channel decoded data, API doesn't seem to mention this? */
+        *channels = 4;
+        return try_get_preloaded_data;
+    }
+
+    return NULL;
+}
 
 OSWRAPPER_IMAGE_DEF OSWRAPPER_IMAGE_RESULT_TYPE oswrapper_image_init(void) {
     return OSWRAPPER_IMAGE_RESULT_SUCCESS;
@@ -547,30 +567,62 @@ OSWRAPPER_IMAGE_DEF void oswrapper_image_free(unsigned char* image_data) {
     }
 }
 
-OSWRAPPER_IMAGE_DEF unsigned char* oswrapper_image_load_from_memory(unsigned char* image, int length, int* width, int* height, int* channels) {
-    return NULL;
+static void oswrapper_image__load_mem_onload(void* arg, const char* fakename) {
+    (void) arg;
+    /* TODO Unfinished multithreading */
+    /* Notify that a callback has been called */
+    current_fakename = fakename;
+    emscripten_atomic_store_u32((void*) &oswrapper_image__preload_janky_lock, 0);
 }
 
-#ifndef OSWRAPPER_IMAGE_NO_LOAD_FROM_PATH
-static unsigned char* oswrapper_image__load_from_path_post_preload(const char* path, int* width, int* height, int* channels) {
-    unsigned char* try_get_preloaded_data = (unsigned char*) emscripten_get_preloaded_image_data(path, width, height);
+static void oswrapper_image__load_mem_onerror(void* arg) {
+    (void) arg;
+    /* TODO Unfinished multithreading */
+    /* Notify that a callback has been called */
+    emscripten_atomic_store_u32((void*) &oswrapper_image__preload_janky_lock, 0);
+}
 
-    if (try_get_preloaded_data != NULL) {
-        /* TODO Currently only returns 4 channel decoded data, API doesn't seem to mention this? */
-        *channels = 4;
-        return try_get_preloaded_data;
+OSWRAPPER_IMAGE_DEF unsigned char* oswrapper_image_load_from_memory(unsigned char* image, int length, int* width, int* height, int* channels) {
+    volatile uint32_t janky_lock_val;
+
+    /* TODO Unfinished multithreading */
+    /* Busy acquire the lock */
+    do {
+        janky_lock_val = emscripten_atomic_cas_u32((void*) &oswrapper_image__preload_janky_lock, 0, 1);
+    } while (janky_lock_val);
+
+    /* TODO Use user data to receive file name */
+    emscripten_run_preload_plugins_data((char*) image, length, "png", (void*) 0, oswrapper_image__load_mem_onload, oswrapper_image__load_mem_onerror);
+
+    /* TODO Unfinished multithreading */
+    /* Busy wait until the callbacks are called */
+    do {
+        /* TODO emscripten_run_preload_plugins uses the main thread to load images, which we are probably on.
+        Busy waiting will therefore normally deadlock,
+        because the image load callbacks will never run without returning to the main thread.
+        Loading synchronously can only work if we're using Asyncify,
+        because calling emscripten_sleep will allow the main thread to run the preload plugins. */
+        emscripten_sleep(100);
+        janky_lock_val = emscripten_atomic_load_u32((void*) &oswrapper_image__preload_janky_lock);
+    } while (janky_lock_val == 1);
+
+    if (current_fakename != NULL) {
+        return oswrapper_image__load_from_path_post_preload(current_fakename, width, height, channels);
     }
 
     return NULL;
 }
 
+#ifndef OSWRAPPER_IMAGE_NO_LOAD_FROM_PATH
 static void oswrapper_image__load_path_onload(const char* textureName) {
+    (void) textureName;
     /* TODO Unfinished multithreading */
     /* Notify that a callback has been called */
     emscripten_atomic_store_u32((void*) &oswrapper_image__preload_janky_lock, 0);
 }
 
 static void oswrapper_image__load_path_onerror(const char* textureName) {
+    (void) textureName;
     /* TODO Unfinished multithreading */
     /* Notify that a callback has been called */
     emscripten_atomic_store_u32((void*) &oswrapper_image__preload_janky_lock, 0);
@@ -592,7 +644,7 @@ OSWRAPPER_IMAGE_DEF unsigned char* oswrapper_image_load_from_path(const char* pa
         janky_lock_val = emscripten_atomic_cas_u32((void*) &oswrapper_image__preload_janky_lock, 0, 1);
     } while (janky_lock_val);
 
-    does_file_exist_for_preloading = emscripten_run_preload_plugins(path, (em_str_callback_func) oswrapper_image__load_path_onload, (em_str_callback_func) oswrapper_image__load_path_onerror);
+    does_file_exist_for_preloading = emscripten_run_preload_plugins(path, oswrapper_image__load_path_onload, oswrapper_image__load_path_onerror);
 
     if (does_file_exist_for_preloading == 0) {
         /* TODO Unfinished multithreading */
