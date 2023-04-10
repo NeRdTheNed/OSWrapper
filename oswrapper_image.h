@@ -532,17 +532,9 @@ OSWRAPPER_IMAGE_DEF OSWrapper_image_decoded_data* oswrapper_image_load_from_path
 
 /* TODO Unfinished multithreading */
 static volatile uint32_t oswrapper_image__preload_janky_lock = 0;
-/* TODO Refactor to avoid issues with multithreading */
-static const char* current_fakename = NULL;
 
 static unsigned char* oswrapper_image__load_from_path_post_preload(const char* path, int* width, int* height, int* channels) {
     unsigned char* try_get_preloaded_data = (unsigned char*) emscripten_get_preloaded_image_data(path, width, height);
-
-    /* TODO Refactor to avoid issues with multithreading */
-    if (current_fakename == path && current_fakename != NULL) {
-        free((void*) current_fakename);
-        current_fakename = NULL;
-    }
 
     if (try_get_preloaded_data != NULL) {
         /* TODO Currently only returns 4 channel decoded data, API doesn't seem to mention this? */
@@ -568,10 +560,10 @@ OSWRAPPER_IMAGE_DEF void oswrapper_image_free(unsigned char* image_data) {
 }
 
 static void oswrapper_image__load_mem_onload(void* arg, const char* fakename) {
-    (void) arg;
+    const char** current_fakename = (const char**) arg;
     /* TODO Unfinished multithreading */
     /* Notify that a callback has been called */
-    current_fakename = fakename;
+    *current_fakename = fakename;
     emscripten_atomic_store_u32((void*) &oswrapper_image__preload_janky_lock, 0);
 }
 
@@ -584,6 +576,7 @@ static void oswrapper_image__load_mem_onerror(void* arg) {
 
 OSWRAPPER_IMAGE_DEF unsigned char* oswrapper_image_load_from_memory(unsigned char* image, int length, int* width, int* height, int* channels) {
     volatile uint32_t janky_lock_val;
+    const char* current_fakename = NULL;
 
     /* TODO Unfinished multithreading */
     /* Busy acquire the lock */
@@ -591,8 +584,7 @@ OSWRAPPER_IMAGE_DEF unsigned char* oswrapper_image_load_from_memory(unsigned cha
         janky_lock_val = emscripten_atomic_cas_u32((void*) &oswrapper_image__preload_janky_lock, 0, 1);
     } while (janky_lock_val);
 
-    /* TODO Use user data to receive file name */
-    emscripten_run_preload_plugins_data((char*) image, length, "png", (void*) 0, oswrapper_image__load_mem_onload, oswrapper_image__load_mem_onerror);
+    emscripten_run_preload_plugins_data((char*) image, length, "png", (void*) &current_fakename, oswrapper_image__load_mem_onload, oswrapper_image__load_mem_onerror);
 
     /* TODO Unfinished multithreading */
     /* Busy wait until the callbacks are called */
@@ -607,7 +599,9 @@ OSWRAPPER_IMAGE_DEF unsigned char* oswrapper_image_load_from_memory(unsigned cha
     } while (janky_lock_val == 1);
 
     if (current_fakename != NULL) {
-        return oswrapper_image__load_from_path_post_preload(current_fakename, width, height, channels);
+        unsigned char* try_get_preloaded_data = oswrapper_image__load_from_path_post_preload(current_fakename, width, height, channels);
+        free((void*) current_fakename);
+        return try_get_preloaded_data;
     }
 
     return NULL;
