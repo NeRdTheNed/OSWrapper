@@ -525,12 +525,10 @@ OSWRAPPER_IMAGE_DEF OSWrapper_image_decoded_data* oswrapper_image_load_from_path
 #endif
 /* End Win32 WIC implementation */
 #elif defined(OSWRAPPER_IMAGE_USE_EMSCRIPTEN_PRELOAD_IMPL)
-/* TODO: Requires Asyncify, multithreading isn't finished. */
 /* Start Emscripten preloader implementation */
 #include <emscripten.h>
 #include <emscripten/atomic.h>
 
-/* TODO Unfinished multithreading */
 static volatile uint32_t oswrapper_image__preload_janky_lock = 0;
 
 static unsigned char* oswrapper_image__load_from_path_post_preload(const char* path, int* width, int* height, int* channels) {
@@ -561,7 +559,6 @@ OSWRAPPER_IMAGE_DEF void oswrapper_image_free(unsigned char* image_data) {
 
 static void oswrapper_image__load_mem_onload(void* arg, const char* fakename) {
     const char** current_fakename = (const char**) arg;
-    /* TODO Unfinished multithreading */
     /* Notify that a callback has been called */
     *current_fakename = fakename;
     emscripten_atomic_store_u32((void*) &oswrapper_image__preload_janky_lock, 0);
@@ -569,7 +566,6 @@ static void oswrapper_image__load_mem_onload(void* arg, const char* fakename) {
 
 static void oswrapper_image__load_mem_onerror(void* arg) {
     (void) arg;
-    /* TODO Unfinished multithreading */
     /* Notify that a callback has been called */
     emscripten_atomic_store_u32((void*) &oswrapper_image__preload_janky_lock, 0);
 }
@@ -578,7 +574,6 @@ OSWRAPPER_IMAGE_DEF unsigned char* oswrapper_image_load_from_memory(unsigned cha
     volatile uint32_t janky_lock_val;
     const char* current_fakename = NULL;
 
-    /* TODO Unfinished multithreading */
     /* Busy acquire the lock */
     do {
         janky_lock_val = emscripten_atomic_cas_u32((void*) &oswrapper_image__preload_janky_lock, 0, 1);
@@ -586,14 +581,15 @@ OSWRAPPER_IMAGE_DEF unsigned char* oswrapper_image_load_from_memory(unsigned cha
 
     emscripten_run_preload_plugins_data((char*) image, length, "png", (void*) &current_fakename, oswrapper_image__load_mem_onload, oswrapper_image__load_mem_onerror);
 
-    /* TODO Unfinished multithreading */
     /* Busy wait until the callbacks are called */
     do {
-        /* TODO emscripten_run_preload_plugins uses the main thread to load images, which we are probably on.
-        Busy waiting will therefore normally deadlock,
+        /* emscripten_run_preload_plugins uses the main thread to load images, which we are probably on.
+        Busy waiting will therefore normally result in a deadlock,
         because the image load callbacks will never run without returning to the main thread.
         Loading synchronously can only work if we're using Asyncify,
-        because calling emscripten_sleep will allow the main thread to run the preload plugins. */
+        because calling emscripten_sleep will allow the main thread to run the preload plugins.
+        TODO The sleep could allow another thread to acquire the lock before it finishes.
+        This is mostly harmless, but it will lock until the other image has also finished decoding. */
         emscripten_sleep(100);
         janky_lock_val = emscripten_atomic_load_u32((void*) &oswrapper_image__preload_janky_lock);
     } while (janky_lock_val == 1);
@@ -610,14 +606,12 @@ OSWRAPPER_IMAGE_DEF unsigned char* oswrapper_image_load_from_memory(unsigned cha
 #ifndef OSWRAPPER_IMAGE_NO_LOAD_FROM_PATH
 static void oswrapper_image__load_path_onload(const char* textureName) {
     (void) textureName;
-    /* TODO Unfinished multithreading */
     /* Notify that a callback has been called */
     emscripten_atomic_store_u32((void*) &oswrapper_image__preload_janky_lock, 0);
 }
 
 static void oswrapper_image__load_path_onerror(const char* textureName) {
     (void) textureName;
-    /* TODO Unfinished multithreading */
     /* Notify that a callback has been called */
     emscripten_atomic_store_u32((void*) &oswrapper_image__preload_janky_lock, 0);
 }
@@ -632,7 +626,6 @@ OSWRAPPER_IMAGE_DEF unsigned char* oswrapper_image_load_from_path(const char* pa
         return try_get_preloaded_data;
     }
 
-    /* TODO Unfinished multithreading */
     /* Busy acquire the lock */
     do {
         janky_lock_val = emscripten_atomic_cas_u32((void*) &oswrapper_image__preload_janky_lock, 0, 1);
@@ -641,14 +634,15 @@ OSWRAPPER_IMAGE_DEF unsigned char* oswrapper_image_load_from_path(const char* pa
     does_file_exist_for_preloading = emscripten_run_preload_plugins(path, oswrapper_image__load_path_onload, oswrapper_image__load_path_onerror);
 
     if (does_file_exist_for_preloading == 0) {
-        /* TODO Unfinished multithreading */
         /* Busy wait until the callbacks are called */
         do {
-            /* TODO emscripten_run_preload_plugins uses the main thread to load images, which we are probably on.
-            Busy waiting will therefore normally deadlock,
+            /* emscripten_run_preload_plugins uses the main thread to load images, which we are probably on.
+            Busy waiting will therefore normally result in a deadlock,
             because the image load callbacks will never run without returning to the main thread.
             Loading synchronously can only work if we're using Asyncify,
-            because calling emscripten_sleep will allow the main thread to run the preload plugins. */
+            because calling emscripten_sleep will allow the main thread to run the preload plugins.
+            TODO The sleep could allow another thread to acquire the lock before it finishes.
+            This is mostly harmless, but it will lock until the other image has also finished decoding. */
             emscripten_sleep(100);
             janky_lock_val = emscripten_atomic_load_u32((void*) &oswrapper_image__preload_janky_lock);
         } while (janky_lock_val == 1);
