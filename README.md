@@ -36,6 +36,7 @@ Full examples of linking and using OSWrapper libraries can be found in the test 
 ## Future work
 
 - Emscripten audio decoding
+- CPP support
 
 Issues and PRs are welcome.
 
