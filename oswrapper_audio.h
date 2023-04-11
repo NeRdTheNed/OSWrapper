@@ -484,6 +484,28 @@ OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* aud
 #include <shlwapi.h>
 #include <stdio.h>
 
+/* Using CINTERFACE breaks some headers, so we have to define these ourselves */
+#if defined(__cplusplus) && !defined(CINTERFACE)
+#define IMFAttributes_GetGUID(attributes, ...) attributes->GetGUID(__VA_ARGS__)
+#define IMFByteStream_Release(byte_stream) byte_stream->Release()
+#define IMFMediaBuffer_Lock(media_buffer, ...) media_buffer->Lock(__VA_ARGS__)
+#define IMFMediaBuffer_Release(media_buffer) media_buffer->Release()
+#define IMFMediaBuffer_Unlock(media_buffer) media_buffer->Unlock()
+#define IMFMediaType_GetUINT32(media_type, ...) media_type->GetUINT32(__VA_ARGS__)
+#define IMFMediaType_Release(media_type) media_type->Release()
+#define IMFMediaType_SetGUID(media_type, ...) media_type->SetGUID(__VA_ARGS__)
+#define IMFMediaType_SetUINT32(media_type, ...) media_type->SetUINT32(__VA_ARGS__)
+#define IMFSample_ConvertToContiguousBuffer(sample, ...) sample->ConvertToContiguousBuffer(__VA_ARGS__)
+#define IMFSample_Release(sample) sample->Release()
+#define IMFSourceReader_GetNativeMediaType(source_reader, ...) source_reader->GetNativeMediaType(__VA_ARGS__)
+#define IMFSourceReader_ReadSample(source_reader, ...) source_reader->ReadSample(__VA_ARGS__)
+#define IMFSourceReader_Release(source_reader) source_reader->Release()
+#define IMFSourceReader_SetCurrentMediaType(source_reader, ...) source_reader->SetCurrentMediaType(__VA_ARGS__)
+#define IMFSourceReader_SetCurrentPosition(source_reader, ...) source_reader->SetCurrentPosition(__VA_ARGS__)
+#define IMFSourceReader_SetStreamSelection(source_reader, ...) source_reader->SetStreamSelection(__VA_ARGS__)
+#define IStream_Release(istream) istream->Release()
+#endif
+
 /* TODO Ugly hack */
 #ifndef OSWRAPPER_AUDIO_PATH_MAX
 #define OSWRAPPER_AUDIO_PATH_MAX MAX_PATH
@@ -585,7 +607,11 @@ static OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio__configure_stream(IMFSourceRe
         OSWRAPPER_AUDIO__END_FAIL(IMFSourceReader_GetNativeMediaType(reader, (DWORD) MF_SOURCE_READER_FIRST_AUDIO_STREAM, 0, &media_type));
 
         if (channel_count == 0) {
+#ifdef __cplusplus
+            IMFMediaType_GetUINT32(media_type, MF_MT_AUDIO_NUM_CHANNELS, &channel_count);
+#else
             IMFMediaType_GetUINT32(media_type, &MF_MT_AUDIO_NUM_CHANNELS, &channel_count);
+#endif
 
             /* Sanity check */
             if (channel_count == 0) {
@@ -596,7 +622,11 @@ static OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio__configure_stream(IMFSourceRe
         }
 
         if (sample_rate == 0) {
+#ifdef __cplusplus
+            IMFMediaType_GetUINT32(media_type, MF_MT_AUDIO_SAMPLES_PER_SECOND, &sample_rate);
+#else
             IMFMediaType_GetUINT32(media_type, &MF_MT_AUDIO_SAMPLES_PER_SECOND, &sample_rate);
+#endif
 
             /* Sanity check */
             if (sample_rate == 0) {
@@ -607,7 +637,11 @@ static OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio__configure_stream(IMFSourceRe
         }
 
         if (audio->audio_type == OSWRAPPER_AUDIO_FORMAT_NOT_SET) {
+#ifdef __cplusplus
+            IMFAttributes_GetGUID(media_type, MF_MT_SUBTYPE, &format_type);
+#else
             IMFAttributes_GetGUID(media_type, &MF_MT_SUBTYPE, &format_type);
+#endif
 
             /* Sanity check */
             if (!OSWRAPPER_AUDIO_MEMCMP(&format_type, &MFAudioFormat_PCM, sizeof(GUID))) {
@@ -622,7 +656,11 @@ static OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio__configure_stream(IMFSourceRe
         }
 
         if (bits_per_channel == 0) {
+#ifdef __cplusplus
+            IMFMediaType_GetUINT32(media_type, MF_MT_AUDIO_BITS_PER_SAMPLE, &bits_per_channel);
+#else
             IMFMediaType_GetUINT32(media_type, &MF_MT_AUDIO_BITS_PER_SAMPLE, &bits_per_channel);
+#endif
 
             /* Sanity check */
             if (bits_per_channel == 0) {
@@ -640,11 +678,19 @@ static OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio__configure_stream(IMFSourceRe
     }
 
     OSWRAPPER_AUDIO__END_FAIL(MFCreateMediaType(&media_type));
+#ifdef __cplusplus
+    OSWRAPPER_AUDIO__END_FAIL(IMFMediaType_SetGUID(media_type, MF_MT_MAJOR_TYPE, MFMediaType_Audio));
+    OSWRAPPER_AUDIO__END_FAIL(IMFMediaType_SetGUID(media_type, MF_MT_SUBTYPE, format_type));
+    OSWRAPPER_AUDIO__END_FAIL(IMFMediaType_SetUINT32(media_type, MF_MT_AUDIO_BITS_PER_SAMPLE, audio->bits_per_channel));
+    OSWRAPPER_AUDIO__END_FAIL(IMFMediaType_SetUINT32(media_type, MF_MT_AUDIO_SAMPLES_PER_SECOND, audio->sample_rate));
+    OSWRAPPER_AUDIO__END_FAIL(IMFMediaType_SetUINT32(media_type, MF_MT_AUDIO_NUM_CHANNELS, audio->channel_count));
+#else
     OSWRAPPER_AUDIO__END_FAIL(IMFMediaType_SetGUID(media_type, &MF_MT_MAJOR_TYPE, &MFMediaType_Audio));
     OSWRAPPER_AUDIO__END_FAIL(IMFMediaType_SetGUID(media_type, &MF_MT_SUBTYPE, &format_type));
     OSWRAPPER_AUDIO__END_FAIL(IMFMediaType_SetUINT32(media_type, &MF_MT_AUDIO_BITS_PER_SAMPLE, audio->bits_per_channel));
     OSWRAPPER_AUDIO__END_FAIL(IMFMediaType_SetUINT32(media_type, &MF_MT_AUDIO_SAMPLES_PER_SECOND, audio->sample_rate));
     OSWRAPPER_AUDIO__END_FAIL(IMFMediaType_SetUINT32(media_type, &MF_MT_AUDIO_NUM_CHANNELS, audio->channel_count));
+#endif
     OSWRAPPER_AUDIO__END_FAIL(IMFSourceReader_SetCurrentMediaType(reader, (DWORD) MF_SOURCE_READER_FIRST_AUDIO_STREAM, NULL, media_type));
     OSWRAPPER_AUDIO__END_FAIL(IMFSourceReader_SetStreamSelection(reader, (DWORD) MF_SOURCE_READER_FIRST_AUDIO_STREAM, TRUE));
 cleanup:
@@ -768,7 +814,11 @@ OSWRAPPER_AUDIO_DEF void oswrapper_audio_seek(OSWrapper_audio_spec* audio, OSWRA
     result = S_OK;
     pos_propvariant.vt = VT_I8;
     pos_propvariant.hVal.QuadPart = pos;
+#ifdef __cplusplus
+    IMFSourceReader_SetCurrentPosition(internal_data->reader, GUID_NULL, pos_propvariant);
+#else
     IMFSourceReader_SetCurrentPosition(internal_data->reader, &GUID_NULL, &pos_propvariant);
+#endif
     PropVariantClear(&pos_propvariant);
     /* Reset buffer positions */
     internal_data->internal_buffer_remaining = 0;
@@ -790,7 +840,11 @@ OSWRAPPER_AUDIO_DEF void oswrapper_audio_rewind(OSWrapper_audio_spec* audio) {
     result = S_OK;
     pos_propvariant.vt = VT_I8;
     pos_propvariant.hVal.QuadPart = 0;
+#ifdef __cplusplus
+    IMFSourceReader_SetCurrentPosition(internal_data->reader, GUID_NULL, pos_propvariant);
+#else
     IMFSourceReader_SetCurrentPosition(internal_data->reader, &GUID_NULL, &pos_propvariant);
+#endif
     PropVariantClear(&pos_propvariant);
     /* Reset buffer positions */
     internal_data->internal_buffer_remaining = 0;

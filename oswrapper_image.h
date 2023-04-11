@@ -156,7 +156,13 @@ typedef unsigned int NSUInteger;
 #endif /* defined(MAC_OS_X_VERSION_10_8) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_8 */
 
 #if defined(MAC_OS_X_VERSION_10_10) && MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_10
-extern id objc_alloc(Class class);
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern id objc_alloc(Class clazz);
+#ifdef __cplusplus
+}
+#endif
 #define oswrapper__objc_alloc(class) objc_alloc(class)
 #else
 #define oswrapper__objc_alloc(class) oswrapper__objc_msgSend_t(id)((id) class, sel_registerName("alloc"))
@@ -165,15 +171,27 @@ extern id objc_alloc(Class class);
 #define oswrapper__objc_init(x) oswrapper__objc_msgSend_t(id)(x, sel_registerName("init"))
 
 #if defined(MAC_OS_X_VERSION_10_14) && MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_14
-extern id objc_alloc_init(Class class);
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern id objc_alloc_init(Class clazz);
+#ifdef __cplusplus
+}
+#endif
 #define oswrapper__objc_alloc_init(class) objc_alloc_init(class)
 #else
 #define oswrapper__objc_alloc_init(class) oswrapper__objc_init(oswrapper__objc_alloc(class))
 #endif
 
 #if defined(MAC_OS_X_VERSION_10_7) && MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_7
+#ifdef __cplusplus
+extern "C" {
+#endif
 extern void objc_autoreleasePoolPop(void *pool);
 extern void *objc_autoreleasePoolPush(void);
+#ifdef __cplusplus
+}
+#endif
 #define OSWRAPPER_IMAGE__OBJC_AUTORELEASE_POOL_POP(pool) objc_autoreleasePoolPop(pool)
 #define OSWRAPPER_IMAGE__OBJC_AUTORELEASE_POOL_PUSH() objc_autoreleasePoolPush()
 #else
@@ -331,6 +349,9 @@ OSWRAPPER_IMAGE_DEF unsigned char* oswrapper_image_load_from_path(const char* pa
 /* End macOS implementation */
 #elif defined(OSWRAPPER_IMAGE_USE_WIN_IMCOM_IMPL)
 /* Start Win32 WIC implementation */
+#if defined(__cplusplus) && !defined(CINTERFACE)
+#define CINTERFACE
+#endif
 #define COBJMACROS
 #define WIN32_LEAN_AND_MEAN
 #include "wincodec.h"
@@ -353,13 +374,21 @@ OSWRAPPER_IMAGE_DEF OSWRAPPER_IMAGE_RESULT_TYPE oswrapper_image_init(void) {
         return OSWRAPPER_IMAGE_RESULT_SUCCESS;
     }
 
+#ifdef __cplusplus
+    result = CoCreateInstance(OSWRAPPER_IMAGE__FIRST_CLSID, NULL, CLSCTX_INPROC_SERVER, OSWRAPPER_IMAGE__FIRST_IID, (LPVOID*) &oswrapper_image__factory);
+#else
     result = CoCreateInstance(&OSWRAPPER_IMAGE__FIRST_CLSID, NULL, CLSCTX_INPROC_SERVER, &OSWRAPPER_IMAGE__FIRST_IID, &oswrapper_image__factory);
+#endif
 
     if (SUCCEEDED(result)) {
         return OSWRAPPER_IMAGE_RESULT_SUCCESS;
     } else {
 #ifdef OSWRAPPER_IMAGE__USING_WINCODEC_SDK_VERSION2
+#ifdef __cplusplus
+        result = CoCreateInstance(CLSID_WICImagingFactory1, NULL, CLSCTX_INPROC_SERVER, IID_IWICImagingFactory, (LPVOID*) &oswrapper_image__factory);
+#else
         result = CoCreateInstance(&CLSID_WICImagingFactory1, NULL, CLSCTX_INPROC_SERVER, &IID_IWICImagingFactory, &oswrapper_image__factory);
+#endif
 
         if (SUCCEEDED(result)) {
             return OSWRAPPER_IMAGE_RESULT_SUCCESS;
@@ -397,14 +426,24 @@ static unsigned char* oswrapper__setup_image_from_decoder(IWICBitmapDecoder* dec
 
         if (SUCCEEDED(result)) {
             /* TODO Get original format / bit depth */
+#ifdef __cplusplus
+            result = IWICFormatConverter_Initialize(converter, (IWICBitmapSource*) frame, GUID_WICPixelFormat32bppPRGBA, WICBitmapDitherTypeNone, NULL, 0.0f, WICBitmapPaletteTypeCustom);
+#else
             result = IWICFormatConverter_Initialize(converter, (IWICBitmapSource*) frame, &GUID_WICPixelFormat32bppPRGBA, WICBitmapDitherTypeNone, NULL, 0.0f, WICBitmapPaletteTypeCustom);
+#endif
 
             if (SUCCEEDED(result)) {
-                result = IWICBitmapFrameDecode_GetSize(frame, width, height);
+                UINT uwidth, uheight;
+                uwidth = 0;
+                uheight = 0;
+                result = IWICBitmapFrameDecode_GetSize(frame, &uwidth, &uheight);
 
                 if (SUCCEEDED(result)) {
+                    *width = (int) uwidth;
+                    *height = (int) uheight;
                     *channels = 4;
-                    {
+
+                    if (*width > 0 && *height > 0) {
                         size_t data_size = ((size_t) * width) * ((size_t) * height) * ((size_t) * channels);
                         decoded_data = (unsigned char*) OSWRAPPER_IMAGE_MALLOC(data_size);
 

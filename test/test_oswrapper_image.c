@@ -48,13 +48,13 @@ int main(int argc, char** argv) {
 
 #endif
     int returnVal = EXIT_FAILURE;
+    const char* path = argc < 2 ? NULL : argv[argc - 1];
 
     if (!oswrapper_image_init()) {
         puts("Could not initialise oswrapper_image!");
         goto exit;
     }
 
-    const char* path = argc < 2 ? NULL : argv[argc - 1];
     int width, height, channels;
     unsigned char* image_data;
 

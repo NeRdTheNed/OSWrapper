@@ -12,7 +12,7 @@
 ## Usage
 
 These libraries are single-header file libraries.
-Include them in exactly one C file as such:
+Include them in exactly one C or C++ file as such:
 
 ```C
 #define OSWRAPPER_LIBRARYNAME_IMPLEMENTATION
@@ -36,7 +36,6 @@ Full examples of linking and using OSWrapper libraries can be found in the test 
 ## Future work
 
 - Emscripten audio decoding
-- CPP support
 
 Issues and PRs are welcome.
 

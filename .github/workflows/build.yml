@@ -17,7 +17,9 @@ jobs:
           name: Examples-macOS
           path: |
             test/test_oswrapper_image
+            test/test_oswrapper_image_cpp
             test/test_oswrapper_audio
+            test/test_oswrapper_audio_cpp
             test/demo_oswrapper_audio_mac
   build_windows:
     runs-on: windows-latest
@@ -35,8 +37,10 @@ jobs:
           name: Examples-windows
           path: |
             test/test_oswrapper_image.exe
+            test/test_oswrapper_image_cpp.exe
             test/test_oswrapper_image_no_crt.exe
             test/test_oswrapper_audio.exe
+            test/test_oswrapper_audio_cpp.exe
             test/test_oswrapper_audio_no_crt.exe
   build_emscripten:
     runs-on: ubuntu-latest
@@ -59,3 +63,6 @@ jobs:
             test/test_oswrapper_image.html
             test/test_oswrapper_image.js
             test/test_oswrapper_image.wasm
+            test/test_oswrapper_image_cpp.html
+            test/test_oswrapper_image_cpp.js
+            test/test_oswrapper_image_cpp.wasm
