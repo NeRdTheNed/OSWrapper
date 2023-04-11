@@ -3,6 +3,7 @@
 
 # Test executables
 test/demo_oswrapper_audio_mac
+test/demo_oswrapper_audio_mac_cpp
 test/test_oswrapper_image
 test/test_oswrapper_image.html
 test/test_oswrapper_image.js

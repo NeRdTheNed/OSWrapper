@@ -21,6 +21,7 @@ jobs:
             test/test_oswrapper_audio
             test/test_oswrapper_audio_cpp
             test/demo_oswrapper_audio_mac
+            test/demo_oswrapper_audio_mac_cpp
   build_windows:
     runs-on: windows-latest
     steps:
