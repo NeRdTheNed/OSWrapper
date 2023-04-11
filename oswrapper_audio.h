@@ -808,7 +808,7 @@ OSWRAPPER_AUDIO_DEF void oswrapper_audio_seek(OSWrapper_audio_spec* audio, OSWRA
 
     if (internal_data->no_reader_error == OSWRAPPER_AUDIO_RESULT_FAILURE) {
         /* IMFSourceReader methods can no longer be called */
-        return OSWRAPPER_AUDIO_RESULT_FAILURE;
+        return;
     }
 
     result = S_OK;
