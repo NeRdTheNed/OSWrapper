@@ -499,7 +499,7 @@ OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* aud
 #define IMFSample_Release(sample) sample->Release()
 #define IMFSourceReader_GetNativeMediaType(source_reader, ...) source_reader->GetNativeMediaType(__VA_ARGS__)
 #define IMFSourceReader_ReadSample(source_reader, ...) source_reader->ReadSample(__VA_ARGS__)
-#define IMFSourceReader_Release(reader) reader->Release()
+#define IMFSourceReader_Release(source_reader) source_reader->Release()
 #define IMFSourceReader_SetCurrentMediaType(source_reader, ...) source_reader->SetCurrentMediaType(__VA_ARGS__)
 #define IMFSourceReader_SetCurrentPosition(source_reader, ...) source_reader->SetCurrentPosition(__VA_ARGS__)
 #define IMFSourceReader_SetStreamSelection(source_reader, ...) source_reader->SetStreamSelection(__VA_ARGS__)
