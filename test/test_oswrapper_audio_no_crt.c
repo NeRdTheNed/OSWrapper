@@ -267,13 +267,14 @@ int main(int argc, char** argv) {
     OSWrapper_audio_spec* audio_spec = NULL;
     char* output_path = NULL;
     short* buffer = NULL;
+    const char* path = argc < 2 ? "noise.wav" : argv[argc - 1];
+    size_t input_string_length = AUDIO_DEMO_STRLEN(path);
 
     if (!oswrapper_audio_init()) {
         AUDIO_DEMO_CONSOLE_OUTPUT("Could not initialise oswrapper_audio!");
         goto exit;
     }
 
-    const char* path = argc < 2 ? "noise.wav" : argv[argc - 1];
     audio_spec = (OSWrapper_audio_spec*) AUDIO_DEMO_CALLOC(1, sizeof(OSWrapper_audio_spec));
 
     if (audio_spec == NULL) {
@@ -281,8 +282,7 @@ int main(int argc, char** argv) {
         goto exit;
     }
 
-    size_t input_string_length = AUDIO_DEMO_STRLEN(path);
-    output_path = OSWRAPPER_AUDIO_MALLOC(input_string_length + sizeof(".raw"));
+    output_path = (char*) OSWRAPPER_AUDIO_MALLOC(input_string_length + sizeof(".raw"));
 
     if (output_path == NULL) {
         AUDIO_DEMO_CONSOLE_OUTPUT("malloc failed for output path!");
@@ -326,13 +326,12 @@ int main(int argc, char** argv) {
 
         size_t frame_size = (audio_spec->bits_per_channel / 8) * (audio_spec->channel_count);
         buffer = (short*) AUDIO_DEMO_CALLOC(TEST_PROGRAM_BUFFER_SIZE, frame_size);
+        size_t frames_done = 0;
 
         if (buffer == NULL) {
             AUDIO_DEMO_CONSOLE_OUTPUT("calloc failed for audio decoding buffer!");
             goto audio_cleanup;
         }
-
-        size_t frames_done = 0;
 
         while (1) {
             AUDIO_DEMO_FILE_NUM_WRITTEN_TYPE num_written;
