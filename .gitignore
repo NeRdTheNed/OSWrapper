@@ -17,5 +17,6 @@ test/test_oswrapper_image_no_crt.obj
 test/test_oswrapper_audio
 test/test_oswrapper_audio.exe
 test/test_oswrapper_audio.obj
+test/test_oswrapper_audio_cpp
 test/test_oswrapper_audio_no_crt.exe
 test/test_oswrapper_audio_no_crt.obj
