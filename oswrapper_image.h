@@ -64,10 +64,6 @@ https://github.com/NeRdTheNed/OSWrapper/blob/main/oswrapper_image.h
 #define OSWRAPPER_IMAGE_RESULT_FAILURE 0
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* Call oswrapper_image_init() before using the library,
 and call oswrapper_image_uninit() after you're done using the library. */
 OSWRAPPER_IMAGE_DEF OSWRAPPER_IMAGE_RESULT_TYPE oswrapper_image_init(void);
@@ -160,7 +156,13 @@ typedef unsigned int NSUInteger;
 #endif /* defined(MAC_OS_X_VERSION_10_8) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_8 */
 
 #if defined(MAC_OS_X_VERSION_10_10) && MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_10
+#ifdef __cplusplus
+extern "C" {
+#endif
 extern id objc_alloc(Class clazz);
+#ifdef __cplusplus
+}
+#endif
 #define oswrapper__objc_alloc(class) objc_alloc(class)
 #else
 #define oswrapper__objc_alloc(class) oswrapper__objc_msgSend_t(id)((id) class, sel_registerName("alloc"))
@@ -169,15 +171,27 @@ extern id objc_alloc(Class clazz);
 #define oswrapper__objc_init(x) oswrapper__objc_msgSend_t(id)(x, sel_registerName("init"))
 
 #if defined(MAC_OS_X_VERSION_10_14) && MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_14
+#ifdef __cplusplus
+extern "C" {
+#endif
 extern id objc_alloc_init(Class clazz);
+#ifdef __cplusplus
+}
+#endif
 #define oswrapper__objc_alloc_init(class) objc_alloc_init(class)
 #else
 #define oswrapper__objc_alloc_init(class) oswrapper__objc_init(oswrapper__objc_alloc(class))
 #endif
 
 #if defined(MAC_OS_X_VERSION_10_7) && MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_7
+#ifdef __cplusplus
+extern "C" {
+#endif
 extern void objc_autoreleasePoolPop(void *pool);
 extern void *objc_autoreleasePoolPush(void);
+#ifdef __cplusplus
+}
+#endif
 #define OSWRAPPER_IMAGE__OBJC_AUTORELEASE_POOL_POP(pool) objc_autoreleasePoolPop(pool)
 #define OSWRAPPER_IMAGE__OBJC_AUTORELEASE_POOL_PUSH() objc_autoreleasePoolPush()
 #else
@@ -777,11 +791,6 @@ OSWRAPPER_IMAGE_DEF unsigned char* oswrapper_image_load_from_path(const char* pa
 /* End no image loader implementation */
 #endif
 #endif /* OSWRAPPER_IMAGE_IMPLEMENTATION */
-
-#ifdef __cplusplus
-}
-#endif
-
 #endif /* OSWRAPPER_INCLUDE_OSWRAPPER_IMAGE_H */
 
 /*
