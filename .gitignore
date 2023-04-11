@@ -10,6 +10,9 @@ test/test_oswrapper_image.wasm
 test/test_oswrapper_image.exe
 test/test_oswrapper_image.obj
 test/test_oswrapper_image_cpp
+test/test_oswrapper_image_cpp.html
+test/test_oswrapper_image_cpp.js
+test/test_oswrapper_image_cpp.wasm
 test/test_oswrapper_image_cpp.obj
 test/test_oswrapper_image_cpp.exe
 test/test_oswrapper_image_no_crt.exe

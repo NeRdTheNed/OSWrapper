@@ -63,3 +63,6 @@ jobs:
             test/test_oswrapper_image.html
             test/test_oswrapper_image.js
             test/test_oswrapper_image.wasm
+            test/test_oswrapper_image_cpp.html
+            test/test_oswrapper_image_cpp.js
+            test/test_oswrapper_image_cpp.wasm
