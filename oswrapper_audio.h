@@ -570,7 +570,7 @@ OSWRAPPER_AUDIO_DEF OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio_free_context(OSW
 #define OSWRAPPER_AUDIO__END_FAIL_FALSE(cond) if(!cond) { return_val = OSWRAPPER_AUDIO_RESULT_FAILURE; goto cleanup; }
 #define OSWRAPPER_AUDIO__END_FAIL(hres) OSWRAPPER_AUDIO__END_FAIL_FALSE(SUCCEEDED(hres))
 
-static OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio__configure_stream(IMFSourceReader* reader, OSWrapper_audio_spec* audio) {
+static OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio__configure_stream(IMFSourceReader* reader, OSWrapper_audio_spec* audio, OSWRAPPER_AUDIO_RESULT_TYPE initial_configure) {
     OSWRAPPER_AUDIO_RESULT_TYPE return_val;
     HRESULT result;
     UINT32 sample_rate, channel_count, bits_per_channel;
@@ -578,7 +578,7 @@ static OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio__configure_stream(IMFSourceRe
     IMFMediaType* media_type;
     oswrapper_audio__internal_data_win* internal_data = (oswrapper_audio__internal_data_win*) audio->internal_data;
 
-    if ((internal_data != NULL) && (internal_data->no_reader_error == OSWRAPPER_AUDIO_RESULT_FAILURE)) {
+    if ((initial_configure != OSWRAPPER_AUDIO_RESULT_SUCCESS) && (internal_data != NULL) && (internal_data->no_reader_error == OSWRAPPER_AUDIO_RESULT_FAILURE)) {
         /* IMFSourceReader methods can no longer be called */
         return OSWRAPPER_AUDIO_RESULT_FAILURE;
     }
@@ -703,7 +703,7 @@ cleanup:
 }
 
 OSWRAPPER_AUDIO_DEF OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio__load_from_reader(IMFSourceReader* reader, IMFByteStream* byte_stream, IStream* memory_stream, OSWrapper_audio_spec* audio) {
-    if (oswrapper_audio__configure_stream(reader, audio)) {
+    if (oswrapper_audio__configure_stream(reader, audio, OSWRAPPER_AUDIO_RESULT_SUCCESS)) {
         oswrapper_audio__internal_data_win* internal_data = (oswrapper_audio__internal_data_win*) OSWRAPPER_AUDIO_MALLOC(sizeof(oswrapper_audio__internal_data_win));
 
         if (internal_data != NULL) {
