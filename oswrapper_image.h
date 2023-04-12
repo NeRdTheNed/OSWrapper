@@ -362,6 +362,14 @@ OSWRAPPER_IMAGE_DEF unsigned char* oswrapper_image_load_from_path(const char* pa
 #endif
 #include "wincodec.h"
 
+#ifdef OSWRAPPER_IMAGE_MANAGE_COINIT
+#include <objbase.h>
+
+#ifndef OSWRAPPER_IMAGE_COINIT_VALUE
+#define OSWRAPPER_IMAGE_COINIT_VALUE COINIT_MULTITHREADED
+#endif
+#endif
+
 #if defined(WINCODEC_SDK_VERSION2) && WINCODEC_SDK_VERSION >= WINCODEC_SDK_VERSION2
 #define OSWRAPPER_IMAGE__USING_WINCODEC_SDK_VERSION2
 #define OSWRAPPER_IMAGE__FIRST_CLSID CLSID_WICImagingFactory2
@@ -380,6 +388,14 @@ OSWRAPPER_IMAGE_DEF OSWRAPPER_IMAGE_RESULT_TYPE oswrapper_image_init(void) {
         return OSWRAPPER_IMAGE_RESULT_SUCCESS;
     }
 
+#ifdef OSWRAPPER_IMAGE_MANAGE_COINIT
+    result = CoInitializeEx(NULL, OSWRAPPER_IMAGE_COINIT_VALUE);
+
+    if (FAILED(result)) {
+        return OSWRAPPER_IMAGE_RESULT_FAILURE;
+    }
+
+#endif
 #ifdef __cplusplus
     result = CoCreateInstance(OSWRAPPER_IMAGE__FIRST_CLSID, NULL, CLSCTX_INPROC_SERVER, OSWRAPPER_IMAGE__FIRST_IID, (LPVOID*) &oswrapper_image__factory);
 #else
@@ -403,6 +419,9 @@ OSWRAPPER_IMAGE_DEF OSWRAPPER_IMAGE_RESULT_TYPE oswrapper_image_init(void) {
 #endif
     }
 
+#ifdef OSWRAPPER_IMAGE_MANAGE_COINIT
+    CoUninitialize();
+#endif
     return OSWRAPPER_IMAGE_RESULT_FAILURE;
 }
 
@@ -411,6 +430,9 @@ OSWRAPPER_IMAGE_DEF OSWRAPPER_IMAGE_RESULT_TYPE oswrapper_image_uninit(void) {
         IWICImagingFactory_Release(oswrapper_image__factory);
     }
 
+#ifdef OSWRAPPER_IMAGE_MANAGE_COINIT
+    CoUninitialize();
+#endif
     return OSWRAPPER_IMAGE_RESULT_SUCCESS;
 }
 

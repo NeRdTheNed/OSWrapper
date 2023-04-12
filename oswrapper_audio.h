@@ -511,6 +511,14 @@ OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* aud
 #define OSWRAPPER_AUDIO_PATH_MAX MAX_PATH
 #endif
 
+#ifdef OSWRAPPER_AUDIO_MANAGE_COINIT
+#include <objbase.h>
+
+#ifndef OSWRAPPER_AUDIO_COINIT_VALUE
+#define OSWRAPPER_AUDIO_COINIT_VALUE COINIT_MULTITHREADED
+#endif
+#endif
+
 /* The startup flags forMFStartup */
 #ifndef OSWRAPPER_AUDIO__MF_STARTUP_VAL
 #define OSWRAPPER_AUDIO__MF_STARTUP_VAL MFSTARTUP_LITE
@@ -538,11 +546,37 @@ typedef struct oswrapper_audio__internal_data_win {
 } oswrapper_audio__internal_data_win;
 
 OSWRAPPER_AUDIO_DEF OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio_init(void) {
+#ifdef OSWRAPPER_AUDIO_MANAGE_COINIT
+    HRESULT result = CoInitializeEx(NULL, OSWRAPPER_AUDIO_COINIT_VALUE);
+
+    if (SUCCEEDED(result)) {
+        result = MFStartup(MF_VERSION, OSWRAPPER_AUDIO__MF_STARTUP_VAL);
+
+        if (SUCCEEDED(result)) {
+            return OSWRAPPER_AUDIO_RESULT_SUCCESS;
+        }
+
+        CoUninitialize();
+    }
+
+    return OSWRAPPER_AUDIO_RESULT_FAILURE;
+#else
     return SUCCEEDED(MFStartup(MF_VERSION, OSWRAPPER_AUDIO__MF_STARTUP_VAL)) ? OSWRAPPER_AUDIO_RESULT_SUCCESS : OSWRAPPER_AUDIO_RESULT_FAILURE;
+#endif
 }
 
 OSWRAPPER_AUDIO_DEF OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio_uninit(void) {
+#ifdef OSWRAPPER_AUDIO_MANAGE_COINIT
+
+    if (FAILED(MFShutdown())) {
+        return OSWRAPPER_AUDIO_RESULT_FAILURE;
+    }
+
+    CoUninitialize();
+    return OSWRAPPER_AUDIO_RESULT_SUCCESS;
+#else
     return SUCCEEDED(MFShutdown()) ? OSWRAPPER_AUDIO_RESULT_SUCCESS : OSWRAPPER_AUDIO_RESULT_FAILURE;
+#endif
 }
 
 OSWRAPPER_AUDIO_DEF OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio_free_context(OSWrapper_audio_spec* audio) {
