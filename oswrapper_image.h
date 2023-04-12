@@ -354,8 +354,12 @@ OSWRAPPER_IMAGE_DEF unsigned char* oswrapper_image_load_from_path(const char* pa
 #if defined(__cplusplus) && !defined(CINTERFACE)
 #define CINTERFACE
 #endif
+#ifndef COBJMACROS
 #define COBJMACROS
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
+#endif
 #include "wincodec.h"
 
 #if defined(WINCODEC_SDK_VERSION2) && WINCODEC_SDK_VERSION >= WINCODEC_SDK_VERSION2
