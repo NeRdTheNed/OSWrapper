@@ -192,9 +192,11 @@ extern void *objc_autoreleasePoolPush(void);
 #ifdef __cplusplus
 }
 #endif
+#define OSWRAPPER_IMAGE__OBJC_AUTORELEASE_POOL_TYPE void*
 #define OSWRAPPER_IMAGE__OBJC_AUTORELEASE_POOL_POP(pool) objc_autoreleasePoolPop(pool)
 #define OSWRAPPER_IMAGE__OBJC_AUTORELEASE_POOL_PUSH() objc_autoreleasePoolPush()
 #else
+#define OSWRAPPER_IMAGE__OBJC_AUTORELEASE_POOL_TYPE id
 #define OSWRAPPER_IMAGE__OBJC_AUTORELEASE_POOL_POP(pool) oswrapper__objc_msgSend_t(void)(pool, sel_registerName("drain"))
 #define OSWRAPPER_IMAGE__OBJC_AUTORELEASE_POOL_PUSH() oswrapper__objc_alloc_init(objc_getClass("NSAutoreleasePool"))
 #endif
@@ -275,7 +277,7 @@ OSWRAPPER_IMAGE_DEF void oswrapper_image_free_nocopy(OSWrapper_image_decoded_dat
 }
 
 OSWRAPPER_IMAGE_DEF OSWrapper_image_decoded_data* oswrapper_image_load_from_memory_nocopy(unsigned char* image, int length, int* width, int* height, int* channels) {
-    void* autorelease_pool = OSWRAPPER_IMAGE__OBJC_AUTORELEASE_POOL_PUSH();
+    OSWRAPPER_IMAGE__OBJC_AUTORELEASE_POOL_TYPE autorelease_pool = OSWRAPPER_IMAGE__OBJC_AUTORELEASE_POOL_PUSH();
     CFDataRef image_data_cf = CFDataCreateWithBytesNoCopy(NULL, image, length, kCFAllocatorNull);
     id bitmap = oswrapper__setup_image_from_memory((id) image_data_cf, width, height, channels);
     CFRelease(image_data_cf);
@@ -292,7 +294,7 @@ OSWRAPPER_IMAGE_DEF OSWrapper_image_decoded_data* oswrapper_image_load_from_memo
 
 #ifndef OSWRAPPER_IMAGE_NO_LOAD_FROM_PATH
 OSWRAPPER_IMAGE_DEF OSWrapper_image_decoded_data* oswrapper_image_load_from_path_nocopy(const char* path, int* width, int* height, int* channels) {
-    void* autorelease_pool = OSWRAPPER_IMAGE__OBJC_AUTORELEASE_POOL_PUSH();
+    OSWRAPPER_IMAGE__OBJC_AUTORELEASE_POOL_TYPE autorelease_pool = OSWRAPPER_IMAGE__OBJC_AUTORELEASE_POOL_PUSH();
     id bitmap = oswrapper__setup_image_from_path(path, width, height, channels);
 
     if (bitmap == nil) {
@@ -314,7 +316,7 @@ OSWRAPPER_IMAGE_DEF void oswrapper_image_free(unsigned char* image_data) {
 }
 
 OSWRAPPER_IMAGE_DEF unsigned char* oswrapper_image_load_from_memory(unsigned char* image, int length, int* width, int* height, int* channels) {
-    void* autorelease_pool = OSWRAPPER_IMAGE__OBJC_AUTORELEASE_POOL_PUSH();
+    OSWRAPPER_IMAGE__OBJC_AUTORELEASE_POOL_TYPE autorelease_pool = OSWRAPPER_IMAGE__OBJC_AUTORELEASE_POOL_PUSH();
     CFDataRef image_data_cf = CFDataCreateWithBytesNoCopy(NULL, image, length, kCFAllocatorNull);
     id bitmap = oswrapper__setup_image_from_memory((id) image_data_cf, width, height, channels);
     CFRelease(image_data_cf);
@@ -332,7 +334,7 @@ OSWRAPPER_IMAGE_DEF unsigned char* oswrapper_image_load_from_memory(unsigned cha
 
 #ifndef OSWRAPPER_IMAGE_NO_LOAD_FROM_PATH
 OSWRAPPER_IMAGE_DEF unsigned char* oswrapper_image_load_from_path(const char* path, int* width, int* height, int* channels) {
-    void* autorelease_pool = OSWRAPPER_IMAGE__OBJC_AUTORELEASE_POOL_PUSH();
+    OSWRAPPER_IMAGE__OBJC_AUTORELEASE_POOL_TYPE autorelease_pool = OSWRAPPER_IMAGE__OBJC_AUTORELEASE_POOL_PUSH();
     id bitmap = oswrapper__setup_image_from_path(path, width, height, channels);
 
     if (bitmap == nil) {
