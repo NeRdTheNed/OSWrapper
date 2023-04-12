@@ -1,10 +1,15 @@
-INCLUDES = -I..
+INCLUDES = -I.. -I./testlibs
 CFLAGS += -Wall -Wextra -Os -Wl,-S -Wl,-x -Wl,-dead_strip
 LDFLAGS += -lobjc -framework CoreFoundation -framework Foundation
 LDFLAGS_IMAGE += -framework AppKit
-LDFLAGS_AUDIO += -framework AudioToolbox -framework AudioUnit -framework CoreServices -Wl,-dead_strip_dylibs
+LDFLAGS_AUDIO += -framework AudioToolbox -framework AudioUnit -framework CoreAudio -framework CoreServices -Wl,-dead_strip_dylibs
 
-all:
+.PHONY: default
+default: defaulttests ;
+
+all: defaulttests miniaudio
+
+defaulttests:
 	$(CC) $(INCLUDES) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_IMAGE) test_oswrapper_image.c -o test_oswrapper_image
 	$(CXX) $(INCLUDES) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_IMAGE) test_oswrapper_image.c -o test_oswrapper_image_cpp
 	$(CC) $(INCLUDES) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_AUDIO) test_oswrapper_audio.c -o test_oswrapper_audio
@@ -12,5 +17,9 @@ all:
 	$(CC) $(INCLUDES) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_AUDIO) demo_oswrapper_audio_mac.c -o demo_oswrapper_audio_mac
 	$(CXX) $(INCLUDES) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_AUDIO) demo_oswrapper_audio_mac.c -o demo_oswrapper_audio_mac_cpp
 
+miniaudio:
+	$(CC) $(INCLUDES) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_AUDIO) demo_oswrapper_audio_miniaudio.c -o demo_oswrapper_audio_miniaudio
+	$(CXX) $(INCLUDES) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_AUDIO) demo_oswrapper_audio_miniaudio.c -o demo_oswrapper_audio_miniaudio_cpp
+
 clean:
-	rm -f test_oswrapper_image test_oswrapper_image_cpp test_oswrapper_audio test_oswrapper_audio_cpp demo_oswrapper_audio_mac demo_oswrapper_audio_mac_cpp
+	rm -f test_oswrapper_image test_oswrapper_image_cpp test_oswrapper_audio test_oswrapper_audio_cpp demo_oswrapper_audio_mac demo_oswrapper_audio_mac_cpp demo_oswrapper_audio_miniaudio demo_oswrapper_audio_miniaudio_cpp

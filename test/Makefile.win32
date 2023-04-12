@@ -1,7 +1,7 @@
-INCLUDES = -I..
-CFLAGS = /O1 /MT /Wall
-CXXFLAGS = /TP /O1 /MT /Wall
-CFLAGS_NO_CRT = /O1 /Wall /Zl /GS-
+INCLUDES = -I.. -I.\testlibs
+CFLAGS = /O1 /MT /W4
+CXXFLAGS = /TP /O1 /MT /W4
+CFLAGS_NO_CRT = /O1 /W4 /Zl /GS-
 LDFLAGS_NO_CRT = /NODEFAULTLIB
 
 all:
@@ -11,6 +11,8 @@ all:
 	$(CC) $(INCLUDES) $(CFLAGS) $(LDFLAGS) test_oswrapper_audio.c -o test_oswrapper_audio.exe
 	$(CXX) $(INCLUDES) $(CXXFLAGS) $(LDFLAGS) test_oswrapper_audio.c -o test_oswrapper_audio_cpp.exe
 	$(CC) $(INCLUDES) $(CFLAGS_NO_CRT) $(LDFLAGS_NO_CRT) test_oswrapper_audio_no_crt.c -o test_oswrapper_audio_no_crt.exe
+	$(CC) $(INCLUDES) $(CFLAGS) $(LDFLAGS) demo_oswrapper_audio_miniaudio.c -o demo_oswrapper_audio_miniaudio.exe
+	$(CXX) $(INCLUDES) $(CXXFLAGS) $(LDFLAGS) demo_oswrapper_audio_miniaudio.c -o demo_oswrapper_audio_miniaudio_cpp.exe
 
 clean:
-	del test_oswrapper_image.obj test_oswrapper_image.exe test_oswrapper_image_cpp.obj test_oswrapper_image_cpp.exe test_oswrapper_image_no_crt.obj test_oswrapper_image_no_crt.exe test_oswrapper_audio.obj test_oswrapper_audio.exe test_oswrapper_audio_cpp.obj test_oswrapper_audio_cpp.exe test_oswrapper_audio_no_crt.obj test_oswrapper_audio_no_crt.exe
+	del test_oswrapper_image.obj test_oswrapper_image.exe test_oswrapper_image_cpp.obj test_oswrapper_image_cpp.exe test_oswrapper_image_no_crt.obj test_oswrapper_image_no_crt.exe test_oswrapper_audio.obj test_oswrapper_audio.exe test_oswrapper_audio_cpp.obj test_oswrapper_audio_cpp.exe test_oswrapper_audio_no_crt.obj test_oswrapper_audio_no_crt.exe demo_oswrapper_audio_miniaudio.obj demo_oswrapper_audio_miniaudio.exe demo_oswrapper_audio_miniaudio_cpp.obj demo_oswrapper_audio_miniaudio_cpp.exe

@@ -10,7 +10,7 @@ jobs:
         uses: actions/checkout@v3
       - name: Build examples
         working-directory: test
-        run: make -f Makefile.osx
+        run: make -f Makefile.osx all
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
@@ -22,6 +22,8 @@ jobs:
             test/test_oswrapper_audio_cpp
             test/demo_oswrapper_audio_mac
             test/demo_oswrapper_audio_mac_cpp
+            test/demo_oswrapper_audio_miniaudio
+            test/demo_oswrapper_audio_miniaudio_cpp
   build_windows:
     runs-on: windows-latest
     steps:
@@ -43,6 +45,8 @@ jobs:
             test/test_oswrapper_audio.exe
             test/test_oswrapper_audio_cpp.exe
             test/test_oswrapper_audio_no_crt.exe
+            test/demo_oswrapper_audio_miniaudio.exe
+            test/demo_oswrapper_audio_miniaudio_cpp.exe
   build_emscripten:
     runs-on: ubuntu-latest
     steps:

@@ -4,6 +4,12 @@
 # Test executables
 test/demo_oswrapper_audio_mac
 test/demo_oswrapper_audio_mac_cpp
+test/demo_oswrapper_audio_miniaudio
+test/demo_oswrapper_audio_miniaudio.exe
+test/demo_oswrapper_audio_miniaudio.obj
+test/demo_oswrapper_audio_miniaudio_cpp
+test/demo_oswrapper_audio_miniaudio_cpp.exe
+test/demo_oswrapper_audio_miniaudio_cpp.obj
 test/test_oswrapper_image
 test/test_oswrapper_image.html
 test/test_oswrapper_image.js
