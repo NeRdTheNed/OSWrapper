@@ -992,7 +992,11 @@ OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* aud
     }
 
     if (internal_data->internal_buffer_remaining < (frames_to_do * frame_size)) {
-        frames_to_do = internal_data->internal_buffer_remaining / frame_size;
+        frames_to_do = internal_data->internal_buffer_remaining * sizeof(short) / frame_size;
+    }
+
+    if (frames_to_do == 0) {
+        return 0;
     }
 
     OSWRAPPER_AUDIO_MEMCPY(buffer, internal_data->internal_buffer + internal_data->internal_buffer_pos, frames_to_do * frame_size);
