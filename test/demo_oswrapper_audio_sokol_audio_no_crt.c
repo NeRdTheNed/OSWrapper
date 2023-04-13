@@ -12,6 +12,19 @@ The latest version of this file can be found at
 https://github.com/NeRdTheNed/OSWrapper/blob/main/test/demo_oswrapper_audio_sokol_audio_no_crt.c
 */
 
+#ifdef _M_IX86
+/* Fix some linking issues with __ftol2 by using a worse version of it */
+#define FLOAT_TO_INT FloatToInt
+__forceinline int FloatToInt(float f) {
+    int i;
+    __asm fld f
+    __asm fistp i
+    return i;
+}
+#else
+#define FLOAT_TO_INT (int)
+#endif
+
 #if (defined(_WIN32) || defined(__WIN32__) || defined(WIN32)) && defined(_VC_NODEFAULTLIB)
 /* If we're not using the Windows CRT, use Win32 functions instead */
 #define OSWRAPPER_AUDIO_MALLOC(x) HeapAlloc(GetProcessHeap(), 0, x)
@@ -68,16 +81,6 @@ static int impl_memcmp(const void* ptr1, const void* ptr2, size_t amount) {
     return 0;
 }
 #define OSWRAPPER_AUDIO_MEMCMP(ptr1, ptr2, amount) impl_memcmp(ptr1, ptr2, amount)
-#ifdef _M_IX86
-/* Fix some linking issues with __ftol2 by using a worse version of it */
-#define FLOAT_TO_INT FloatToInt
-__forceinline int FloatToInt(float f) {
-    int i;
-    __asm fld f
-    __asm fistp i
-    return i;
-}
-#endif
 #endif
 #define OSWRAPPER_AUDIO_IMPLEMENTATION
 #include "oswrapper_audio.h"
@@ -152,10 +155,6 @@ so as long as the buffer is at least 1025 characters, it's "safe" to use. */
 include headers for standard C functions. */
 #include <stdio.h>
 #include <stdlib.h>
-#endif
-
-#ifndef FLOAT_TO_INT
-#define FLOAT_TO_INT (int)
 #endif
 
 /* Standard C functions and types. */
