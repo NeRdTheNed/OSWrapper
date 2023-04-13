@@ -138,7 +138,7 @@ void* memset(void* destination, int value, size_t amount) {
 #pragma comment(lib, "shell32.lib")
 /* Linking bodge */
 int _fltused = 0;
-#define AUDIO_DEMO_CONSOLE_OUTPUT(x) WriteConsole(GetStdHandle(STD_OUTPUT_HANDLE), x "\n", sizeof(x "\n"), NULL, NULL)
+#define AUDIO_DEMO_CONSOLE_OUTPUT(x) WriteConsole(GetStdHandle(STD_OUTPUT_HANDLE), x "\n", sizeof(x), NULL, NULL)
 #define AUDIO_DEMO_CALLOC(x, size) HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, (x * size))
 #endif
 #endif
