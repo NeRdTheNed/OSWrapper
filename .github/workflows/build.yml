@@ -50,6 +50,7 @@ jobs:
             test/demo_oswrapper_audio_miniaudio.exe
             test/demo_oswrapper_audio_miniaudio_cpp.exe
             test/demo_oswrapper_audio_sokol_audio.exe
+            test/demo_oswrapper_audio_sokol_audio_no_crt.exe
             test/demo_oswrapper_audio_sokol_audio_cpp.exe
   build_emscripten:
     runs-on: ubuntu-latest
