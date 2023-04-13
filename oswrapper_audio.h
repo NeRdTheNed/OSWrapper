@@ -991,7 +991,7 @@ OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* aud
         oswrapper_audio__get_new_samples(audio, frames_to_do * frame_size);
     }
 
-    if (internal_data->internal_buffer_remaining < (frames_to_do * frame_size)) {
+    if (internal_data->internal_buffer_remaining < (frames_to_do * frame_size / sizeof(short))) {
         frames_to_do = internal_data->internal_buffer_remaining * sizeof(short) / frame_size;
     }
 
