@@ -138,20 +138,8 @@ void* memset(void* destination, int value, size_t amount) {
 #pragma comment(lib, "shell32.lib")
 /* Linking bodge */
 int _fltused = 0;
-#define AUDIO_DEMO_STRLEN(x) lstrlen(x)
-#define AUDIO_DEMO_CONSOLE_OUTPUT(x) WriteConsole(GetStdHandle(STD_OUTPUT_HANDLE), x, AUDIO_DEMO_STRLEN(x), NULL, NULL)
-/* HACK: The maximum characters this function writes to a buffer is 1025,
-so as long as the buffer is at least 1025 characters, it's "safe" to use. */
-#define AUDIO_DEMO_SNPRINTF(buffer, len, format, ...) wsprintfA(buffer, format, __VA_ARGS__)
-#define AUDIO_DEMO_FILE_TYPE HANDLE
-#define AUDIO_DEMO_FILE_NUM_WRITTEN_TYPE DWORD
-#define AUDIO_DEMO_INVALID_FILE_TYPE INVALID_HANDLE_VALUE
-#define AUDIO_DEMO_FILE_OPEN_READ(path) CreateFile(path, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL)
-#define AUDIO_DEMO_FILE_OPEN_WRITE(path) CreateFile(path, GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL)
-#define AUDIO_DEMO_FILE_WRITE(num_written, mem, elem_size, elem, file) WriteFile(file, mem, (elem_size * elem), &num_written, NULL)
-#define AUDIO_DEMO_FILE_CLOSE(x) CloseHandle(x)
+#define AUDIO_DEMO_CONSOLE_OUTPUT(x) WriteConsole(GetStdHandle(STD_OUTPUT_HANDLE), x, lstrlen(x), NULL, NULL)
 #define AUDIO_DEMO_CALLOC(x, size) HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, (x * size))
-#define AUDIO_DEMO_FORMAT_SIZE_T "%d"
 #endif
 #endif
 
@@ -166,43 +154,9 @@ include headers for standard C functions. */
 #ifndef AUDIO_DEMO_CONSOLE_OUTPUT
 #define AUDIO_DEMO_CONSOLE_OUTPUT(x) fputs(x, stdout)
 #endif
-#ifndef AUDIO_DEMO_STRLEN
-#define AUDIO_DEMO_STRLEN(x) strlen(x)
-#endif
-#ifndef AUDIO_DEMO_SNPRINTF
-#define AUDIO_DEMO_SNPRINTF(buffer, len, format, ...) snprintf(buffer, len, format, __VA_ARGS__)
-#endif
-#ifndef AUDIO_DEMO_FILE_TYPE
-#define AUDIO_DEMO_FILE_TYPE FILE*
-#endif
-#ifndef AUDIO_DEMO_INVALID_FILE_TYPE
-#define AUDIO_DEMO_INVALID_FILE_TYPE NULL
-#endif
-#ifndef AUDIO_DEMO_FILE_NUM_WRITTEN_TYPE
-#define AUDIO_DEMO_FILE_NUM_WRITTEN_TYPE size_t
-#endif
-#ifndef AUDIO_DEMO_FILE_OPEN_READ
-#define AUDIO_DEMO_FILE_OPEN_READ(path) fopen(path, "rb")
-#endif
-#ifndef AUDIO_DEMO_FILE_OPEN_WRITE
-#define AUDIO_DEMO_FILE_OPEN_WRITE(path) fopen(path, "wb")
-#endif
-#ifndef AUDIO_DEMO_FILE_WRITE
-#define AUDIO_DEMO_FILE_WRITE(num_written, mem, elem_size, elem, file) num_written = fwrite(mem, elem_size, elem, file)
-#endif
-#ifndef AUDIO_DEMO_FILE_CLOSE
-#define AUDIO_DEMO_FILE_CLOSE(x) fclose(x)
-#endif
 #ifndef AUDIO_DEMO_CALLOC
 #define AUDIO_DEMO_CALLOC(x, size) calloc(x, size)
 #endif
-
-#ifndef AUDIO_DEMO_FORMAT_SIZE_T
-#define AUDIO_DEMO_FORMAT_SIZE_T "%zu"
-#endif
-
-#define AUDIO_DEMO_PRINT_BUFFER_SIZE 1025
-static char print_buffer[AUDIO_DEMO_PRINT_BUFFER_SIZE] = "";
 
 /* Windows specific code to allow compiling without the CRT */
 #ifdef _VC_NODEFAULTLIB
