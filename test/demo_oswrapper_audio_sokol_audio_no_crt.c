@@ -94,6 +94,11 @@ static int impl_memcmp(const void* ptr1, const void* ptr2, size_t amount) {
 #if (defined(_WIN32) || defined(__WIN32__) || defined(WIN32)) && defined(_VC_NODEFAULTLIB)
 #define SOKOL_MALLOC(x) OSWRAPPER_AUDIO_MALLOC(x)
 #define SOKOL_FREE(x) OSWRAPPER_AUDIO_FREE(x)
+/* MSVC seems to emit references to memcpy even if you don't call it, so we have to redefine it */
+#pragma function(memcpy)
+void* memcpy(void* destination, const void* source, size_t num) {
+    return bad_memcpy(destination, source, num);
+}
 #define SOKOL_MEMCPY(x, y, amount) bad_memcpy(x, y, amount)
 /* MSVC seems to emit references to memset even if you don't call it, so we have to redefine it */
 #pragma function(memset)
