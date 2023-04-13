@@ -37,6 +37,7 @@ Full examples of linking and using OSWrapper libraries can be found in the test 
 
 - Emscripten audio decoding
 - Haiku support
+- SerenityOS support
 
 Issues and PRs are welcome.
 
