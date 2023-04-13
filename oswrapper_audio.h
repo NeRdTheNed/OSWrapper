@@ -993,15 +993,11 @@ OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* aud
 
     if (internal_data->internal_buffer_remaining < (frames_to_do * frame_size)) {
         frames_to_do = internal_data->internal_buffer_remaining / frame_size;
-        OSWRAPPER_AUDIO_MEMCPY(buffer, internal_data->internal_buffer + internal_data->internal_buffer_pos, internal_data->internal_buffer_remaining);
-        internal_data->internal_buffer_pos += internal_data->internal_buffer_remaining;
-        internal_data->internal_buffer_remaining -= internal_data->internal_buffer_remaining;
-    } else {
-        OSWRAPPER_AUDIO_MEMCPY(buffer, internal_data->internal_buffer + internal_data->internal_buffer_pos, frames_to_do * frame_size);
-        internal_data->internal_buffer_pos += (frames_to_do * frame_size / sizeof(short));
-        internal_data->internal_buffer_remaining -= (frames_to_do * frame_size / sizeof(short));
     }
 
+    OSWRAPPER_AUDIO_MEMCPY(buffer, internal_data->internal_buffer + internal_data->internal_buffer_pos, frames_to_do * frame_size);
+    internal_data->internal_buffer_pos += (frames_to_do * frame_size / sizeof(short));
+    internal_data->internal_buffer_remaining -= (frames_to_do * frame_size / sizeof(short));
     return frames_to_do;
 }
 /* End Win32 MF implementation */
