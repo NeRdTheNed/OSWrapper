@@ -19,7 +19,7 @@ all:
 	$(CC) $(INCLUDES) $(CFLAGS) $(LDFLAGS) demo_oswrapper_audio_miniaudio.c -o demo_oswrapper_audio_miniaudio.exe
 	$(CXX) $(INCLUDES) $(CXXFLAGS) $(LDFLAGS) demo_oswrapper_audio_miniaudio.c -o demo_oswrapper_audio_miniaudio_cpp.exe
 	$(CC) $(INCLUDES) $(CFLAGS) $(LDFLAGS) demo_oswrapper_audio_sokol_audio.c -o demo_oswrapper_audio_sokol_audio.exe
-	$(CC) $(INCLUDES) $(CFLAGS_NO_CRT) demo_oswrapper_audio_sokol_audio_no_crt.c
+	$(CC) $(INCLUDES) $(CFLAGS_NO_CRT) /arch:IA32 demo_oswrapper_audio_sokol_audio_no_crt.c
 	$(LINK) /OUT:demo_oswrapper_audio_sokol_audio_no_crt.exe $(LDFLAGS_NO_CRT) uuid.lib $(AUDIO_LIBS) demo_oswrapper_audio_sokol_audio_no_crt.obj
 	$(CXX) $(INCLUDES) $(CXXFLAGS) $(LDFLAGS) demo_oswrapper_audio_sokol_audio.c -o demo_oswrapper_audio_sokol_audio_cpp.exe
 
