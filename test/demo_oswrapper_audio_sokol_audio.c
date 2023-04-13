@@ -84,7 +84,7 @@ int main(int argc, char** argv) {
     saudio_setup(&format);
     FAIL_WITH_MESSAGE_ON_COND((saudio_isvalid() == false), "Failed to initialise sokol_audio!");
     FAIL_WITH_MESSAGE_ON_COND((saudio_sample_rate() != (int) audio_spec->sample_rate), "Output sample rate was not the same as requested sample rate!");
-    FAIL_WITH_MESSAGE_ON_COND((saudio_channels() != (int) audio_spec->channel_count), "Output sample rate was not the same as requested sample rate!");
+    FAIL_WITH_MESSAGE_ON_COND((saudio_channels() != (int) audio_spec->channel_count), "Output channel count was not the same as requested channel count!");
     float float_buffer[FLOAT_BUFFER_SIZE];
     bool first_time = true;
     puts("Playing sound...");
@@ -95,7 +95,7 @@ int main(int argc, char** argv) {
 
         if (num_frames > 0) {
             FAIL_WITH_MESSAGE_ON_COND((saudio_sample_rate() != (int) audio_spec->sample_rate), "Output sample rate was not the same as requested sample rate!");
-            FAIL_WITH_MESSAGE_ON_COND((saudio_channels() != (int) audio_spec->channel_count), "Output sample rate was not the same as requested sample rate!");
+            FAIL_WITH_MESSAGE_ON_COND((saudio_channels() != (int) audio_spec->channel_count), "Output channel count was not the same as requested channel count!");
             const int num_samples = num_frames > (FLOAT_BUFFER_SIZE / saudio_channels()) ? FLOAT_BUFFER_SIZE / saudio_channels() : num_frames;
             size_t decoded_samples = oswrapper_audio_get_samples(audio_spec, (short*) &float_buffer, num_samples);
 
