@@ -987,8 +987,8 @@ OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* aud
     frame_size = (audio->bits_per_channel / 8) * audio->channel_count;
 
     /* We have to buffer decoding ourselves due to API quirks */
-    if (internal_data->internal_buffer_remaining < (frames_to_do * frame_size)) {
-        oswrapper_audio__get_new_samples(audio, frames_to_do * frame_size);
+    if (internal_data->internal_buffer_remaining < (frames_to_do * frame_size / sizeof(short))) {
+        oswrapper_audio__get_new_samples(audio, frames_to_do * frame_size / sizeof(short));
     }
 
     if (internal_data->internal_buffer_remaining < (frames_to_do * frame_size / sizeof(short))) {
