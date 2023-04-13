@@ -10,6 +10,12 @@ test/demo_oswrapper_audio_miniaudio.obj
 test/demo_oswrapper_audio_miniaudio_cpp
 test/demo_oswrapper_audio_miniaudio_cpp.exe
 test/demo_oswrapper_audio_miniaudio_cpp.obj
+test/demo_oswrapper_audio_sokol_audio
+test/demo_oswrapper_audio_sokol_audio.exe
+test/demo_oswrapper_audio_sokol_audio.obj
+test/demo_oswrapper_audio_sokol_audio_cpp
+test/demo_oswrapper_audio_sokol_audio_cpp.exe
+test/demo_oswrapper_audio_sokol_audio_cpp.obj
 test/test_oswrapper_image
 test/test_oswrapper_image.html
 test/test_oswrapper_image.js

@@ -7,7 +7,7 @@ LDFLAGS_AUDIO += -framework AudioToolbox -framework AudioUnit -framework CoreAud
 .PHONY: default
 default: defaulttests ;
 
-all: defaulttests miniaudio
+all: defaulttests miniaudio sokol_audio
 
 defaulttests:
 	$(CC) $(INCLUDES) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_IMAGE) test_oswrapper_image.c -o test_oswrapper_image
@@ -21,5 +21,13 @@ miniaudio:
 	$(CC) $(INCLUDES) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_AUDIO) demo_oswrapper_audio_miniaudio.c -o demo_oswrapper_audio_miniaudio
 	$(CXX) $(INCLUDES) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_AUDIO) demo_oswrapper_audio_miniaudio.c -o demo_oswrapper_audio_miniaudio_cpp
 
+sokol_audio:
+	$(CC) $(INCLUDES) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_AUDIO) demo_oswrapper_audio_sokol_audio.c -o demo_oswrapper_audio_sokol_audio
+	$(CXX) $(INCLUDES) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_AUDIO) demo_oswrapper_audio_sokol_audio.c -o demo_oswrapper_audio_sokol_audio_cpp
+
 clean:
-	rm -f test_oswrapper_image test_oswrapper_image_cpp test_oswrapper_audio test_oswrapper_audio_cpp demo_oswrapper_audio_mac demo_oswrapper_audio_mac_cpp demo_oswrapper_audio_miniaudio demo_oswrapper_audio_miniaudio_cpp
+	rm -f test_oswrapper_image test_oswrapper_image_cpp
+	rm -f test_oswrapper_audio test_oswrapper_audio_cpp
+	rm -f demo_oswrapper_audio_mac demo_oswrapper_audio_mac_cpp
+	rm -f demo_oswrapper_audio_miniaudio demo_oswrapper_audio_miniaudio_cpp
+	rm -f demo_oswrapper_audio_sokol_audio demo_oswrapper_audio_sokol_audio_cpp
