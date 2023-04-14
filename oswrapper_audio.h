@@ -827,7 +827,7 @@ OSWRAPPER_AUDIO_DEF OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio_get_pos(OSWrappe
       oswrapper_audio__internal_data_win* internal_data = (oswrapper_audio__internal_data_win*) audio->internal_data;
 
       if (internal_data->no_reader_error == OSWRAPPER_AUDIO_RESULT_FAILURE) {
-          /* IMFSourceReader methods can no longer be called * /
+          / * IMFSourceReader methods can no longer be called * /
           return OSWRAPPER_AUDIO_RESULT_FAILURE;
       }
       */
