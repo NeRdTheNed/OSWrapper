@@ -220,7 +220,7 @@ OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* aud
 
 #ifdef OSWRAPPER_AUDIO_USE_AUDIOTOOLBOX_IMPL
 /* Start macOS AudioToolbox implementation */
-#include <AudioToolbox/AudioToolbox.h>
+#include <AudioToolbox/ExtendedAudioFile.h>
 
 #include <AvailabilityMacros.h>
 
