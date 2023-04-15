@@ -220,6 +220,7 @@ OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* aud
 
 #ifdef OSWRAPPER_AUDIO_USE_AUDIOTOOLBOX_IMPL
 /* Start macOS AudioToolbox implementation */
+#include <AudioToolbox/AudioConverter.h>
 #include <AudioToolbox/ExtendedAudioFile.h>
 
 #include <AvailabilityMacros.h>
@@ -363,7 +364,24 @@ static OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio__load_from_open(AudioFileID a
             error = ExtAudioFileSetProperty(audio_file_ext, kExtAudioFileProperty_ClientDataFormat, sizeof(AudioStreamBasicDescription), &output_format);
 
             if (!error) {
-                oswrapper_audio__internal_data_mac* internal_data = (oswrapper_audio__internal_data_mac*) OSWRAPPER_AUDIO_MALLOC(sizeof(oswrapper_audio__internal_data_mac));
+                oswrapper_audio__internal_data_mac* internal_data = NULL;
+
+                if (input_file_format.mChannelsPerFrame == 1 && output_format.mChannelsPerFrame == 2) {
+                    /* Try to set up appropriate channel mappings */
+                    AudioConverterRef converter = NULL;
+                    property_size = sizeof(AudioConverterRef);
+
+                    if (!ExtAudioFileGetProperty(audio_file_ext, kExtAudioFileProperty_AudioConverter, &property_size, &converter) && converter != NULL) {
+                        /* Output from input mono channel to both stereo channels */
+                        SInt32 channel_map[2] = {0, 0};
+                        /* Failure is mostly harmless */
+                        AudioConverterSetProperty(converter, kAudioConverterChannelMap, sizeof(channel_map), channel_map);
+                        CFArrayRef converter_config = NULL;
+                        ExtAudioFileSetProperty(audio_file_ext, kExtAudioFileProperty_ConverterConfig, sizeof(CFArrayRef), &converter_config);
+                    }
+                }
+
+                internal_data = (oswrapper_audio__internal_data_mac*) OSWRAPPER_AUDIO_MALLOC(sizeof(oswrapper_audio__internal_data_mac));
 
                 if (internal_data != NULL) {
                     audio->sample_rate = output_format.mSampleRate;
