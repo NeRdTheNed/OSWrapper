@@ -355,6 +355,11 @@ static OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio__load_from_open(AudioFileID a
                 output_format.mChannelsPerFrame = 2;
             }
 
+            /* macOS doesn't mix channels for us */
+            if (input_file_format.mChannelsPerFrame > output_format.mChannelsPerFrame) {
+                output_format.mChannelsPerFrame = input_file_format.mChannelsPerFrame;
+            }
+
             /* kAudioFormatLinearPCM doesn't use packets */
             output_format.mFramesPerPacket = 1;
             /* Bytes per channel * channels per frame */
