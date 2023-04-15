@@ -235,6 +235,11 @@ typedef struct oswrapper_audio__callback_data_mac {
 } oswrapper_audio__callback_data_mac;
 
 typedef struct oswrapper_audio__internal_data_mac {
+#ifdef OSWRAPPER_AUDIO__MAC_MIX
+    unsigned int real_channel_size;
+    short* internal_buffer;
+    size_t internal_buffer_size;
+#endif
     AudioFileID audio_file;
     ExtAudioFileRef audio_file_ext;
     oswrapper_audio__callback_data_mac* callback_data;
@@ -289,6 +294,13 @@ OSWRAPPER_AUDIO_DEF OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio_free_context(OSW
                 OSWRAPPER_AUDIO_FREE(internal_data->callback_data);
             }
 
+#ifdef OSWRAPPER_AUDIO__MAC_MIX
+
+            if (internal_data->internal_buffer != NULL) {
+                OSWRAPPER_AUDIO_FREE(internal_data->internal_buffer);
+            }
+
+#endif
             OSWRAPPER_AUDIO_FREE(audio->internal_data);
             return OSWRAPPER_AUDIO_RESULT_SUCCESS;
         }
@@ -308,6 +320,7 @@ static OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio__load_from_open(AudioFileID a
         error = ExtAudioFileGetProperty(audio_file_ext, kExtAudioFileProperty_FileDataFormat, &property_size, &input_file_format);
 
         if (!error) {
+            unsigned int output_channel_size;
             AudioStreamBasicDescription output_format;
             output_format.mFormatID = kAudioFormatLinearPCM;
 
@@ -355,9 +368,19 @@ static OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio__load_from_open(AudioFileID a
                 output_format.mChannelsPerFrame = 2;
             }
 
+            output_channel_size = output_format.mChannelsPerFrame;
+#ifdef OSWRAPPER_AUDIO__MAC_MIX
+
+            if (output_format.mChannelsPerFrame == 1) {
+                output_format.mChannelsPerFrame = input_file_format.mChannelsPerFrame;
+            }
+
+#endif
+
             /* macOS doesn't mix channels for us */
             if (input_file_format.mChannelsPerFrame > output_format.mChannelsPerFrame) {
                 output_format.mChannelsPerFrame = input_file_format.mChannelsPerFrame;
+                output_channel_size = output_format.mChannelsPerFrame;
             }
 
             /* kAudioFormatLinearPCM doesn't use packets */
@@ -391,12 +414,17 @@ static OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio__load_from_open(AudioFileID a
                 if (internal_data != NULL) {
                     audio->sample_rate = output_format.mSampleRate;
                     audio->bits_per_channel = output_format.mBitsPerChannel;
-                    audio->channel_count = output_format.mChannelsPerFrame;
+                    audio->channel_count = output_channel_size;
                     audio->audio_type = (output_format.mFormatFlags & kLinearPCMFormatFlagIsFloat) ? OSWRAPPER_AUDIO_FORMAT_PCM_FLOAT : OSWRAPPER_AUDIO_FORMAT_PCM_INTEGER;
                     audio->internal_data = (void*) internal_data;
                     internal_data->audio_file = audio_file;
                     internal_data->audio_file_ext = audio_file_ext;
                     internal_data->callback_data = callback_data;
+#ifdef OSWRAPPER_AUDIO__MAC_MIX
+                    internal_data->real_channel_size = output_format.mChannelsPerFrame;
+                    internal_data->internal_buffer = NULL;
+                    internal_data->internal_buffer_size = 0;
+#endif
                     return OSWRAPPER_AUDIO_RESULT_SUCCESS;
                 }
             }
@@ -482,6 +510,71 @@ OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* aud
     UInt32 frames;
     oswrapper_audio__internal_data_mac* internal_data = (oswrapper_audio__internal_data_mac*) audio->internal_data;
     frames = frames_to_do;
+#ifdef OSWRAPPER_AUDIO__MAC_MIX
+
+    if (audio->channel_count == 1 && internal_data->real_channel_size > audio->channel_count) {
+        size_t buffer_frame_size = ((audio->bits_per_channel / 8) * internal_data->real_channel_size);
+        size_t new_target_size = frames_to_do * buffer_frame_size;
+
+        if (new_target_size > internal_data->internal_buffer_size) {
+            /* Try to allocate enough memory to buffer the samples */
+            short* realloc_buffer = (short*) OSWRAPPER_AUDIO_MALLOC(new_target_size * sizeof(short));
+
+            if (realloc_buffer != NULL) {
+                /* Free old buffer */
+                OSWRAPPER_AUDIO_FREE(internal_data->internal_buffer);
+                /* Replace old buffer with new buffer */
+                internal_data->internal_buffer = realloc_buffer;
+                internal_data->internal_buffer_size = new_target_size;
+            }
+        }
+
+        if (internal_data->internal_buffer != NULL && internal_data->internal_buffer_size >= new_target_size) {
+            buffer_list.mNumberBuffers = 1;
+            buffer_list.mBuffers[0].mNumberChannels = internal_data->real_channel_size;
+            buffer_list.mBuffers[0].mDataByteSize = new_target_size;
+            buffer_list.mBuffers[0].mData = internal_data->internal_buffer;
+            ExtAudioFileRead(internal_data->audio_file_ext, &frames, &buffer_list);
+
+            /* Mix channels to mono */
+            if (audio->audio_type == OSWRAPPER_AUDIO_FORMAT_PCM_INTEGER && audio->bits_per_channel == 16) {
+                size_t i;
+
+                for (i = 0; i < frames; i++) {
+                    int mixed;
+                    size_t j;
+                    size_t offset = i * internal_data->real_channel_size;
+                    mixed = internal_data->internal_buffer[offset];
+
+                    for (j = 1; j < internal_data->real_channel_size; j++) {
+                        /* TODO Better mixing */
+                        mixed = (mixed + internal_data->internal_buffer[offset + j]) / 2;
+                    }
+
+                    buffer[i] = mixed;
+                }
+            } else {
+                /* Unknown format, try to copy the first channel */
+                size_t i;
+                size_t j;
+                unsigned char* buffcast;
+                unsigned char* internal_buffcast;
+                size_t stride = audio->bits_per_channel / 8;
+                buffcast = (unsigned char*) buffer;
+                internal_buffcast = (unsigned char*) internal_data->internal_buffer;
+
+                for (i = 0; i < frames * sizeof(internal_data->internal_buffer[0]); i += buffer_frame_size) {
+                    for (j = 0; j < stride; j++) {
+                        buffcast[i + j] = internal_buffcast[(i * stride) + j];
+                    }
+                }
+            }
+
+            return frames;
+        }
+    }
+
+#endif
     buffer_list.mNumberBuffers = 1;
     buffer_list.mBuffers[0].mNumberChannels = audio->channel_count;
     buffer_list.mBuffers[0].mDataByteSize = frames_to_do * ((audio->bits_per_channel / 8) * audio->channel_count);
