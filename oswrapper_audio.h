@@ -541,17 +541,17 @@ OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* aud
                 size_t i;
 
                 for (i = 0; i < frames; i++) {
-                    int mixed;
+                    float mixed;
                     size_t j;
                     size_t offset = i * internal_data->real_channel_size;
-                    mixed = internal_data->internal_buffer[offset];
+                    mixed = (float) internal_data->internal_buffer[offset] / (float) internal_data->real_channel_size;
 
                     for (j = 1; j < internal_data->real_channel_size; j++) {
                         /* TODO Better mixing */
-                        mixed = (mixed + internal_data->internal_buffer[offset + j]) / 2;
+                        mixed += (float) internal_data->internal_buffer[offset + j] / (float) internal_data->real_channel_size;
                     }
 
-                    buffer[i] = mixed;
+                    buffer[i] = (short) mixed;
                 }
             } else {
                 /* Unknown format, try to copy the first channel */
