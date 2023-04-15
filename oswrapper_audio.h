@@ -371,7 +371,7 @@ static OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio__load_from_open(AudioFileID a
             output_channel_size = output_format.mChannelsPerFrame;
 #ifdef OSWRAPPER_AUDIO__MAC_MIX
 
-            if (output_format.mChannelsPerFrame == 1) {
+            if (output_format.mChannelsPerFrame == 1 && ((output_format.mFormatID & kAudioFormatLinearPCM) && output_format.mBitsPerChannel == 16)) {
                 output_format.mChannelsPerFrame = input_file_format.mChannelsPerFrame;
             }
 
