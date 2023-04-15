@@ -55,6 +55,11 @@ static OSStatus Callback(void *inRefCon, AudioUnitRenderActionFlags *ioActionFla
     (void)ioActionFlags;
     (void)inTimeStamp;
     (void)inBusNumber;
+
+    if (audio_spec == NULL) {
+        return 0;
+    }
+    
     /* Because the stream is interleaved, there is only one buffer */
     amount_done = oswrapper_audio_get_samples(audio_spec, (short*)ioData->mBuffers[0].mData, inNumberFrames);
 
