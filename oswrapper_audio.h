@@ -564,6 +564,18 @@ static void oswrapper_audio__mix_float64(double* input, double* output, size_t f
         output[i] = mixed;
     }
 }
+
+static void oswrapper_audio__copy_first_channel(unsigned char* input, unsigned char* output, size_t frames, size_t frame_size, size_t stride) {
+    size_t i;
+
+    for (i = 0; i < frames * frame_size; i += frame_size) {
+        size_t j;
+
+        for (j = 0; j < frame_size; j++) {
+            output[i + j] = input[(i * stride) + j];
+        }
+    }
+}
 #endif
 
 OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* audio, short* buffer, size_t frames_to_do) {
@@ -606,19 +618,7 @@ OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* aud
                 oswrapper_audio__mix_float64((double*) internal_data->internal_buffer, (double*) buffer, frames, internal_data->real_channel_size);
             } else {
                 /* Unknown format, try to copy the first channel */
-                size_t i;
-                size_t j;
-                unsigned char* buffcast;
-                unsigned char* internal_buffcast;
-                size_t stride = audio->bits_per_channel / 8;
-                buffcast = (unsigned char*) buffer;
-                internal_buffcast = (unsigned char*) internal_data->internal_buffer;
-
-                for (i = 0; i < frames * sizeof(internal_data->internal_buffer[0]); i += buffer_frame_size) {
-                    for (j = 0; j < stride; j++) {
-                        buffcast[i + j] = internal_buffcast[(i * stride) + j];
-                    }
-                }
+                oswrapper_audio__copy_first_channel((unsigned char*) internal_data->internal_buffer, (unsigned char*) buffer, frames, audio->bits_per_channel / 8, internal_data->real_channel_size);
             }
 
             return frames;
