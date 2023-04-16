@@ -371,8 +371,13 @@ static OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio__load_from_open(AudioFileID a
             output_channel_size = output_format.mChannelsPerFrame;
 #ifdef OSWRAPPER_AUDIO__MAC_MIX
 
-            if (output_format.mChannelsPerFrame == 1 && ((output_format.mFormatID & kAudioFormatLinearPCM) && output_format.mBitsPerChannel == 16)) {
-                output_format.mChannelsPerFrame = input_file_format.mChannelsPerFrame;
+            if ((output_format.mChannelsPerFrame == 1) && (output_format.mFormatID & kAudioFormatLinearPCM)) {
+                /* Mix known formats to mono */
+                if ((output_format.mFormatFlags & kLinearPCMFormatFlagIsSignedInteger) && (output_format.mBitsPerChannel == 16)) {
+                    output_format.mChannelsPerFrame = input_file_format.mChannelsPerFrame;
+                } else if ((output_format.mFormatFlags & kLinearPCMFormatFlagIsFloat) && (output_format.mBitsPerChannel == 32)) {
+                    output_format.mChannelsPerFrame = input_file_format.mChannelsPerFrame;
+                }
             }
 
 #endif
@@ -552,6 +557,24 @@ OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* aud
                     }
 
                     buffer[i] = (short) mixed;
+                }
+            } else if (audio->audio_type == OSWRAPPER_AUDIO_FORMAT_PCM_FLOAT && audio->bits_per_channel == 32) {
+                float* internal_cast = (float*) internal_data->internal_buffer;
+                float* buff_cast = (float*) buffer;
+                size_t i;
+
+                for (i = 0; i < frames; i++) {
+                    float mixed;
+                    size_t j;
+                    size_t offset = i * internal_data->real_channel_size;
+                    mixed = internal_cast[offset] / (float) internal_data->real_channel_size;
+
+                    for (j = 1; j < internal_data->real_channel_size; j++) {
+                        /* TODO Better mixing */
+                        mixed += internal_cast[offset + j] / (float) internal_data->real_channel_size;
+                    }
+
+                    buff_cast[i] = mixed;
                 }
             } else {
                 /* Unknown format, try to copy the first channel */
