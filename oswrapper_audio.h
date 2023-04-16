@@ -510,6 +510,62 @@ OSWRAPPER_AUDIO_DEF void oswrapper_audio_rewind(OSWrapper_audio_spec* audio) {
     ExtAudioFileSeek(internal_data->audio_file_ext, 0);
 }
 
+#ifdef OSWRAPPER_AUDIO__MAC_MIX
+static void oswrapper_audio__mix_uint16(short* input, short* output, size_t frames, unsigned int channels) {
+    size_t i;
+
+    for (i = 0; i < frames; i++) {
+        float mixed;
+        size_t j;
+        size_t offset = i * channels;
+        mixed = (float) input[offset] / (float) channels;
+
+        for (j = 1; j < channels; j++) {
+            /* TODO Better mixing */
+            mixed += (float) input[offset + j] / (float) channels;
+        }
+
+        output[i] = (short) mixed;
+    }
+}
+
+static void oswrapper_audio__mix_float32(float* input, float* output, size_t frames, unsigned int channels) {
+    size_t i;
+
+    for (i = 0; i < frames; i++) {
+        float mixed;
+        size_t j;
+        size_t offset = i * channels;
+        mixed = input[offset] / (float) channels;
+
+        for (j = 1; j < channels; j++) {
+            /* TODO Better mixing */
+            mixed += input[offset + j] / (float) channels;
+        }
+
+        output[i] = mixed;
+    }
+}
+
+static void oswrapper_audio__mix_float64(double* input, double* output, size_t frames, unsigned int channels) {
+    size_t i;
+
+    for (i = 0; i < frames; i++) {
+        double mixed;
+        size_t j;
+        size_t offset = i * channels;
+        mixed = input[offset] / (double) channels;
+
+        for (j = 1; j < channels; j++) {
+            /* TODO Better mixing */
+            mixed += input[offset + j] / (double) channels;
+        }
+
+        output[i] = mixed;
+    }
+}
+#endif
+
 OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* audio, short* buffer, size_t frames_to_do) {
     AudioBufferList buffer_list;
     UInt32 frames;
@@ -543,57 +599,11 @@ OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* aud
 
             /* Mix channels to mono */
             if (audio->audio_type == OSWRAPPER_AUDIO_FORMAT_PCM_INTEGER && audio->bits_per_channel == 16) {
-                size_t i;
-
-                for (i = 0; i < frames; i++) {
-                    float mixed;
-                    size_t j;
-                    size_t offset = i * internal_data->real_channel_size;
-                    mixed = (float) internal_data->internal_buffer[offset] / (float) internal_data->real_channel_size;
-
-                    for (j = 1; j < internal_data->real_channel_size; j++) {
-                        /* TODO Better mixing */
-                        mixed += (float) internal_data->internal_buffer[offset + j] / (float) internal_data->real_channel_size;
-                    }
-
-                    buffer[i] = (short) mixed;
-                }
+                oswrapper_audio__mix_uint16(internal_data->internal_buffer, buffer, frames, internal_data->real_channel_size);
             } else if (audio->audio_type == OSWRAPPER_AUDIO_FORMAT_PCM_FLOAT && audio->bits_per_channel == 32) {
-                float* internal_cast = (float*) internal_data->internal_buffer;
-                float* buff_cast = (float*) buffer;
-                size_t i;
-
-                for (i = 0; i < frames; i++) {
-                    float mixed;
-                    size_t j;
-                    size_t offset = i * internal_data->real_channel_size;
-                    mixed = internal_cast[offset] / (float) internal_data->real_channel_size;
-
-                    for (j = 1; j < internal_data->real_channel_size; j++) {
-                        /* TODO Better mixing */
-                        mixed += internal_cast[offset + j] / (float) internal_data->real_channel_size;
-                    }
-
-                    buff_cast[i] = mixed;
-                }
+                oswrapper_audio__mix_float32((float*) internal_data->internal_buffer, (float*) buffer, frames, internal_data->real_channel_size);
             } else if (audio->audio_type == OSWRAPPER_AUDIO_FORMAT_PCM_FLOAT && audio->bits_per_channel == 64) {
-                double* internal_cast = (double*) internal_data->internal_buffer;
-                double* buff_cast = (double*) buffer;
-                size_t i;
-
-                for (i = 0; i < frames; i++) {
-                    double mixed;
-                    size_t j;
-                    size_t offset = i * internal_data->real_channel_size;
-                    mixed = internal_cast[offset] / (double) internal_data->real_channel_size;
-
-                    for (j = 1; j < internal_data->real_channel_size; j++) {
-                        /* TODO Better mixing */
-                        mixed += internal_cast[offset + j] / (double) internal_data->real_channel_size;
-                    }
-
-                    buff_cast[i] = mixed;
-                }
+                oswrapper_audio__mix_float64((double*) internal_data->internal_buffer, (double*) buffer, frames, internal_data->real_channel_size);
             } else {
                 /* Unknown format, try to copy the first channel */
                 size_t i;
