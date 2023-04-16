@@ -375,7 +375,7 @@ static OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio__load_from_open(AudioFileID a
                 /* Mix known formats to mono */
                 if ((output_format.mFormatFlags & kLinearPCMFormatFlagIsSignedInteger) && (output_format.mBitsPerChannel == 16)) {
                     output_format.mChannelsPerFrame = input_file_format.mChannelsPerFrame;
-                } else if ((output_format.mFormatFlags & kLinearPCMFormatFlagIsFloat) && (output_format.mBitsPerChannel == 32)) {
+                } else if ((output_format.mFormatFlags & kLinearPCMFormatFlagIsFloat) && (output_format.mBitsPerChannel == 32 || output_format.mBitsPerChannel == 64)) {
                     output_format.mChannelsPerFrame = input_file_format.mChannelsPerFrame;
                 }
             }
@@ -572,6 +572,24 @@ OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* aud
                     for (j = 1; j < internal_data->real_channel_size; j++) {
                         /* TODO Better mixing */
                         mixed += internal_cast[offset + j] / (float) internal_data->real_channel_size;
+                    }
+
+                    buff_cast[i] = mixed;
+                }
+            } else if (audio->audio_type == OSWRAPPER_AUDIO_FORMAT_PCM_FLOAT && audio->bits_per_channel == 64) {
+                double* internal_cast = (double*) internal_data->internal_buffer;
+                double* buff_cast = (double*) buffer;
+                size_t i;
+
+                for (i = 0; i < frames; i++) {
+                    double mixed;
+                    size_t j;
+                    size_t offset = i * internal_data->real_channel_size;
+                    mixed = internal_cast[offset] / (double) internal_data->real_channel_size;
+
+                    for (j = 1; j < internal_data->real_channel_size; j++) {
+                        /* TODO Better mixing */
+                        mixed += internal_cast[offset + j] / (double) internal_data->real_channel_size;
                     }
 
                     buff_cast[i] = mixed;
