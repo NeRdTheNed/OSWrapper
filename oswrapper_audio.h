@@ -945,7 +945,7 @@ OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* aud
                                 size_t remaining_sample_data_size = new_target_size - frames_to_do;
                                 /* Prevent copying more data to the output buffer than requested */
                                 new_target_frames -= remaining_sample_data_size;
-                                current_length = new_target_frames * sizeof(short);
+                                current_length = (DWORD) new_target_frames * sizeof(short);
                                 /* Calculate how much data we can copy to the internal buffer */
                                 copied_sample_data_size = remaining_sample_data_size;
 
