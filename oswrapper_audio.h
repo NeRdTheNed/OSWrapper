@@ -904,19 +904,22 @@ OSWRAPPER_AUDIO_DEF void oswrapper_audio_rewind(OSWrapper_audio_spec* audio) {
 }
 
 /* TODO This code isn't optimised. If you're brave enough, you can probably speed it up and save memory. */
-static void oswrapper_audio__get_new_samples(OSWrapper_audio_spec* audio, size_t frames_to_do) {
+static size_t oswrapper_audio__get_new_samples(OSWrapper_audio_spec* audio, short* buffer, size_t frames_to_do) {
+    size_t frames_done;
     oswrapper_audio__internal_data_win* internal_data = (oswrapper_audio__internal_data_win*) audio->internal_data;
+    frames_done = 0;
 
-    /* Move any remaining samples to the start of the buffer, if they're not at the start of the buffer */
-    if (internal_data->internal_buffer_remaining > 0 && (internal_data->internal_buffer_pos != 0)) {
-        OSWRAPPER_AUDIO_MEMMOVE(internal_data->internal_buffer, internal_data->internal_buffer + internal_data->internal_buffer_pos, internal_data->internal_buffer_remaining * (sizeof internal_data->internal_buffer[0]));
+    /* Copy any remaining samples from the buffer */
+    if (internal_data->internal_buffer_remaining > 0) {
+        size_t copied_sample_data_size = internal_data->internal_buffer_remaining < frames_to_do ? internal_data->internal_buffer_remaining : frames_to_do;
+        OSWRAPPER_AUDIO_MEMCPY(buffer, internal_data->internal_buffer + internal_data->internal_buffer_pos, copied_sample_data_size * (sizeof internal_data->internal_buffer[0]));
+        internal_data->internal_buffer_remaining -= copied_sample_data_size;
+        internal_data->internal_buffer_pos += copied_sample_data_size;
+        frames_done += copied_sample_data_size;
     }
 
-    /* Reset the buffer position to 0 */
-    internal_data->internal_buffer_pos = 0;
-
     /* Get new samples */
-    while (frames_to_do > internal_data->internal_buffer_remaining) {
+    while (frames_to_do > frames_done) {
         size_t new_target_frames = 0;
 
         /* Check if IMFSourceReader methods can still be called */
@@ -946,30 +949,36 @@ static void oswrapper_audio__get_new_samples(OSWrapper_audio_spec* audio, size_t
                         if (SUCCEEDED(result)) {
                             size_t new_target_size;
                             new_target_frames = current_length / sizeof(short);
-                            new_target_size = internal_data->internal_buffer_remaining + new_target_frames;
+                            new_target_size = frames_done + new_target_frames;
 
-                            if (new_target_size > internal_data->internal_buffer_size) {
-                                /* Try to allocate enough memory to store the sample + the buffered samples */
-                                short* realloc_buffer = (short*) OSWRAPPER_AUDIO_MALLOC(new_target_size * sizeof(short));
+                            if (new_target_size > frames_to_do) {
+                                size_t remaining_sample_data_size = new_target_size - frames_to_do;
 
-                                if (realloc_buffer == NULL) {
-                                    /* Couldn't allocate any more memory, just work with what we have */
-                                    new_target_frames = internal_data->internal_buffer_size - internal_data->internal_buffer_remaining;
-                                    current_length = (DWORD) (new_target_frames / sizeof(short));
-                                    frames_to_do = internal_data->internal_buffer_remaining + new_target_frames;
-                                } else {
-                                    /* Copy contents of the old buffer to the new buffer */
-                                    OSWRAPPER_AUDIO_MEMCPY(realloc_buffer, internal_data->internal_buffer, internal_data->internal_buffer_size);
-                                    /* Free old buffer */
-                                    OSWRAPPER_AUDIO_FREE(internal_data->internal_buffer);
-                                    /* Replace old buffer with new buffer */
-                                    internal_data->internal_buffer = realloc_buffer;
-                                    internal_data->internal_buffer_size = new_target_size;
+                                if (internal_data->internal_buffer_size < remaining_sample_data_size) {
+                                    /* Try to allocate enough memory to store remaining samples */
+                                    short* realloc_buffer = (short*) OSWRAPPER_AUDIO_MALLOC(remaining_sample_data_size * sizeof(short));
+
+                                    if (realloc_buffer == NULL) {
+                                        /* Couldn't allocate any more memory, just work with what we have */
+                                    } else {
+                                        /* Free old buffer */
+                                        OSWRAPPER_AUDIO_FREE(internal_data->internal_buffer);
+                                        /* Replace old buffer with new buffer */
+                                        internal_data->internal_buffer = realloc_buffer;
+                                        internal_data->internal_buffer_size = remaining_sample_data_size;
+                                    }
                                 }
+
+                                size_t copied_sample_data_size = internal_data->internal_buffer_size < remaining_sample_data_size ? internal_data->internal_buffer_size : remaining_sample_data_size;
+                                internal_data->internal_buffer_remaining = copied_sample_data_size;
+                                internal_data->internal_buffer_pos = 0;
+                                new_target_frames -= remaining_sample_data_size;
+                                current_length = new_target_frames * sizeof(short);
+                                OSWRAPPER_AUDIO_MEMCPY((BYTE*)(internal_data->internal_buffer), sample_audio_data + current_length, copied_sample_data_size * sizeof(short));
                             }
 
                             if (new_target_frames > 0) {
-                                OSWRAPPER_AUDIO_MEMCPY((BYTE*)(internal_data->internal_buffer + internal_data->internal_buffer_remaining), sample_audio_data, current_length);
+                                OSWRAPPER_AUDIO_MEMCPY((BYTE*)(buffer + frames_done), sample_audio_data, current_length);
                             }
 
                             result = IMFMediaBuffer_Unlock(media_buffer);
@@ -992,35 +1001,19 @@ static void oswrapper_audio__get_new_samples(OSWrapper_audio_spec* audio, size_t
 
         if (new_target_frames == 0) {
             /* Break the loop */
-            frames_to_do = internal_data->internal_buffer_remaining;
+            break;
         } else {
-            internal_data->internal_buffer_remaining += new_target_frames;
+            frames_done += new_target_frames;
         }
     }
+
+    return frames_done;
 }
 
 OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* audio, short* buffer, size_t frames_to_do) {
     size_t frame_size;
-    oswrapper_audio__internal_data_win* internal_data = (oswrapper_audio__internal_data_win*) audio->internal_data;
     frame_size = (audio->bits_per_channel / 8) * audio->channel_count;
-
-    /* We have to buffer decoding ourselves due to API quirks */
-    if (internal_data->internal_buffer_remaining < (frames_to_do * frame_size / sizeof(short))) {
-        oswrapper_audio__get_new_samples(audio, frames_to_do * frame_size / sizeof(short));
-    }
-
-    if (internal_data->internal_buffer_remaining < (frames_to_do * frame_size / sizeof(short))) {
-        frames_to_do = internal_data->internal_buffer_remaining * sizeof(short) / frame_size;
-    }
-
-    if (frames_to_do == 0) {
-        return 0;
-    }
-
-    OSWRAPPER_AUDIO_MEMCPY(buffer, internal_data->internal_buffer + internal_data->internal_buffer_pos, frames_to_do * frame_size);
-    internal_data->internal_buffer_pos += (frames_to_do * frame_size / sizeof(short));
-    internal_data->internal_buffer_remaining -= (frames_to_do * frame_size / sizeof(short));
-    return frames_to_do;
+    return oswrapper_audio__get_new_samples(audio, buffer, frames_to_do * frame_size / sizeof(short)) * sizeof(short) / frame_size;
 }
 /* End Win32 MF implementation */
 #else
