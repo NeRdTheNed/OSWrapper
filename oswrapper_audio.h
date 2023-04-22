@@ -196,9 +196,6 @@ OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* aud
 #ifndef OSWRAPPER_AUDIO_MEMCPY
 #define OSWRAPPER_AUDIO_MEMCPY(x, y, amount) memcpy(x, y, amount)
 #endif /* OSWRAPPER_AUDIO_MEMCPY */
-#ifndef OSWRAPPER_AUDIO_MEMMOVE
-#define OSWRAPPER_AUDIO_MEMMOVE(x, y, amount) memmove(x, y, amount)
-#endif /* OSWRAPPER_AUDIO_MEMMOVE */
 #ifndef OSWRAPPER_AUDIO_MEMCMP
 #define OSWRAPPER_AUDIO_MEMCMP(ptr1, ptr2, amount) memcmp(ptr1, ptr2, amount)
 #endif /* OSWRAPPER_AUDIO_MEMCMP */

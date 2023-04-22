@@ -30,8 +30,7 @@ __forceinline int FloatToInt(float f) {
 #define OSWRAPPER_AUDIO_MALLOC(x) HeapAlloc(GetProcessHeap(), 0, x)
 #define OSWRAPPER_AUDIO_FREE(x) HeapFree(GetProcessHeap(), 0, x)
 /* These are just macros for the C functions, so we have to implement our own versions :/
-#define OSWRAPPER_AUDIO_MEMCPY(x, y, amount) CopyMemory(x, y, amount)
-#define OSWRAPPER_AUDIO_MEMMOVE(x, y, amount) MoveMemory(x, y, amount)*/
+#define OSWRAPPER_AUDIO_MEMCPY(x, y, amount) CopyMemory(x, y, amount)*/
 #include <stddef.h>
 
 /* Forward memcpy. Not optimised. */
@@ -46,28 +45,7 @@ static void* bad_memcpy(void* destination, const void* source, size_t num) {
 
     return destination;
 }
-
-/* Not optimised. */
-static void* bad_memmove(void* destination, const void* source, size_t num) {
-    unsigned char* dest_cast = (unsigned char*) destination;
-    unsigned char* source_cast = (unsigned char*) source;
-
-    if (dest_cast < source_cast) {
-        /* Forward copy */
-        return bad_memcpy(destination, source, num);
-    } else {
-        /* Backward copy */
-        size_t i = num;
-
-        while (i--) {
-            dest_cast[i] = source_cast[i];
-        }
-
-        return destination;
-    }
-}
 #define OSWRAPPER_AUDIO_MEMCPY(x, y, amount) bad_memcpy(x, y, amount)
-#define OSWRAPPER_AUDIO_MEMMOVE(x, y, amount) bad_memmove(x, y, amount)
 static int impl_memcmp(const void* ptr1, const void* ptr2, size_t amount) {
     const unsigned char* cast_1 = (const unsigned char*) ptr1;
     const unsigned char* cast_2 = (const unsigned char*) ptr2;
