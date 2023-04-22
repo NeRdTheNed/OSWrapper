@@ -888,9 +888,12 @@ OSWRAPPER_AUDIO_DEF void oswrapper_audio_rewind(OSWrapper_audio_spec* audio) {
     internal_data->internal_buffer_pos = 0;
 }
 
-static size_t oswrapper_audio__get_new_samples(OSWrapper_audio_spec* audio, short* buffer, size_t frames_to_do) {
+OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* audio, short* buffer, size_t frames_to_do) {
+    size_t frame_size;
     size_t frames_done;
     oswrapper_audio__internal_data_win* internal_data = (oswrapper_audio__internal_data_win*) audio->internal_data;
+    frame_size = (audio->bits_per_channel / 8) * audio->channel_count;
+    frames_to_do = frames_to_do * frame_size / sizeof(short);
     frames_done = 0;
 
     /* Copy any previous excess frames from the internal buffer */
@@ -1004,12 +1007,7 @@ static size_t oswrapper_audio__get_new_samples(OSWrapper_audio_spec* audio, shor
         }
     }
 
-    return frames_done;
-}
-
-OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* audio, short* buffer, size_t frames_to_do) {
-    size_t frame_size = (audio->bits_per_channel / 8) * audio->channel_count;
-    return oswrapper_audio__get_new_samples(audio, buffer, frames_to_do * frame_size / sizeof(short)) * sizeof(short) / frame_size;
+    return frames_done * sizeof(short) / frame_size;
 }
 /* End Win32 MF implementation */
 #else
