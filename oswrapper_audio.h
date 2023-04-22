@@ -981,7 +981,7 @@ OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* aud
                                 OSWRAPPER_AUDIO_MEMCPY((BYTE*)(buffer + frames_done), sample_audio_data, current_length);
                             }
 
-                            result = IMFMediaBuffer_Unlock(media_buffer);
+                            /* result = */ IMFMediaBuffer_Unlock(media_buffer);
                             /* TODO I'm not sure there's any way to handle this?
                             if (FAILED(result)) {
                                 ...some code?
