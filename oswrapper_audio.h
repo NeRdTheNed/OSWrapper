@@ -937,6 +937,7 @@ static size_t oswrapper_audio__get_new_samples(OSWrapper_audio_spec* audio, shor
                             new_target_size = frames_done + new_target_frames;
 
                             if (new_target_size > frames_to_do) {
+                                size_t copied_sample_data_size;
                                 size_t remaining_sample_data_size = new_target_size - frames_to_do;
 
                                 if (internal_data->internal_buffer_size < remaining_sample_data_size) {
@@ -954,7 +955,7 @@ static size_t oswrapper_audio__get_new_samples(OSWrapper_audio_spec* audio, shor
                                     }
                                 }
 
-                                size_t copied_sample_data_size = internal_data->internal_buffer_size < remaining_sample_data_size ? internal_data->internal_buffer_size : remaining_sample_data_size;
+                                copied_sample_data_size = internal_data->internal_buffer_size < remaining_sample_data_size ? internal_data->internal_buffer_size : remaining_sample_data_size;
                                 internal_data->internal_buffer_remaining = copied_sample_data_size;
                                 internal_data->internal_buffer_pos = 0;
                                 new_target_frames -= remaining_sample_data_size;
@@ -999,8 +1000,7 @@ static size_t oswrapper_audio__get_new_samples(OSWrapper_audio_spec* audio, shor
 }
 
 OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* audio, short* buffer, size_t frames_to_do) {
-    size_t frame_size;
-    frame_size = (audio->bits_per_channel / 8) * audio->channel_count;
+    size_t frame_size = (audio->bits_per_channel / 8) * audio->channel_count;
     return oswrapper_audio__get_new_samples(audio, buffer, frames_to_do * frame_size / sizeof(short)) * sizeof(short) / frame_size;
 }
 /* End Win32 MF implementation */
