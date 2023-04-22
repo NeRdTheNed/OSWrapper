@@ -902,7 +902,7 @@ OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* aud
         OSWRAPPER_AUDIO_MEMCPY(buffer, internal_data->internal_buffer + internal_data->internal_buffer_pos, copied_sample_data_size * (sizeof internal_data->internal_buffer[0]));
         internal_data->internal_buffer_remaining -= copied_sample_data_size;
         internal_data->internal_buffer_pos += copied_sample_data_size;
-        frames_done += copied_sample_data_size;
+        frames_done = copied_sample_data_size;
     }
 
     /* Get new samples */
