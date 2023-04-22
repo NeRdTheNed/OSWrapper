@@ -940,6 +940,11 @@ static size_t oswrapper_audio__get_new_samples(OSWrapper_audio_spec* audio, shor
                             if (new_target_size > frames_to_do) {
                                 size_t copied_sample_data_size;
                                 size_t remaining_sample_data_size = new_target_size - frames_to_do;
+                                /* Prevent copying more data to the output buffer than requested */
+                                new_target_frames -= remaining_sample_data_size;
+                                current_length = new_target_frames * sizeof(short);
+                                /* Calculate how much data we can copy to the internal buffer */
+                                copied_sample_data_size = remaining_sample_data_size;
 
                                 /* Is the internal buffer large enough to store the excess frames? */
                                 if (internal_data->internal_buffer_size < remaining_sample_data_size) {
@@ -952,19 +957,16 @@ static size_t oswrapper_audio__get_new_samples(OSWrapper_audio_spec* audio, shor
                                         /* Replace old buffer with new buffer */
                                         internal_data->internal_buffer = realloc_buffer;
                                         internal_data->internal_buffer_size = remaining_sample_data_size;
+                                    } else {
+                                        /* If we can't allocate more memory, some excess frames will be lost.
+                                           This is unlikely, and mostly harmless. */
+                                        copied_sample_data_size = internal_data->internal_buffer_size;
                                     }
-
-                                    /* If we can't allocate more memory, some excess frames will be lost.
-                                       This is unlikely, and mostly harmless. */
                                 }
 
                                 /* Copy as many excess frames as we have space for */
-                                copied_sample_data_size = internal_data->internal_buffer_size < remaining_sample_data_size ? internal_data->internal_buffer_size : remaining_sample_data_size;
                                 internal_data->internal_buffer_remaining = copied_sample_data_size;
                                 internal_data->internal_buffer_pos = 0;
-                                new_target_frames -= remaining_sample_data_size;
-                                /* Prevent copying more data to the output buffer than requested */
-                                current_length = new_target_frames * sizeof(short);
 
                                 if (copied_sample_data_size > 0) {
                                     OSWRAPPER_AUDIO_MEMCPY((BYTE*)(internal_data->internal_buffer), sample_audio_data + current_length, copied_sample_data_size * sizeof(short));
