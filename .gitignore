@@ -40,3 +40,5 @@ test/test_oswrapper_audio_cpp.exe
 test/test_oswrapper_audio_cpp.obj
 test/test_oswrapper_audio_no_crt.exe
 test/test_oswrapper_audio_no_crt.obj
+test/test_oswrapper_audio_mac_encoder
+test/test_oswrapper_audio_mac_encoder_cpp
