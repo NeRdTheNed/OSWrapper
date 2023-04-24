@@ -35,14 +35,20 @@ https://github.com/NeRdTheNed/OSWrapper/blob/main/test/test_oswrapper_audio_mac_
 #define AUDIO_FORMAT OSWRAPPER_AUDIO_FORMAT_NOT_SET
 #endif
 
+#if !defined(DEMO_CONVERT_TO_WAV) && !defined(DEMO_CONVERT_TO_M4A)
+#define DEMO_CONVERT_TO_M4A
+#endif
+
 #ifdef DEMO_CONVERT_TO_WAV
 #define DEMO_AUDIO_FILE_TYPE kAudioFileWAVEType
 #define DEMO_AUDIO_FILL_OUTPUT_METHOD(desc, sample_rate, channel_count, bits_per_channel, audio_type) create_pcm_desc(desc, sample_rate, channel_count, bits_per_channel, audio_type)
 #define DEMO_AUDIO_FILE_EXT ".wav"
-#else
+#elif defined(DEMO_CONVERT_TO_M4A)
 #define DEMO_AUDIO_FILE_TYPE kAudioFileM4AType
 #define DEMO_AUDIO_FILL_OUTPUT_METHOD(desc, sample_rate, channel_count, bits_per_channel, audio_type) create_m4a_desc(desc, sample_rate, channel_count)
 #define DEMO_AUDIO_FILE_EXT ".m4a"
+#else
+#error No format defined
 #endif
 
 #define TEST_PROGRAM_BUFFER_SIZE 1024
@@ -104,7 +110,7 @@ static OSWRAPPER_AUDIO_RESULT_TYPE create_pcm_desc(AudioStreamBasicDescription* 
     return OSWRAPPER_AUDIO_RESULT_SUCCESS;
 }
 
-#ifndef DEMO_CONVERT_TO_WAV
+#ifdef DEMO_CONVERT_TO_M4A
 static OSWRAPPER_AUDIO_RESULT_TYPE create_m4a_desc(AudioStreamBasicDescription* desc, unsigned long sample_rate, unsigned int channel_count) {
     desc->mFormatID = kAudioFormatMPEG4AAC;
     desc->mFormatFlags = kAudioFormatFlagsAreAllClear;
