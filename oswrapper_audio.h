@@ -125,8 +125,8 @@ typedef enum {
 /* Endianness of the decoded audio. Most platforms use little-endian. */
 typedef enum {
     OSWRAPPER_AUDIO_ENDIANNESS_NOT_SPECIFIED = 0,
-    OSWRAPPER_AUDIO_ENDIANNESS_BIG,
-    OSWRAPPER_AUDIO_ENDIANNESS_LITTLE
+    OSWRAPPER_AUDIO_ENDIANNESS_LITTLE,
+    OSWRAPPER_AUDIO_ENDIANNESS_BIG
 } OSWrapper_audio_endianness_type;
 
 /* The created audio context.
