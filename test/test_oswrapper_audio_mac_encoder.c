@@ -35,7 +35,7 @@ https://github.com/NeRdTheNed/OSWrapper/blob/main/test/test_oswrapper_audio_mac_
 #define AUDIO_FORMAT OSWRAPPER_AUDIO_FORMAT_NOT_SET
 #endif
 
-#if !defined(DEMO_CONVERT_TO_WAV) && !defined(DEMO_CONVERT_TO_M4A) && !defined(DEMO_CONVERT_TO_NEXT)
+#if !defined(DEMO_CONVERT_TO_WAV) && !defined(DEMO_CONVERT_TO_M4A) && !defined(DEMO_CONVERT_TO_NEXT) && !defined(DEMO_CONVERT_TO_ALAC)
 #define DEMO_CONVERT_TO_M4A
 #endif
 
@@ -49,7 +49,14 @@ https://github.com/NeRdTheNed/OSWrapper/blob/main/test/test_oswrapper_audio_mac_
 #define DEMO_AUDIO_FILE_TYPE kAudioFileNextType
 #define DEMO_AUDIO_FILL_OUTPUT_METHOD(desc, sample_rate, channel_count, bits_per_channel, audio_type, endianness_type) create_pcm_desc(desc, sample_rate, channel_count, bits_per_channel, audio_type, endianness_type)
 #define DEMO_AUDIO_FILE_EXT ".snd"
+#elif defined(DEMO_CONVERT_TO_ALAC)
+#define TEST_PROGRAM_BUFFER_SIZE 4096
+#define ENDIANNESS_TYPE OSWRAPPER_AUDIO_ENDIANNESS_USE_SYSTEM_DEFAULT
+#define DEMO_AUDIO_FILE_TYPE kAudioFileM4AType
+#define DEMO_AUDIO_FILL_OUTPUT_METHOD(desc, sample_rate, channel_count, bits_per_channel, audio_type, endianness_type) create_alac_desc(desc, sample_rate, channel_count, bits_per_channel, audio_type)
+#define DEMO_AUDIO_FILE_EXT ".m4a"
 #elif defined(DEMO_CONVERT_TO_M4A)
+#define TEST_PROGRAM_BUFFER_SIZE 1024
 #define ENDIANNESS_TYPE OSWRAPPER_AUDIO_ENDIANNESS_USE_SYSTEM_DEFAULT
 #define DEMO_AUDIO_FILE_TYPE kAudioFileM4AType
 #define DEMO_AUDIO_FILL_OUTPUT_METHOD(desc, sample_rate, channel_count, bits_per_channel, audio_type, endianness_type) create_m4a_desc(desc, sample_rate, channel_count)
@@ -58,7 +65,9 @@ https://github.com/NeRdTheNed/OSWrapper/blob/main/test/test_oswrapper_audio_mac_
 #error No format defined
 #endif
 
-#define TEST_PROGRAM_BUFFER_SIZE 1024
+#ifndef TEST_PROGRAM_BUFFER_SIZE
+#define TEST_PROGRAM_BUFFER_SIZE 4096
+#endif
 
 static OSStatus test_encoder_create_from_path(const char* path, AudioStreamBasicDescription* output_format, ExtAudioFileRef* audio_file) {
     OSStatus error;
@@ -125,6 +134,45 @@ static OSWRAPPER_AUDIO_RESULT_TYPE create_m4a_desc(AudioStreamBasicDescription* 
     desc->mSampleRate = sample_rate;
     desc->mChannelsPerFrame = channel_count;
     /* Must be 1024 */
+    desc->mFramesPerPacket = TEST_PROGRAM_BUFFER_SIZE;
+    return OSWRAPPER_AUDIO_RESULT_SUCCESS;
+}
+#endif
+
+#ifdef DEMO_CONVERT_TO_ALAC
+static OSWRAPPER_AUDIO_RESULT_TYPE create_alac_desc(AudioStreamBasicDescription* desc, unsigned long sample_rate, unsigned int channel_count, unsigned int bits_per_channel, OSWrapper_audio_type audio_type) {
+    desc->mFormatID = kAudioFormatAppleLossless;
+
+    if (audio_type == OSWRAPPER_AUDIO_FORMAT_PCM_FLOAT) {
+        puts("Unsupported input audio format, was not integer!");
+        return OSWRAPPER_AUDIO_RESULT_FAILURE;
+    } else {
+        switch (bits_per_channel) {
+        case 16:
+            desc->mFormatFlags = kAppleLosslessFormatFlag_16BitSourceData;
+            break;
+
+        case 20:
+            desc->mFormatFlags = kAppleLosslessFormatFlag_20BitSourceData;
+            break;
+
+        case 24:
+            desc->mFormatFlags = kAppleLosslessFormatFlag_24BitSourceData;
+            break;
+
+        case 32:
+            desc->mFormatFlags = kAppleLosslessFormatFlag_32BitSourceData;
+            break;
+
+        default:
+            puts("Unsupported input bit depth!");
+            return OSWRAPPER_AUDIO_RESULT_FAILURE;
+        }
+    }
+
+    desc->mSampleRate = sample_rate;
+    desc->mChannelsPerFrame = channel_count;
+    /* Must be 4096 */
     desc->mFramesPerPacket = TEST_PROGRAM_BUFFER_SIZE;
     return OSWRAPPER_AUDIO_RESULT_SUCCESS;
 }
