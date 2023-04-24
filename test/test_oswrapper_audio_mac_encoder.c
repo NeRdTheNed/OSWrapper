@@ -1,6 +1,6 @@
 /*
 This program uses oswrapper_audio to decode an audio file,
-and encode the decoded PCM data to M4A.
+and encode the decoded PCM data to M4A (or WAV if you define DEMO_CONVERT_TO_WAV).
 
 Usage: test_oswrapper_audio_mac_encoder (audio_file.ext)
 If no input is provided, it will decode and encode the file named noise.wav in this folder.
@@ -35,6 +35,16 @@ https://github.com/NeRdTheNed/OSWrapper/blob/main/test/test_oswrapper_audio_mac_
 #define AUDIO_FORMAT OSWRAPPER_AUDIO_FORMAT_NOT_SET
 #endif
 
+#ifdef DEMO_CONVERT_TO_WAV
+#define DEMO_AUDIO_FILE_TYPE kAudioFileWAVEType
+#define DEMO_AUDIO_FILL_OUTPUT_METHOD(desc, sample_rate, channel_count, bits_per_channel, audio_type) create_pcm_desc(desc, sample_rate, channel_count, bits_per_channel, audio_type)
+#define DEMO_AUDIO_FILE_EXT ".wav"
+#else
+#define DEMO_AUDIO_FILE_TYPE kAudioFileM4AType
+#define DEMO_AUDIO_FILL_OUTPUT_METHOD(desc, sample_rate, channel_count, bits_per_channel, audio_type) create_m4a_desc(desc, sample_rate, channel_count)
+#define DEMO_AUDIO_FILE_EXT ".m4a"
+#endif
+
 #define TEST_PROGRAM_BUFFER_SIZE 1024
 
 static OSStatus test_encoder_create_from_path(const char* path, AudioStreamBasicDescription* output_format, ExtAudioFileRef* audio_file) {
@@ -54,18 +64,59 @@ static OSStatus test_encoder_create_from_path(const char* path, AudioStreamBasic
     error = FSPathMakeRef(base_dir, &path_fsref, &is_dir);
 
     if (!error && is_dir) {
-        error = ExtAudioFileCreateNew(&path_fsref, path_cfstr, kAudioFileM4AType, output_format, NULL, audio_file);
+        error = ExtAudioFileCreateNew(&path_fsref, path_cfstr, DEMO_AUDIO_FILE_TYPE, output_format, NULL, audio_file);
     }
 
 #else
-    error = ExtAudioFileCreateWithURL(path_url, kAudioFileM4AType, output_format, NULL, 0, audio_file);
+    error = ExtAudioFileCreateWithURL(path_url, DEMO_AUDIO_FILE_TYPE, output_format, NULL, 0, audio_file);
 #endif
     CFRelease(path_url);
     CFRelease(path_cfstr);
     return error;
 }
 
-/* Decodes and re-encodes a given audio file to M4A */
+static OSWRAPPER_AUDIO_RESULT_TYPE create_pcm_desc(AudioStreamBasicDescription* desc, unsigned long sample_rate, unsigned int channel_count, unsigned int bits_per_channel, OSWrapper_audio_type audio_type) {
+    desc->mFormatID = kAudioFormatLinearPCM;
+
+    if (audio_type == OSWRAPPER_AUDIO_FORMAT_PCM_FLOAT) {
+        desc->mFormatFlags = kLinearPCMFormatFlagIsFloat;
+    } else if (audio_type == OSWRAPPER_AUDIO_FORMAT_PCM_INTEGER) {
+        desc->mFormatFlags = kLinearPCMFormatFlagIsSignedInteger;
+    } else {
+        puts("Unsupported audio format, was not float or integer!");
+        return OSWRAPPER_AUDIO_RESULT_FAILURE;
+    }
+
+    desc->mFormatFlags |= kLinearPCMFormatFlagIsPacked
+#if defined(__ppc64__) || defined(__ppc__)
+                          | kAudioFormatFlagIsBigEndian
+#endif
+                          ;
+    desc->mSampleRate = sample_rate;
+    desc->mBitsPerChannel = bits_per_channel;
+    desc->mChannelsPerFrame = channel_count;
+    /* kAudioFormatLinearPCM doesn't use packets */
+    desc->mFramesPerPacket = 1;
+    /* Bytes per channel * channels per frame */
+    desc->mBytesPerFrame = (desc->mBitsPerChannel / 8) * desc->mChannelsPerFrame;
+    /* Bytes per frame * frames per packet */
+    desc->mBytesPerPacket = desc->mBytesPerFrame * desc->mFramesPerPacket;
+    return OSWRAPPER_AUDIO_RESULT_SUCCESS;
+}
+
+#ifndef DEMO_CONVERT_TO_WAV
+static OSWRAPPER_AUDIO_RESULT_TYPE create_m4a_desc(AudioStreamBasicDescription* desc, unsigned long sample_rate, unsigned int channel_count) {
+    desc->mFormatID = kAudioFormatMPEG4AAC;
+    desc->mFormatFlags = kAudioFormatFlagsAreAllClear;
+    desc->mSampleRate = sample_rate;
+    desc->mChannelsPerFrame = channel_count;
+    /* Must be 1024 */
+    desc->mFramesPerPacket = TEST_PROGRAM_BUFFER_SIZE;
+    return OSWRAPPER_AUDIO_RESULT_SUCCESS;
+}
+#endif
+
+/* Decodes and re-encodes a given audio file to M4A (or WAV if you define DEMO_CONVERT_TO_WAV) */
 int main(int argc, char** argv) {
     int returnVal = EXIT_FAILURE;
     FILE* output_file = NULL;
@@ -88,7 +139,7 @@ int main(int argc, char** argv) {
         goto exit;
     }
 
-    output_path = (char*) malloc(input_string_length + sizeof(".m4a"));
+    output_path = (char*) malloc(input_string_length + sizeof(DEMO_AUDIO_FILE_EXT));
 
     if (output_path == NULL) {
         puts("malloc failed for output path!");
@@ -96,7 +147,7 @@ int main(int argc, char** argv) {
     }
 
     memcpy(output_path, path, input_string_length);
-    memcpy(output_path + input_string_length, ".m4a", sizeof(".m4a"));
+    memcpy(output_path + input_string_length, DEMO_AUDIO_FILE_EXT, sizeof(DEMO_AUDIO_FILE_EXT));
     output_file = fopen(output_path, "rb");
 
     if (output_file != NULL) {
@@ -141,39 +192,16 @@ int main(int argc, char** argv) {
         output_buffer_list.mNumberBuffers = 1;
         output_buffer_list.mBuffers[0].mNumberChannels = audio_spec->channel_count;
         output_buffer_list.mBuffers[0].mData = buffer;
-        /* Input PCM format */
-        input_format.mFormatID = kAudioFormatLinearPCM;
 
-        if (audio_spec->audio_type == OSWRAPPER_AUDIO_FORMAT_PCM_FLOAT) {
-            input_format.mFormatFlags = kLinearPCMFormatFlagIsFloat;
-        } else if (audio_spec->audio_type == OSWRAPPER_AUDIO_FORMAT_PCM_INTEGER) {
-            input_format.mFormatFlags = kLinearPCMFormatFlagIsSignedInteger;
-        } else {
-            puts("Unsupported audio format, was not float or integer!");
+        /* Input PCM format */
+        if (!create_pcm_desc(&input_format, audio_spec->sample_rate, audio_spec->channel_count, audio_spec->bits_per_channel, audio_spec->audio_type)) {
             goto audio_cleanup;
         }
 
-        input_format.mFormatFlags |= kLinearPCMFormatFlagIsPacked
-#if defined(__ppc64__) || defined(__ppc__)
-                                     | kAudioFormatFlagIsBigEndian
-#endif
-                                     ;
-        input_format.mSampleRate = audio_spec->sample_rate;
-        input_format.mBitsPerChannel = audio_spec->bits_per_channel;
-        input_format.mChannelsPerFrame = audio_spec->channel_count;
-        /* kAudioFormatLinearPCM doesn't use packets */
-        input_format.mFramesPerPacket = 1;
-        /* Bytes per channel * channels per frame */
-        input_format.mBytesPerFrame = (input_format.mBitsPerChannel / 8) * input_format.mChannelsPerFrame;
-        /* Bytes per frame * frames per packet */
-        input_format.mBytesPerPacket = input_format.mBytesPerFrame * input_format.mFramesPerPacket;
-        /* Output M4A format */
-        output_format.mFormatID = kAudioFormatMPEG4AAC;
-        output_format.mFormatFlags = kAudioFormatFlagsAreAllClear;
-        output_format.mSampleRate = audio_spec->sample_rate;
-        output_format.mChannelsPerFrame = audio_spec->channel_count;
-        /* Must be 1024 */
-        output_format.mFramesPerPacket = TEST_PROGRAM_BUFFER_SIZE;
+        /* Output format */
+        if (!DEMO_AUDIO_FILL_OUTPUT_METHOD(&output_format, audio_spec->sample_rate, audio_spec->channel_count, audio_spec->bits_per_channel, audio_spec->audio_type)) {
+            goto audio_cleanup;
+        }
 
         if (test_encoder_create_from_path(output_path, &output_format, &ext_output_file)) {
             puts("Couldn't open output file for encoding!");
