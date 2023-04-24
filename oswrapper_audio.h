@@ -122,6 +122,13 @@ typedef enum {
     OSWRAPPER_AUDIO_FORMAT_PCM_FLOAT
 } OSWrapper_audio_type;
 
+/* Endianness of the decoded audio. Most platforms use little-endian. */
+typedef enum {
+    OSWRAPPER_AUDIO_ENDIANNESS_NOT_SPECIFIED = 0,
+    OSWRAPPER_AUDIO_ENDIANNESS_BIG,
+    OSWRAPPER_AUDIO_ENDIANNESS_LITTLE
+} OSWrapper_audio_endianness_type;
+
 /* The created audio context.
 The values can be set before creating an audio context
 with the oswrapper_audio_load_from_ functions,
@@ -135,6 +142,7 @@ typedef struct OSWrapper_audio_spec {
     unsigned int channel_count;
     unsigned int bits_per_channel;
     OSWrapper_audio_type audio_type;
+    OSWrapper_audio_endianness_type endianness_type;
 } OSWrapper_audio_spec;
 
 /* Call oswrapper_audio_init() before using the library,
@@ -319,11 +327,19 @@ static OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio__load_from_open(AudioFileID a
                 output_format.mFormatFlags = kLinearPCMFormatFlagIsSignedInteger;
             }
 
-            output_format.mFormatFlags |= kLinearPCMFormatFlagIsPacked
+            output_format.mFormatFlags |= kLinearPCMFormatFlagIsPacked;
+
+            /* Use hinted endianness */
+            if (audio->endianness_type == OSWRAPPER_AUDIO_ENDIANNESS_BIG) {
+                output_format.mFormatFlags |= kAudioFormatFlagIsBigEndian;
+            }
+
 #if defined(__ppc64__) || defined(__ppc__)
-                                          | kAudioFormatFlagIsBigEndian
+            else if (audio->endianness_type == OSWRAPPER_AUDIO_ENDIANNESS_NOT_SPECIFIED) {
+                output_format.mFormatFlags |= kAudioFormatFlagIsBigEndian;
+            }
+
 #endif
-                                          ;
             /* Use hinted sample rate */
             output_format.mSampleRate = audio->sample_rate == 0 ? input_file_format.mSampleRate : audio->sample_rate;
 
@@ -385,6 +401,7 @@ static OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio__load_from_open(AudioFileID a
                     audio->bits_per_channel = output_format.mBitsPerChannel;
                     audio->channel_count = output_format.mChannelsPerFrame;
                     audio->audio_type = (output_format.mFormatFlags & kLinearPCMFormatFlagIsFloat) ? OSWRAPPER_AUDIO_FORMAT_PCM_FLOAT : OSWRAPPER_AUDIO_FORMAT_PCM_INTEGER;
+                    audio->endianness_type = (output_format.mFormatFlags & kAudioFormatFlagIsBigEndian) ? OSWRAPPER_AUDIO_ENDIANNESS_BIG : OSWRAPPER_AUDIO_ENDIANNESS_LITTLE;
                     audio->internal_data = (void*) internal_data;
                     internal_data->audio_file = audio_file;
                     internal_data->audio_file_ext = audio_file_ext;
@@ -750,6 +767,7 @@ OSWRAPPER_AUDIO_DEF OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio__load_from_reade
         oswrapper_audio__internal_data_win* internal_data = (oswrapper_audio__internal_data_win*) OSWRAPPER_AUDIO_MALLOC(sizeof(oswrapper_audio__internal_data_win));
 
         if (internal_data != NULL) {
+            audio->endianness_type = OSWRAPPER_AUDIO_ENDIANNESS_LITTLE;
             audio->internal_data = (void*) internal_data;
             internal_data->reader = reader;
             internal_data->byte_stream = byte_stream;
