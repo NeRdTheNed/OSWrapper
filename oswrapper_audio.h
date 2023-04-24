@@ -124,7 +124,7 @@ typedef enum {
 
 /* Endianness of the decoded audio. Most platforms use little-endian. */
 typedef enum {
-    OSWRAPPER_AUDIO_ENDIANNESS_NOT_SPECIFIED = 0,
+    OSWRAPPER_AUDIO_ENDIANNESS_USE_SYSTEM_DEFAULT = 0,
     OSWRAPPER_AUDIO_ENDIANNESS_LITTLE,
     OSWRAPPER_AUDIO_ENDIANNESS_BIG
 } OSWrapper_audio_endianness_type;
@@ -335,7 +335,7 @@ static OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio__load_from_open(AudioFileID a
             }
 
 #if defined(__ppc64__) || defined(__ppc__)
-            else if (audio->endianness_type == OSWRAPPER_AUDIO_ENDIANNESS_NOT_SPECIFIED) {
+            else if (audio->endianness_type == OSWRAPPER_AUDIO_ENDIANNESS_USE_SYSTEM_DEFAULT) {
                 output_format.mFormatFlags |= kAudioFormatFlagIsBigEndian;
             }
 
