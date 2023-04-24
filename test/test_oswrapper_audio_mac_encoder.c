@@ -28,11 +28,13 @@ https://github.com/NeRdTheNed/OSWrapper/blob/main/test/test_oswrapper_audio_mac_
 #define CHANNEL_COUNT 2
 #define BITS_PER_CHANNEL 16
 #define AUDIO_FORMAT OSWRAPPER_AUDIO_FORMAT_PCM_INTEGER
+#define ENDIANNESS_TYPE OSWRAPPER_AUDIO_ENDIANNESS_LITTLE
 #else
 #define SAMPLE_RATE 0
 #define CHANNEL_COUNT 0
 #define BITS_PER_CHANNEL 0
 #define AUDIO_FORMAT OSWRAPPER_AUDIO_FORMAT_NOT_SET
+#define ENDIANNESS_TYPE OSWRAPPER_AUDIO_ENDIANNESS_NOT_SPECIFIED
 #endif
 
 #if !defined(DEMO_CONVERT_TO_WAV) && !defined(DEMO_CONVERT_TO_M4A)
@@ -41,11 +43,11 @@ https://github.com/NeRdTheNed/OSWrapper/blob/main/test/test_oswrapper_audio_mac_
 
 #ifdef DEMO_CONVERT_TO_WAV
 #define DEMO_AUDIO_FILE_TYPE kAudioFileWAVEType
-#define DEMO_AUDIO_FILL_OUTPUT_METHOD(desc, sample_rate, channel_count, bits_per_channel, audio_type) create_pcm_desc(desc, sample_rate, channel_count, bits_per_channel, audio_type)
+#define DEMO_AUDIO_FILL_OUTPUT_METHOD(desc, sample_rate, channel_count, bits_per_channel, audio_type, endianness_type) create_pcm_desc(desc, sample_rate, channel_count, bits_per_channel, audio_type, endianness_type)
 #define DEMO_AUDIO_FILE_EXT ".wav"
 #elif defined(DEMO_CONVERT_TO_M4A)
 #define DEMO_AUDIO_FILE_TYPE kAudioFileM4AType
-#define DEMO_AUDIO_FILL_OUTPUT_METHOD(desc, sample_rate, channel_count, bits_per_channel, audio_type) create_m4a_desc(desc, sample_rate, channel_count)
+#define DEMO_AUDIO_FILL_OUTPUT_METHOD(desc, sample_rate, channel_count, bits_per_channel, audio_type, endianness_type) create_m4a_desc(desc, sample_rate, channel_count)
 #define DEMO_AUDIO_FILE_EXT ".m4a"
 #else
 #error No format defined
@@ -81,7 +83,7 @@ static OSStatus test_encoder_create_from_path(const char* path, AudioStreamBasic
     return error;
 }
 
-static OSWRAPPER_AUDIO_RESULT_TYPE create_pcm_desc(AudioStreamBasicDescription* desc, unsigned long sample_rate, unsigned int channel_count, unsigned int bits_per_channel, OSWrapper_audio_type audio_type) {
+static OSWRAPPER_AUDIO_RESULT_TYPE create_pcm_desc(AudioStreamBasicDescription* desc, unsigned long sample_rate, unsigned int channel_count, unsigned int bits_per_channel, OSWrapper_audio_type audio_type, OSWrapper_audio_endianness_type endianness_type) {
     desc->mFormatID = kAudioFormatLinearPCM;
 
     if (audio_type == OSWRAPPER_AUDIO_FORMAT_PCM_FLOAT) {
@@ -93,11 +95,12 @@ static OSWRAPPER_AUDIO_RESULT_TYPE create_pcm_desc(AudioStreamBasicDescription* 
         return OSWRAPPER_AUDIO_RESULT_FAILURE;
     }
 
-    desc->mFormatFlags |= kLinearPCMFormatFlagIsPacked
-#if defined(__ppc64__) || defined(__ppc__)
-                          | kAudioFormatFlagIsBigEndian
-#endif
-                          ;
+    desc->mFormatFlags |= kLinearPCMFormatFlagIsPacked;
+
+    if (endianness_type == OSWRAPPER_AUDIO_ENDIANNESS_BIG) {
+        desc->mFormatFlags |= kAudioFormatFlagIsBigEndian;
+    }
+
     desc->mSampleRate = sample_rate;
     desc->mBitsPerChannel = bits_per_channel;
     desc->mChannelsPerFrame = channel_count;
@@ -167,6 +170,7 @@ int main(int argc, char** argv) {
     audio_spec->channel_count = CHANNEL_COUNT;
     audio_spec->bits_per_channel = BITS_PER_CHANNEL;
     audio_spec->audio_type = AUDIO_FORMAT;
+    audio_spec->endianness_type = ENDIANNESS_TYPE;
 
     if (oswrapper_audio_load_from_path(path, audio_spec)) {
         printf("Path: %s\nOutput path: %s\nSample rate: %lu\nChannels: %d\nBit depth: %d\n", path, output_path, audio_spec->sample_rate, audio_spec->channel_count, audio_spec->bits_per_channel);
@@ -175,6 +179,12 @@ int main(int argc, char** argv) {
             puts("Input format: floating point PCM\n");
         } else {
             puts("Input format: integer PCM\n");
+        }
+
+        if (audio_spec->endianness_type == OSWRAPPER_AUDIO_ENDIANNESS_BIG) {
+            puts("Big-endian\n");
+        } else {
+            puts("Little-endian\n");
         }
 
         size_t frame_size = (audio_spec->bits_per_channel / 8) * (audio_spec->channel_count);
@@ -200,12 +210,12 @@ int main(int argc, char** argv) {
         output_buffer_list.mBuffers[0].mData = buffer;
 
         /* Input PCM format */
-        if (!create_pcm_desc(&input_format, audio_spec->sample_rate, audio_spec->channel_count, audio_spec->bits_per_channel, audio_spec->audio_type)) {
+        if (!create_pcm_desc(&input_format, audio_spec->sample_rate, audio_spec->channel_count, audio_spec->bits_per_channel, audio_spec->audio_type, audio_spec->endianness_type)) {
             goto audio_cleanup;
         }
 
         /* Output format */
-        if (!DEMO_AUDIO_FILL_OUTPUT_METHOD(&output_format, audio_spec->sample_rate, audio_spec->channel_count, audio_spec->bits_per_channel, audio_spec->audio_type)) {
+        if (!DEMO_AUDIO_FILL_OUTPUT_METHOD(&output_format, audio_spec->sample_rate, audio_spec->channel_count, audio_spec->bits_per_channel, audio_spec->audio_type, audio_spec->endianness_type)) {
             goto audio_cleanup;
         }
 
