@@ -35,7 +35,7 @@ https://github.com/NeRdTheNed/OSWrapper/blob/main/test/test_oswrapper_audio_mac_
 #define AUDIO_FORMAT OSWRAPPER_AUDIO_FORMAT_NOT_SET
 #endif
 
-#if !defined(DEMO_CONVERT_TO_WAV) && !defined(DEMO_CONVERT_TO_M4A)
+#if !defined(DEMO_CONVERT_TO_WAV) && !defined(DEMO_CONVERT_TO_M4A) && !defined(DEMO_CONVERT_TO_NEXT)
 #define DEMO_CONVERT_TO_M4A
 #endif
 
@@ -44,6 +44,11 @@ https://github.com/NeRdTheNed/OSWrapper/blob/main/test/test_oswrapper_audio_mac_
 #define DEMO_AUDIO_FILE_TYPE kAudioFileWAVEType
 #define DEMO_AUDIO_FILL_OUTPUT_METHOD(desc, sample_rate, channel_count, bits_per_channel, audio_type, endianness_type) create_pcm_desc(desc, sample_rate, channel_count, bits_per_channel, audio_type, endianness_type)
 #define DEMO_AUDIO_FILE_EXT ".wav"
+#elif defined(DEMO_CONVERT_TO_NEXT)
+#define ENDIANNESS_TYPE OSWRAPPER_AUDIO_ENDIANNESS_BIG
+#define DEMO_AUDIO_FILE_TYPE kAudioFileNextType
+#define DEMO_AUDIO_FILL_OUTPUT_METHOD(desc, sample_rate, channel_count, bits_per_channel, audio_type, endianness_type) create_pcm_desc(desc, sample_rate, channel_count, bits_per_channel, audio_type, endianness_type)
+#define DEMO_AUDIO_FILE_EXT ".snd"
 #elif defined(DEMO_CONVERT_TO_M4A)
 #define ENDIANNESS_TYPE OSWRAPPER_AUDIO_ENDIANNESS_USE_SYSTEM_DEFAULT
 #define DEMO_AUDIO_FILE_TYPE kAudioFileM4AType
