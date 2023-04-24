@@ -234,6 +234,10 @@ OSWRAPPER_AUDIO_DEF size_t oswrapper_audio_get_samples(OSWrapper_audio_spec* aud
 #define kAudioFileReadPermission 0x01
 #endif
 
+#if !defined(MAC_OS_X_VERSION_10_13) || MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_13
+#define kAudioFormatFLAC 'flac'
+#endif
+
 typedef struct oswrapper_audio__callback_data_mac {
     size_t data_size;
     const unsigned char* data;
@@ -350,6 +354,30 @@ static OSWRAPPER_AUDIO_RESULT_TYPE oswrapper_audio__load_from_open(AudioFileID a
 
             /* Use hinted bits per channel */
             output_format.mBitsPerChannel = audio->bits_per_channel == 0 ? input_file_format.mBitsPerChannel : audio->bits_per_channel;
+
+            /* Get bits per channel for ALAC and FLAC files */
+            if ((output_format.mBitsPerChannel == 0) && (input_file_format.mFormatID == kAudioFormatAppleLossless || input_file_format.mFormatID == kAudioFormatFLAC)) {
+                switch (input_file_format.mFormatFlags) {
+                case kAppleLosslessFormatFlag_16BitSourceData:
+                    output_format.mBitsPerChannel = 16;
+                    break;
+
+                case kAppleLosslessFormatFlag_20BitSourceData:
+                    output_format.mBitsPerChannel = 20;
+                    break;
+
+                case kAppleLosslessFormatFlag_24BitSourceData:
+                    output_format.mBitsPerChannel = 24;
+                    break;
+
+                case kAppleLosslessFormatFlag_32BitSourceData:
+                    output_format.mBitsPerChannel = 32;
+                    break;
+
+                default:
+                    break;
+                }
+            }
 
             /* Sanity check */
             if (output_format.mBitsPerChannel == 0) {
