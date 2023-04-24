@@ -28,13 +28,11 @@ https://github.com/NeRdTheNed/OSWrapper/blob/main/test/test_oswrapper_audio_mac_
 #define CHANNEL_COUNT 2
 #define BITS_PER_CHANNEL 16
 #define AUDIO_FORMAT OSWRAPPER_AUDIO_FORMAT_PCM_INTEGER
-#define ENDIANNESS_TYPE OSWRAPPER_AUDIO_ENDIANNESS_LITTLE
 #else
 #define SAMPLE_RATE 0
 #define CHANNEL_COUNT 0
 #define BITS_PER_CHANNEL 0
 #define AUDIO_FORMAT OSWRAPPER_AUDIO_FORMAT_NOT_SET
-#define ENDIANNESS_TYPE OSWRAPPER_AUDIO_ENDIANNESS_USE_SYSTEM_DEFAULT
 #endif
 
 #if !defined(DEMO_CONVERT_TO_WAV) && !defined(DEMO_CONVERT_TO_M4A)
@@ -42,10 +40,12 @@ https://github.com/NeRdTheNed/OSWrapper/blob/main/test/test_oswrapper_audio_mac_
 #endif
 
 #ifdef DEMO_CONVERT_TO_WAV
+#define ENDIANNESS_TYPE OSWRAPPER_AUDIO_ENDIANNESS_LITTLE
 #define DEMO_AUDIO_FILE_TYPE kAudioFileWAVEType
 #define DEMO_AUDIO_FILL_OUTPUT_METHOD(desc, sample_rate, channel_count, bits_per_channel, audio_type, endianness_type) create_pcm_desc(desc, sample_rate, channel_count, bits_per_channel, audio_type, endianness_type)
 #define DEMO_AUDIO_FILE_EXT ".wav"
 #elif defined(DEMO_CONVERT_TO_M4A)
+#define ENDIANNESS_TYPE OSWRAPPER_AUDIO_ENDIANNESS_USE_SYSTEM_DEFAULT
 #define DEMO_AUDIO_FILE_TYPE kAudioFileM4AType
 #define DEMO_AUDIO_FILL_OUTPUT_METHOD(desc, sample_rate, channel_count, bits_per_channel, audio_type, endianness_type) create_m4a_desc(desc, sample_rate, channel_count)
 #define DEMO_AUDIO_FILE_EXT ".m4a"
