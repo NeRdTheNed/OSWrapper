@@ -36,11 +36,13 @@ https://github.com/NeRdTheNed/OSWrapper/blob/main/test/demo_oswrapper_audio_mini
 #define CHANNEL_COUNT 2
 #define BITS_PER_CHANNEL 16
 #define AUDIO_FORMAT OSWRAPPER_AUDIO_FORMAT_PCM_INTEGER
+#define ENDIANNESS_TYPE OSWRAPPER_AUDIO_ENDIANNESS_USE_SYSTEM_DEFAULT
 #else
 #define SAMPLE_RATE 0
 #define CHANNEL_COUNT 0
 #define BITS_PER_CHANNEL 0
 #define AUDIO_FORMAT OSWRAPPER_AUDIO_FORMAT_NOT_SET
+#define ENDIANNESS_TYPE OSWRAPPER_AUDIO_ENDIANNESS_USE_SYSTEM_DEFAULT
 #endif
 
 static ma_event stop_audio_cond;
@@ -76,6 +78,7 @@ int main(int argc, char** argv) {
     audio_spec->channel_count = CHANNEL_COUNT;
     audio_spec->bits_per_channel = BITS_PER_CHANNEL;
     audio_spec->audio_type = AUDIO_FORMAT;
+    audio_spec->endianness_type = ENDIANNESS_TYPE;
     /* Or set these values to zero to use the input format's values.
     The values in audio_spec will always be set to the output format's values
     after initialising an OSWrapper_audio_spec. */

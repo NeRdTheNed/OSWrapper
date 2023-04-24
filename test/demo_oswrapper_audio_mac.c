@@ -35,11 +35,13 @@ https://github.com/NeRdTheNed/OSWrapper/blob/main/test/demo_oswrapper_audio_mac.
 #define CHANNEL_COUNT 2
 #define BITS_PER_CHANNEL 16
 #define AUDIO_FORMAT OSWRAPPER_AUDIO_FORMAT_PCM_INTEGER
+#define ENDIANNESS_TYPE OSWRAPPER_AUDIO_ENDIANNESS_USE_SYSTEM_DEFAULT
 #else
 #define SAMPLE_RATE 0
 #define CHANNEL_COUNT 0
 #define BITS_PER_CHANNEL 0
 #define AUDIO_FORMAT OSWRAPPER_AUDIO_FORMAT_NOT_SET
+#define ENDIANNESS_TYPE OSWRAPPER_AUDIO_ENDIANNESS_USE_SYSTEM_DEFAULT
 #endif
 
 #define FAIL_WITH_MESSAGE_ON_COND(cond, message) if ((cond)) { puts(message); return EXIT_FAILURE; }
@@ -59,7 +61,7 @@ static OSStatus Callback(void *inRefCon, AudioUnitRenderActionFlags *ioActionFla
     if (audio_spec == NULL) {
         return 0;
     }
-    
+
     /* Because the stream is interleaved, there is only one buffer */
     amount_done = oswrapper_audio_get_samples(audio_spec, (short*)ioData->mBuffers[0].mData, inNumberFrames);
 
@@ -81,6 +83,7 @@ int main(int argc, char** argv) {
     audio_spec->channel_count = CHANNEL_COUNT;
     audio_spec->bits_per_channel = BITS_PER_CHANNEL;
     audio_spec->audio_type = AUDIO_FORMAT;
+    audio_spec->endianness_type = ENDIANNESS_TYPE;
     /* Or set these values to zero to use the input format's values.
     The values in audio_spec will always be set to the output format's values
     after initialising an OSWrapper_audio_spec. */
@@ -114,11 +117,12 @@ int main(int argc, char** argv) {
         return EXIT_FAILURE;
     }
 
-    want.mFormatFlags |= kLinearPCMFormatFlagIsPacked
-#if defined(__ppc64__) || defined(__ppc__)
-                         | kAudioFormatFlagIsBigEndian
-#endif
-                         ;
+    want.mFormatFlags |= kLinearPCMFormatFlagIsPacked;
+
+    if (audio_spec->endianness_type == OSWRAPPER_AUDIO_ENDIANNESS_BIG) {
+        want.mFormatFlags |= kAudioFormatFlagIsBigEndian;
+    }
+
     want.mSampleRate = audio_spec->sample_rate;
     want.mBitsPerChannel = audio_spec->bits_per_channel;
     want.mChannelsPerFrame = audio_spec->channel_count;

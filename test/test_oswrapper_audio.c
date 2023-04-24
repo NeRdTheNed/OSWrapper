@@ -30,11 +30,13 @@ https://github.com/NeRdTheNed/OSWrapper/blob/main/test/test_oswrapper_audio.c
 #define CHANNEL_COUNT 2
 #define BITS_PER_CHANNEL 16
 #define AUDIO_FORMAT OSWRAPPER_AUDIO_FORMAT_PCM_INTEGER
+#define ENDIANNESS_TYPE OSWRAPPER_AUDIO_ENDIANNESS_LITTLE
 #else
 #define SAMPLE_RATE 0
 #define CHANNEL_COUNT 0
 #define BITS_PER_CHANNEL 0
 #define AUDIO_FORMAT OSWRAPPER_AUDIO_FORMAT_NOT_SET
+#define ENDIANNESS_TYPE OSWRAPPER_AUDIO_ENDIANNESS_USE_SYSTEM_DEFAULT
 #endif
 
 #define TEST_PROGRAM_BUFFER_SIZE 0x50
@@ -99,6 +101,7 @@ int main(int argc, char** argv) {
     audio_spec->channel_count = CHANNEL_COUNT;
     audio_spec->bits_per_channel = BITS_PER_CHANNEL;
     audio_spec->audio_type = AUDIO_FORMAT;
+    audio_spec->endianness_type = ENDIANNESS_TYPE;
 
     if (oswrapper_audio_load_from_path(path, audio_spec)) {
         printf("Path: %s\nOutput path: %s\nSample rate: %lu\nChannels: %d\nBit depth: %d\n", path, output_path, audio_spec->sample_rate, audio_spec->channel_count, audio_spec->bits_per_channel);
@@ -107,6 +110,12 @@ int main(int argc, char** argv) {
             puts("Output format: floating point PCM\n");
         } else {
             puts("Output format: integer PCM\n");
+        }
+
+        if (audio_spec->endianness_type == OSWRAPPER_AUDIO_ENDIANNESS_BIG) {
+            puts("Big-endian\n");
+        } else {
+            puts("Little-endian\n");
         }
 
         size_t frame_size = (audio_spec->bits_per_channel / 8) * (audio_spec->channel_count);
