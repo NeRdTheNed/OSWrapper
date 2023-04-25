@@ -333,7 +333,7 @@ int main(int argc, char** argv) {
                 break;
             }
 
-            output_buffer_list.mBuffers[0].mDataByteSize = this_iter * audio_spec->channel_count * frame_size;
+            output_buffer_list.mBuffers[0].mDataByteSize = this_iter * frame_size;
 
             if (ExtAudioFileWrite(ext_output_file, this_iter, &output_buffer_list)) {
                 printf("Error writing frame at position %zu!\n", frames_done);
