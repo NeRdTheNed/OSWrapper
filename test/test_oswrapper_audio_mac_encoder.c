@@ -103,7 +103,8 @@ static OSStatus test_encoder_create_from_path(const char* path, AudioStreamBasic
 
 static OSWRAPPER_AUDIO_RESULT_TYPE create_desc(AudioStreamBasicDescription* desc, AudioFormatID format_id, unsigned long sample_rate, unsigned int channel_count, unsigned int bits_per_channel, OSWrapper_audio_type audio_type, OSWrapper_audio_endianness_type endianness_type) {
     desc->mFormatID = format_id;
-    desc->mSampleRate = sample_rate;
+    /* This may be set to 0 when creating compressed formats */
+    desc->mSampleRate = format_id == kAudioFormatMPEG4AAC ? 0 : sample_rate;
     desc->mChannelsPerFrame = channel_count;
 
     if (format_id == kAudioFormatLinearPCM) {
