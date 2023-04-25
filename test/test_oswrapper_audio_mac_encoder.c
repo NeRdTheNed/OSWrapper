@@ -42,30 +42,30 @@ https://github.com/NeRdTheNed/OSWrapper/blob/main/test/test_oswrapper_audio_mac_
 #ifdef DEMO_CONVERT_TO_WAV
 #define ENDIANNESS_TYPE OSWRAPPER_AUDIO_ENDIANNESS_LITTLE
 #define DEMO_AUDIO_FILE_TYPE kAudioFileWAVEType
-#define DEMO_AUDIO_FILL_OUTPUT_METHOD(desc, sample_rate, channel_count, bits_per_channel, audio_type, endianness_type) create_pcm_desc(desc, sample_rate, channel_count, bits_per_channel, audio_type, endianness_type)
+#define DEMO_AUDIO_FILE_FORMAT kAudioFormatLinearPCM
 #define DEMO_AUDIO_FILE_EXT ".wav"
 #elif defined(DEMO_CONVERT_TO_NEXT)
 #define ENDIANNESS_TYPE OSWRAPPER_AUDIO_ENDIANNESS_BIG
 #define DEMO_AUDIO_FILE_TYPE kAudioFileNextType
-#define DEMO_AUDIO_FILL_OUTPUT_METHOD(desc, sample_rate, channel_count, bits_per_channel, audio_type, endianness_type) create_pcm_desc(desc, sample_rate, channel_count, bits_per_channel, audio_type, endianness_type)
+#define DEMO_AUDIO_FILE_FORMAT kAudioFormatLinearPCM
 #define DEMO_AUDIO_FILE_EXT ".snd"
 #elif defined(DEMO_CONVERT_TO_ALAC)
 #define TEST_PROGRAM_BUFFER_SIZE 4096
 #define ENDIANNESS_TYPE OSWRAPPER_AUDIO_ENDIANNESS_USE_SYSTEM_DEFAULT
 #define DEMO_AUDIO_FILE_TYPE kAudioFileM4AType
-#define DEMO_AUDIO_FILL_OUTPUT_METHOD(desc, sample_rate, channel_count, bits_per_channel, audio_type, endianness_type) create_alac_desc(desc, sample_rate, channel_count, bits_per_channel, audio_type)
+#define DEMO_AUDIO_FILE_FORMAT kAudioFormatAppleLossless
 #define DEMO_AUDIO_FILE_EXT ".m4a"
 #elif defined(DEMO_CONVERT_TO_FLAC)
 #define TEST_PROGRAM_BUFFER_SIZE 4096
 #define ENDIANNESS_TYPE OSWRAPPER_AUDIO_ENDIANNESS_USE_SYSTEM_DEFAULT
 #define DEMO_AUDIO_FILE_TYPE kAudioFileFLACType
-#define DEMO_AUDIO_FILL_OUTPUT_METHOD(desc, sample_rate, channel_count, bits_per_channel, audio_type, endianness_type) create_flac_desc(desc, sample_rate, channel_count, bits_per_channel, audio_type)
+#define DEMO_AUDIO_FILE_FORMAT kAudioFormatFLAC
 #define DEMO_AUDIO_FILE_EXT ".flac"
 #elif defined(DEMO_CONVERT_TO_M4A)
 #define TEST_PROGRAM_BUFFER_SIZE 1024
 #define ENDIANNESS_TYPE OSWRAPPER_AUDIO_ENDIANNESS_USE_SYSTEM_DEFAULT
 #define DEMO_AUDIO_FILE_TYPE kAudioFileM4AType
-#define DEMO_AUDIO_FILL_OUTPUT_METHOD(desc, sample_rate, channel_count, bits_per_channel, audio_type, endianness_type) create_m4a_desc(desc, sample_rate, channel_count)
+#define DEMO_AUDIO_FILE_FORMAT kAudioFormatMPEG4AAC
 #define DEMO_AUDIO_FILE_EXT ".m4a"
 #else
 #error No format defined
@@ -103,124 +103,71 @@ static OSStatus test_encoder_create_from_path(const char* path, AudioStreamBasic
     return error;
 }
 
-static OSWRAPPER_AUDIO_RESULT_TYPE create_pcm_desc(AudioStreamBasicDescription* desc, unsigned long sample_rate, unsigned int channel_count, unsigned int bits_per_channel, OSWrapper_audio_type audio_type, OSWrapper_audio_endianness_type endianness_type) {
-    desc->mFormatID = kAudioFormatLinearPCM;
-
-    if (audio_type == OSWRAPPER_AUDIO_FORMAT_PCM_FLOAT) {
-        desc->mFormatFlags = kLinearPCMFormatFlagIsFloat;
-    } else if (audio_type == OSWRAPPER_AUDIO_FORMAT_PCM_INTEGER) {
-        desc->mFormatFlags = kLinearPCMFormatFlagIsSignedInteger;
-    } else {
-        puts("Unsupported audio format, was not float or integer!");
-        return OSWRAPPER_AUDIO_RESULT_FAILURE;
-    }
-
-    desc->mFormatFlags |= kLinearPCMFormatFlagIsPacked;
-
-    if (endianness_type == OSWRAPPER_AUDIO_ENDIANNESS_BIG) {
-        desc->mFormatFlags |= kAudioFormatFlagIsBigEndian;
-    }
-
-    desc->mSampleRate = sample_rate;
-    desc->mBitsPerChannel = bits_per_channel;
-    desc->mChannelsPerFrame = channel_count;
-    /* kAudioFormatLinearPCM doesn't use packets */
-    desc->mFramesPerPacket = 1;
-    /* Bytes per channel * channels per frame */
-    desc->mBytesPerFrame = (desc->mBitsPerChannel / 8) * desc->mChannelsPerFrame;
-    /* Bytes per frame * frames per packet */
-    desc->mBytesPerPacket = desc->mBytesPerFrame * desc->mFramesPerPacket;
-    return OSWRAPPER_AUDIO_RESULT_SUCCESS;
-}
-
-#ifdef DEMO_CONVERT_TO_M4A
-static OSWRAPPER_AUDIO_RESULT_TYPE create_m4a_desc(AudioStreamBasicDescription* desc, unsigned long sample_rate, unsigned int channel_count) {
-    desc->mFormatID = kAudioFormatMPEG4AAC;
-    desc->mFormatFlags = kAudioFormatFlagsAreAllClear;
+static OSWRAPPER_AUDIO_RESULT_TYPE create_desc(AudioStreamBasicDescription* desc, AudioFormatID format_id, unsigned long sample_rate, unsigned int channel_count, unsigned int bits_per_channel, OSWrapper_audio_type audio_type, OSWrapper_audio_endianness_type endianness_type) {
+    desc->mFormatID = format_id;
     desc->mSampleRate = sample_rate;
     desc->mChannelsPerFrame = channel_count;
-    /* Must be 1024 */
-    desc->mFramesPerPacket = TEST_PROGRAM_BUFFER_SIZE;
-    return OSWRAPPER_AUDIO_RESULT_SUCCESS;
-}
-#endif
 
-#ifdef DEMO_CONVERT_TO_ALAC
-static OSWRAPPER_AUDIO_RESULT_TYPE create_alac_desc(AudioStreamBasicDescription* desc, unsigned long sample_rate, unsigned int channel_count, unsigned int bits_per_channel, OSWrapper_audio_type audio_type) {
-    desc->mFormatID = kAudioFormatAppleLossless;
-
-    if (audio_type == OSWRAPPER_AUDIO_FORMAT_PCM_FLOAT) {
-        puts("Unsupported input audio format, was not integer!");
-        return OSWRAPPER_AUDIO_RESULT_FAILURE;
-    } else {
-        switch (bits_per_channel) {
-        case 16:
-            desc->mFormatFlags = kAppleLosslessFormatFlag_16BitSourceData;
-            break;
-
-        case 20:
-            desc->mFormatFlags = kAppleLosslessFormatFlag_20BitSourceData;
-            break;
-
-        case 24:
-            desc->mFormatFlags = kAppleLosslessFormatFlag_24BitSourceData;
-            break;
-
-        case 32:
-            desc->mFormatFlags = kAppleLosslessFormatFlag_32BitSourceData;
-            break;
-
-        default:
-            puts("Unsupported input bit depth!");
+    if (format_id == kAudioFormatLinearPCM) {
+        if (audio_type == OSWRAPPER_AUDIO_FORMAT_PCM_FLOAT) {
+            desc->mFormatFlags = kLinearPCMFormatFlagIsFloat;
+        } else if (audio_type == OSWRAPPER_AUDIO_FORMAT_PCM_INTEGER) {
+            desc->mFormatFlags = kLinearPCMFormatFlagIsSignedInteger;
+        } else {
+            puts("Unsupported audio format, was not float or integer!");
             return OSWRAPPER_AUDIO_RESULT_FAILURE;
         }
-    }
 
-    desc->mSampleRate = sample_rate;
-    desc->mChannelsPerFrame = channel_count;
-    /* Must be 4096 */
-    desc->mFramesPerPacket = TEST_PROGRAM_BUFFER_SIZE;
-    return OSWRAPPER_AUDIO_RESULT_SUCCESS;
-}
-#endif
+        desc->mFormatFlags |= kLinearPCMFormatFlagIsPacked;
 
-#ifdef DEMO_CONVERT_TO_FLAC
-static OSWRAPPER_AUDIO_RESULT_TYPE create_flac_desc(AudioStreamBasicDescription* desc, unsigned long sample_rate, unsigned int channel_count, unsigned int bits_per_channel, OSWrapper_audio_type audio_type) {
-    desc->mFormatID = kAudioFormatFLAC;
-
-    if (audio_type == OSWRAPPER_AUDIO_FORMAT_PCM_FLOAT) {
-        puts("Unsupported input audio format, was not integer!");
-        return OSWRAPPER_AUDIO_RESULT_FAILURE;
-    } else {
-        switch (bits_per_channel) {
-        case 16:
-            desc->mFormatFlags = kAppleLosslessFormatFlag_16BitSourceData;
-            break;
-
-        case 20:
-            desc->mFormatFlags = kAppleLosslessFormatFlag_20BitSourceData;
-            break;
-
-        case 24:
-            desc->mFormatFlags = kAppleLosslessFormatFlag_24BitSourceData;
-            break;
-
-        case 32:
-            desc->mFormatFlags = kAppleLosslessFormatFlag_32BitSourceData;
-            break;
-
-        default:
-            puts("Unsupported input bit depth!");
-            return OSWRAPPER_AUDIO_RESULT_FAILURE;
+        if (endianness_type == OSWRAPPER_AUDIO_ENDIANNESS_BIG) {
+            desc->mFormatFlags |= kAudioFormatFlagIsBigEndian;
         }
+
+        desc->mBitsPerChannel = bits_per_channel;
+        /* kAudioFormatLinearPCM doesn't use packets */
+        desc->mFramesPerPacket = 1;
+        /* Bytes per channel * channels per frame */
+        desc->mBytesPerFrame = (desc->mBitsPerChannel / 8) * desc->mChannelsPerFrame;
+        /* Bytes per frame * frames per packet */
+        desc->mBytesPerPacket = desc->mBytesPerFrame * desc->mFramesPerPacket;
+    } else {
+        if (format_id == kAudioFormatAppleLossless || format_id == kAudioFormatFLAC) {
+            if (audio_type == OSWRAPPER_AUDIO_FORMAT_PCM_FLOAT) {
+                puts("Unsupported input audio format, was not integer!");
+                return OSWRAPPER_AUDIO_RESULT_FAILURE;
+            } else {
+                switch (bits_per_channel) {
+                case 16:
+                    desc->mFormatFlags = kAppleLosslessFormatFlag_16BitSourceData;
+                    break;
+
+                case 20:
+                    desc->mFormatFlags = kAppleLosslessFormatFlag_20BitSourceData;
+                    break;
+
+                case 24:
+                    desc->mFormatFlags = kAppleLosslessFormatFlag_24BitSourceData;
+                    break;
+
+                case 32:
+                    desc->mFormatFlags = kAppleLosslessFormatFlag_32BitSourceData;
+                    break;
+
+                default:
+                    puts("Unsupported input bit depth!");
+                    return OSWRAPPER_AUDIO_RESULT_FAILURE;
+                }
+            }
+        } else {
+            desc->mFormatFlags = kAudioFormatFlagsAreAllClear;
+        }
+
+        desc->mFramesPerPacket = TEST_PROGRAM_BUFFER_SIZE;
     }
 
-    desc->mSampleRate = sample_rate;
-    desc->mChannelsPerFrame = channel_count;
-    desc->mFramesPerPacket = TEST_PROGRAM_BUFFER_SIZE;
     return OSWRAPPER_AUDIO_RESULT_SUCCESS;
 }
-#endif
 
 /* Decodes and re-encodes a given audio file to M4A (or WAV if you define DEMO_CONVERT_TO_WAV) */
 int main(int argc, char** argv) {
@@ -307,12 +254,12 @@ int main(int argc, char** argv) {
         output_buffer_list.mBuffers[0].mData = buffer;
 
         /* Input PCM format */
-        if (!create_pcm_desc(&input_format, audio_spec->sample_rate, audio_spec->channel_count, audio_spec->bits_per_channel, audio_spec->audio_type, audio_spec->endianness_type)) {
+        if (!create_desc(&input_format, kAudioFormatLinearPCM, audio_spec->sample_rate, audio_spec->channel_count, audio_spec->bits_per_channel, audio_spec->audio_type, audio_spec->endianness_type)) {
             goto audio_cleanup;
         }
 
         /* Output format */
-        if (!DEMO_AUDIO_FILL_OUTPUT_METHOD(&output_format, audio_spec->sample_rate, audio_spec->channel_count, audio_spec->bits_per_channel, audio_spec->audio_type, audio_spec->endianness_type)) {
+        if (!create_desc(&output_format, DEMO_AUDIO_FILE_FORMAT, audio_spec->sample_rate, audio_spec->channel_count, audio_spec->bits_per_channel, audio_spec->audio_type, audio_spec->endianness_type)) {
             goto audio_cleanup;
         }
 
