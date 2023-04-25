@@ -245,6 +245,10 @@ int main(int argc, char** argv) {
         AudioStreamBasicDescription input_format = { 0 };
         AudioStreamBasicDescription output_format = { 0 };
 #endif
+#ifdef DEMO_CONVERT_TO_M4A
+        AudioConverterRef converter = NULL;
+        UInt32 property_size = sizeof(AudioConverterRef);
+#endif
         AudioBufferList output_buffer_list;
 
         if (buffer == NULL) {
@@ -276,6 +280,19 @@ int main(int argc, char** argv) {
             puts("Couldn't set input format for encoding!");
             goto audio_cleanup;
         }
+
+#ifdef DEMO_CONVERT_TO_M4A
+
+        if (!ExtAudioFileGetProperty(ext_output_file, kExtAudioFileProperty_AudioConverter, &property_size, &converter) && converter != NULL) {
+            /* Set encoding bitrate to 256kpbs */
+            UInt32 bitrate = 256000;
+            /* Failure is mostly harmless */
+            AudioConverterSetProperty(converter, kAudioConverterEncodeBitRate, sizeof(bitrate), &bitrate);
+            CFArrayRef converter_config = NULL;
+            ExtAudioFileSetProperty(ext_output_file, kExtAudioFileProperty_ConverterConfig, sizeof(CFArrayRef), &converter_config);
+        }
+
+#endif
 
         while (1) {
             size_t this_iter = oswrapper_audio_get_samples(audio_spec, buffer, TEST_PROGRAM_BUFFER_SIZE);
