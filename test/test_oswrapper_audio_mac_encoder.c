@@ -14,6 +14,7 @@ https://github.com/NeRdTheNed/OSWrapper/blob/main/test/test_oswrapper_audio_mac_
 #include "oswrapper_audio.h"
 
 #include <AudioToolbox/AudioConverter.h>
+#include <AudioToolbox/AudioFormat.h>
 #include <AudioToolbox/ExtendedAudioFile.h>
 
 #if !defined(MAC_OS_X_VERSION_10_5) || MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_5
@@ -50,19 +51,16 @@ https://github.com/NeRdTheNed/OSWrapper/blob/main/test/test_oswrapper_audio_mac_
 #define DEMO_AUDIO_FILE_FORMAT kAudioFormatLinearPCM
 #define DEMO_AUDIO_FILE_EXT ".snd"
 #elif defined(DEMO_CONVERT_TO_ALAC)
-#define TEST_PROGRAM_BUFFER_SIZE 4096
 #define ENDIANNESS_TYPE OSWRAPPER_AUDIO_ENDIANNESS_USE_SYSTEM_DEFAULT
 #define DEMO_AUDIO_FILE_TYPE kAudioFileM4AType
 #define DEMO_AUDIO_FILE_FORMAT kAudioFormatAppleLossless
 #define DEMO_AUDIO_FILE_EXT ".m4a"
 #elif defined(DEMO_CONVERT_TO_FLAC)
-#define TEST_PROGRAM_BUFFER_SIZE 4096
 #define ENDIANNESS_TYPE OSWRAPPER_AUDIO_ENDIANNESS_USE_SYSTEM_DEFAULT
 #define DEMO_AUDIO_FILE_TYPE kAudioFileFLACType
 #define DEMO_AUDIO_FILE_FORMAT kAudioFormatFLAC
 #define DEMO_AUDIO_FILE_EXT ".flac"
 #elif defined(DEMO_CONVERT_TO_M4A)
-#define TEST_PROGRAM_BUFFER_SIZE 1024
 #define ENDIANNESS_TYPE OSWRAPPER_AUDIO_ENDIANNESS_USE_SYSTEM_DEFAULT
 #define DEMO_AUDIO_FILE_TYPE kAudioFileM4AType
 #define DEMO_AUDIO_FILE_FORMAT kAudioFormatMPEG4AAC
@@ -162,8 +160,13 @@ static OSWRAPPER_AUDIO_RESULT_TYPE create_desc(AudioStreamBasicDescription* desc
         } else {
             desc->mFormatFlags = kAudioFormatFlagsAreAllClear;
         }
+    }
 
-        desc->mFramesPerPacket = TEST_PROGRAM_BUFFER_SIZE;
+    UInt32 property_size = sizeof(AudioStreamBasicDescription);
+
+    if (AudioFormatGetProperty(kAudioFormatProperty_FormatInfo, 0, NULL, &property_size, desc)) {
+        puts("Could not create valid ASBD from input properties!");
+        return OSWRAPPER_AUDIO_RESULT_FAILURE;
     }
 
     return OSWRAPPER_AUDIO_RESULT_SUCCESS;
