@@ -21,6 +21,12 @@ https://github.com/NeRdTheNed/OSWrapper/blob/main/test/test_oswrapper_audio_mac_
 #include <CoreServices/CoreServices.h>
 #endif
 
+#if !defined(MAC_OS_X_VERSION_10_10) || MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_10
+#define AUDIO_FORMAT_ID_TYPE UInt32
+#else
+#define AUDIO_FORMAT_ID_TYPE AudioFormatID
+#endif
+
 #if !defined(MAC_OS_X_VERSION_10_13) || MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_13
 #ifndef kAudioFileFLACType
 #define kAudioFileFLACType 'flac'
@@ -77,7 +83,7 @@ static OSStatus test_encoder_create_from_path(const char* path, AudioStreamBasic
     return error;
 }
 
-static OSWRAPPER_AUDIO_RESULT_TYPE create_desc(AudioStreamBasicDescription* desc, AudioFormatID format_id, unsigned long sample_rate, unsigned int channel_count, unsigned int bits_per_channel, OSWrapper_audio_type audio_type, OSWrapper_audio_endianness_type endianness_type) {
+static OSWRAPPER_AUDIO_RESULT_TYPE create_desc(AudioStreamBasicDescription* desc, AUDIO_FORMAT_ID_TYPE format_id, unsigned long sample_rate, unsigned int channel_count, unsigned int bits_per_channel, OSWrapper_audio_type audio_type, OSWrapper_audio_endianness_type endianness_type) {
     desc->mFormatID = format_id;
     /* This may be set to 0 when creating compressed formats */
     desc->mSampleRate = format_id == kAudioFormatMPEG4AAC ? 0 : sample_rate;
@@ -155,7 +161,7 @@ int main(int argc, char** argv) {
     FILE* output_file = NULL;
     ExtAudioFileRef ext_output_file = NULL;
     AudioFileTypeID file_type;
-    AudioFormatID file_format;
+    AUDIO_FORMAT_ID_TYPE file_format;
     OSWrapper_audio_endianness_type endianness_type;
     OSWrapper_audio_spec* audio_spec = NULL;
     char* output_path = NULL;
