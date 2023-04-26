@@ -1,8 +1,8 @@
 /*
 This program uses oswrapper_audio to decode an audio file,
-and encode the decoded PCM data to M4A (or WAV if you define DEMO_CONVERT_TO_WAV).
+and encodes the decoded PCM data to a variety of file types using macOS APIs.
 
-Usage: test_oswrapper_audio_mac_encoder (audio_file.ext)
+Usage: test_oswrapper_audio_mac_encoder (audio_file.ext) (optional wanted file format)
 If no input is provided, it will decode and encode the file named noise.wav in this folder.
 
 The latest version of this file can be found at
@@ -36,44 +36,11 @@ https://github.com/NeRdTheNed/OSWrapper/blob/main/test/test_oswrapper_audio_mac_
 #define AUDIO_FORMAT OSWRAPPER_AUDIO_FORMAT_NOT_SET
 #endif
 
-#if !defined(DEMO_CONVERT_TO_WAV) && !defined(DEMO_CONVERT_TO_M4A) && !defined(DEMO_CONVERT_TO_NEXT) && !defined(DEMO_CONVERT_TO_ALAC) && !defined(DEMO_CONVERT_TO_FLAC)
-#define DEMO_CONVERT_TO_M4A
-#endif
-
-#ifdef DEMO_CONVERT_TO_WAV
-#define ENDIANNESS_TYPE OSWRAPPER_AUDIO_ENDIANNESS_LITTLE
-#define DEMO_AUDIO_FILE_TYPE kAudioFileWAVEType
-#define DEMO_AUDIO_FILE_FORMAT kAudioFormatLinearPCM
-#define DEMO_AUDIO_FILE_EXT ".wav"
-#elif defined(DEMO_CONVERT_TO_NEXT)
-#define ENDIANNESS_TYPE OSWRAPPER_AUDIO_ENDIANNESS_BIG
-#define DEMO_AUDIO_FILE_TYPE kAudioFileNextType
-#define DEMO_AUDIO_FILE_FORMAT kAudioFormatLinearPCM
-#define DEMO_AUDIO_FILE_EXT ".snd"
-#elif defined(DEMO_CONVERT_TO_ALAC)
-#define ENDIANNESS_TYPE OSWRAPPER_AUDIO_ENDIANNESS_USE_SYSTEM_DEFAULT
-#define DEMO_AUDIO_FILE_TYPE kAudioFileM4AType
-#define DEMO_AUDIO_FILE_FORMAT kAudioFormatAppleLossless
-#define DEMO_AUDIO_FILE_EXT ".m4a"
-#elif defined(DEMO_CONVERT_TO_FLAC)
-#define ENDIANNESS_TYPE OSWRAPPER_AUDIO_ENDIANNESS_USE_SYSTEM_DEFAULT
-#define DEMO_AUDIO_FILE_TYPE kAudioFileFLACType
-#define DEMO_AUDIO_FILE_FORMAT kAudioFormatFLAC
-#define DEMO_AUDIO_FILE_EXT ".flac"
-#elif defined(DEMO_CONVERT_TO_M4A)
-#define ENDIANNESS_TYPE OSWRAPPER_AUDIO_ENDIANNESS_USE_SYSTEM_DEFAULT
-#define DEMO_AUDIO_FILE_TYPE kAudioFileM4AType
-#define DEMO_AUDIO_FILE_FORMAT kAudioFormatMPEG4AAC
-#define DEMO_AUDIO_FILE_EXT ".m4a"
-#else
-#error No format defined
-#endif
-
 #ifndef TEST_PROGRAM_BUFFER_SIZE
 #define TEST_PROGRAM_BUFFER_SIZE 4096
 #endif
 
-static OSStatus test_encoder_create_from_path(const char* path, AudioStreamBasicDescription* output_format, ExtAudioFileRef* audio_file) {
+static OSStatus test_encoder_create_from_path(const char* path, AudioStreamBasicDescription* output_format, ExtAudioFileRef* audio_file, AudioFileTypeID file_type) {
     OSStatus error;
     CFStringRef path_cfstr;
     CFURLRef path_url;
@@ -90,11 +57,11 @@ static OSStatus test_encoder_create_from_path(const char* path, AudioStreamBasic
     error = FSPathMakeRef(base_dir, &path_fsref, &is_dir);
 
     if (!error && is_dir) {
-        error = ExtAudioFileCreateNew(&path_fsref, path_cfstr, DEMO_AUDIO_FILE_TYPE, output_format, NULL, audio_file);
+        error = ExtAudioFileCreateNew(&path_fsref, path_cfstr, file_type, output_format, NULL, audio_file);
     }
 
 #else
-    error = ExtAudioFileCreateWithURL(path_url, DEMO_AUDIO_FILE_TYPE, output_format, NULL, 0, audio_file);
+    error = ExtAudioFileCreateWithURL(path_url, file_type, output_format, NULL, 0, audio_file);
 #endif
     CFRelease(path_url);
     CFRelease(path_cfstr);
@@ -173,16 +140,66 @@ static OSWRAPPER_AUDIO_RESULT_TYPE create_desc(AudioStreamBasicDescription* desc
     return OSWRAPPER_AUDIO_RESULT_SUCCESS;
 }
 
-/* Decodes and re-encodes a given audio file to M4A (or WAV if you define DEMO_CONVERT_TO_WAV) */
+/* Decodes and re-encodes a given audio file to a variety of file types */
 int main(int argc, char** argv) {
     int returnVal = EXIT_FAILURE;
     FILE* output_file = NULL;
     ExtAudioFileRef ext_output_file = NULL;
+    AudioFileTypeID file_type;
+    AudioFormatID file_format;
+    OSWrapper_audio_endianness_type endianness_type;
     OSWrapper_audio_spec* audio_spec = NULL;
     char* output_path = NULL;
     short* buffer = NULL;
-    const char* path = argc < 2 ? "noise.wav" : argv[argc - 1];
+    const char* path;
+    const char* ext;
+
+    if (argc > 2) {
+        path = argv[argc - 2];
+        ext = argv[argc - 1];
+    } else {
+        path = argc < 2 ? "noise.wav" : argv[argc - 1];
+        ext = "m4a";
+    }
+
+    if (strcmp(ext, "m4a") == 0) {
+        puts("Converting to m4a (lossy aac)");
+        endianness_type = OSWRAPPER_AUDIO_ENDIANNESS_USE_SYSTEM_DEFAULT;
+        file_type = kAudioFileM4AType;
+        file_format = kAudioFormatMPEG4AAC;
+    } else if (strcmp(ext, "alac") == 0) {
+        puts("Converting to m4a (lossless alac)");
+        ext = "m4a";
+        endianness_type = OSWRAPPER_AUDIO_ENDIANNESS_USE_SYSTEM_DEFAULT;
+        file_type = kAudioFileM4AType;
+        file_format = kAudioFormatAppleLossless;
+    } else if (strcmp(ext, "flac") == 0) {
+        puts("Converting to flac");
+        endianness_type = OSWRAPPER_AUDIO_ENDIANNESS_USE_SYSTEM_DEFAULT;
+        file_type = kAudioFileFLACType;
+        file_format = kAudioFormatFLAC;
+    } else if (strcmp(ext, "wav") == 0) {
+        puts("Converting to wav");
+        endianness_type = OSWRAPPER_AUDIO_ENDIANNESS_LITTLE;
+        file_type = kAudioFileWAVEType;
+        file_format = kAudioFormatLinearPCM;
+    } else if (strcmp(ext, "snd") == 0) {
+        puts("Converting to snd");
+        endianness_type = OSWRAPPER_AUDIO_ENDIANNESS_BIG;
+        file_type = kAudioFileNextType;
+        file_format = kAudioFormatLinearPCM;
+    } else {
+        /* Default to m4a */
+        puts("Converting to m4a (lossy aac)");
+        ext = "m4a";
+        endianness_type = OSWRAPPER_AUDIO_ENDIANNESS_USE_SYSTEM_DEFAULT;
+        file_type = kAudioFileM4AType;
+        file_format = kAudioFormatMPEG4AAC;
+    }
+
     size_t input_string_length = strlen(path);
+    /* "." + extention */
+    size_t output_ext_length = 1 + strlen(ext);
 
     if (!oswrapper_audio_init()) {
         puts("Could not initialise oswrapper_audio!");
@@ -196,7 +213,7 @@ int main(int argc, char** argv) {
         goto exit;
     }
 
-    output_path = (char*) malloc(input_string_length + sizeof(DEMO_AUDIO_FILE_EXT));
+    output_path = (char*) malloc(input_string_length + output_ext_length);
 
     if (output_path == NULL) {
         puts("malloc failed for output path!");
@@ -204,7 +221,8 @@ int main(int argc, char** argv) {
     }
 
     memcpy(output_path, path, input_string_length);
-    memcpy(output_path + input_string_length, DEMO_AUDIO_FILE_EXT, sizeof(DEMO_AUDIO_FILE_EXT));
+    output_path[input_string_length] = '.';
+    memcpy(output_path + input_string_length + 1, ext, output_ext_length);
     output_file = fopen(output_path, "rb");
 
     if (output_file != NULL) {
@@ -218,7 +236,7 @@ int main(int argc, char** argv) {
     audio_spec->channel_count = CHANNEL_COUNT;
     audio_spec->bits_per_channel = BITS_PER_CHANNEL;
     audio_spec->audio_type = AUDIO_FORMAT;
-    audio_spec->endianness_type = ENDIANNESS_TYPE;
+    audio_spec->endianness_type = endianness_type;
 
     if (oswrapper_audio_load_from_path(path, audio_spec)) {
         printf("Path: %s\nOutput path: %s\nSample rate: %lu\nChannels: %d\nBit depth: %d\n", path, output_path, audio_spec->sample_rate, audio_spec->channel_count, audio_spec->bits_per_channel);
@@ -245,10 +263,8 @@ int main(int argc, char** argv) {
         AudioStreamBasicDescription input_format = { 0 };
         AudioStreamBasicDescription output_format = { 0 };
 #endif
-#ifdef DEMO_CONVERT_TO_M4A
         AudioConverterRef converter = NULL;
         UInt32 property_size = sizeof(AudioConverterRef);
-#endif
         AudioBufferList output_buffer_list;
 
         if (buffer == NULL) {
@@ -267,11 +283,11 @@ int main(int argc, char** argv) {
         }
 
         /* Output format */
-        if (!create_desc(&output_format, DEMO_AUDIO_FILE_FORMAT, audio_spec->sample_rate, audio_spec->channel_count, audio_spec->bits_per_channel, audio_spec->audio_type, audio_spec->endianness_type)) {
+        if (!create_desc(&output_format, file_format, audio_spec->sample_rate, audio_spec->channel_count, audio_spec->bits_per_channel, audio_spec->audio_type, audio_spec->endianness_type)) {
             goto audio_cleanup;
         }
 
-        if (test_encoder_create_from_path(output_path, &output_format, &ext_output_file)) {
+        if (test_encoder_create_from_path(output_path, &output_format, &ext_output_file, file_type)) {
             puts("Couldn't open output file for encoding!");
             goto audio_cleanup;
         }
@@ -281,9 +297,7 @@ int main(int argc, char** argv) {
             goto audio_cleanup;
         }
 
-#ifdef DEMO_CONVERT_TO_M4A
-
-        if (!ExtAudioFileGetProperty(ext_output_file, kExtAudioFileProperty_AudioConverter, &property_size, &converter) && converter != NULL) {
+        if (file_format == kAudioFormatMPEG4AAC && !ExtAudioFileGetProperty(ext_output_file, kExtAudioFileProperty_AudioConverter, &property_size, &converter) && converter != NULL) {
             /* Set encoding bitrate to 256kpbs */
             UInt32 bitrate = 256000;
             /* Failure is mostly harmless */
@@ -291,8 +305,6 @@ int main(int argc, char** argv) {
             CFArrayRef converter_config = NULL;
             ExtAudioFileSetProperty(ext_output_file, kExtAudioFileProperty_ConverterConfig, sizeof(CFArrayRef), &converter_config);
         }
-
-#endif
 
         while (1) {
             size_t this_iter = oswrapper_audio_get_samples(audio_spec, buffer, TEST_PROGRAM_BUFFER_SIZE);
