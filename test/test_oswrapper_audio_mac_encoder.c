@@ -198,7 +198,7 @@ int main(int argc, char** argv) {
         endianness_type = OSWRAPPER_AUDIO_ENDIANNESS_LITTLE;
         file_type = kAudioFileWAVEType;
         file_format = kAudioFormatLinearPCM;
-    } else if (strcmp(ext, "snd") == 0) {
+    } else if (strcmp(ext, "snd") == 0 || strcmp(ext, "au") == 0) {
         puts("Converting to snd");
         endianness_type = OSWRAPPER_AUDIO_ENDIANNESS_BIG;
         file_type = kAudioFileNextType;
