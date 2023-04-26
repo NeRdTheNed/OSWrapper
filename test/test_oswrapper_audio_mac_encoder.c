@@ -21,6 +21,15 @@ https://github.com/NeRdTheNed/OSWrapper/blob/main/test/test_oswrapper_audio_mac_
 #include <CoreServices/CoreServices.h>
 #endif
 
+#if !defined(MAC_OS_X_VERSION_10_13) || MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_13
+#ifndef kAudioFileFLACType
+#define kAudioFileFLACType 'flac'
+#endif
+#ifndef kAudioFormatFLAC
+#define kAudioFormatFLAC 'flac'
+#endif
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 
