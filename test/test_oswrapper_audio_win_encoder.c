@@ -50,7 +50,7 @@ https://github.com/NeRdTheNed/OSWrapper/blob/main/test/test_oswrapper_audio_win_
 #define DEMO_WIN_MAX_PATH MAX_PATH
 #endif
 
-#if !defined(DEMO_WIN_CONVERT_TO_M4A) && !defined(DEMO_WIN_CONVERT_TO_WAV) && !defined(DEMO_WIN_CONVERT_TO_MP3)
+#if !defined(DEMO_WIN_CONVERT_TO_M4A) && !defined(DEMO_WIN_CONVERT_TO_WAV) && !defined(DEMO_WIN_CONVERT_TO_MP3) && !defined(DEMO_WIN_CONVERT_TO_FLAC)
 #define DEMO_WIN_CONVERT_TO_WAV
 #endif
 
@@ -63,6 +63,9 @@ https://github.com/NeRdTheNed/OSWrapper/blob/main/test/test_oswrapper_audio_win_
 #elif defined(DEMO_WIN_CONVERT_TO_MP3)
 #define DEMO_WIN_EXT ".mp3"
 #define DEMO_WIN_CONV_FORMAT &MFAudioFormat_MP3
+#elif defined(DEMO_WIN_CONVERT_TO_FLAC)
+#define DEMO_WIN_EXT ".flac"
+#define DEMO_WIN_CONV_FORMAT &MFAudioFormat_FLAC
 #else
 #error No format defined
 #endif
