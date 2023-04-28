@@ -26,6 +26,19 @@ https://github.com/NeRdTheNed/OSWrapper/blob/main/test/test_oswrapper_audio_win_
 #include <stdio.h>
 #include <stdlib.h>
 
+#if defined(__cplusplus) && !defined(CINTERFACE)
+#define IMFSample_AddBuffer(sample, ...) sample->AddBuffer(__VA_ARGS__)
+#define IMFMediaBuffer_SetCurrentLength(media_buffer, ...) media_buffer->SetCurrentLength(__VA_ARGS__)
+#define IMFSample_SetSampleDuration(sample, ...) sample->SetSampleDuration(__VA_ARGS__)
+#define IMFSample_SetSampleTime(sample, ...) sample->SetSampleTime(__VA_ARGS__)
+#define IMFSinkWriter_WriteSample(sink_writer, ...) sink_writer->WriteSample(__VA_ARGS__)
+#define IMFSinkWriter_AddStream(sink_writer, ...) sink_writer->AddStream(__VA_ARGS__)
+#define IMFSinkWriter_SetInputMediaType(sink_writer, ...) sink_writer->SetInputMediaType(__VA_ARGS__)
+#define IMFSinkWriter_BeginWriting(sink_writer) sink_writer->BeginWriting()
+#define IMFSinkWriter_Finalize(sink_writer) sink_writer->Finalize()
+#define IMFSinkWriter_Release(sink_writer) sink_writer->Release()
+#endif
+
 #ifdef HINT_OUTPUT_FORMAT
 #define SAMPLE_RATE 44100
 #define CHANNEL_COUNT 2
@@ -56,16 +69,32 @@ https://github.com/NeRdTheNed/OSWrapper/blob/main/test/test_oswrapper_audio_win_
 
 #ifdef DEMO_WIN_CONVERT_TO_M4A
 #define DEMO_WIN_EXT ".m4a"
+#ifdef __cplusplus
+#define DEMO_WIN_CONV_FORMAT MFAudioFormat_AAC
+#else
 #define DEMO_WIN_CONV_FORMAT &MFAudioFormat_AAC
+#endif
 #elif defined(DEMO_WIN_CONVERT_TO_WAV)
 #define DEMO_WIN_EXT ".wav"
+#ifdef __cplusplus
+#define DEMO_WIN_CONV_FORMAT MFAudioFormat_PCM
+#else
 #define DEMO_WIN_CONV_FORMAT &MFAudioFormat_PCM
+#endif
 #elif defined(DEMO_WIN_CONVERT_TO_MP3)
 #define DEMO_WIN_EXT ".mp3"
+#ifdef __cplusplus
+#define DEMO_WIN_CONV_FORMAT MFAudioFormat_MP3
+#else
 #define DEMO_WIN_CONV_FORMAT &MFAudioFormat_MP3
+#endif
 #elif defined(DEMO_WIN_CONVERT_TO_FLAC)
 #define DEMO_WIN_EXT ".flac"
+#ifdef __cplusplus
+#define DEMO_WIN_CONV_FORMAT MFAudioFormat_FLAC
+#else
 #define DEMO_WIN_CONV_FORMAT &MFAudioFormat_FLAC
+#endif
 #else
 #error No format defined
 #endif
@@ -98,14 +127,23 @@ static OSWRAPPER_AUDIO_RESULT_TYPE make_sink_writer_from_path(const char* path, 
 
 static OSWRAPPER_AUDIO_RESULT_TYPE make_media_type_for_input_format(IMFMediaType** input_media_type, OSWrapper_audio_spec* audio_spec) {
     if (SUCCEEDED(MFCreateMediaType(input_media_type))) {
-        DEMO_MAKE_MEDIA_HELPER(IMFMediaType_SetGUID(*input_media_type, &MF_MT_MAJOR_TYPE, &MFMediaType_Audio));
-        DEMO_MAKE_MEDIA_HELPER(IMFMediaType_SetGUID(*input_media_type, &MF_MT_SUBTYPE, audio_spec->audio_type == OSWRAPPER_AUDIO_FORMAT_PCM_FLOAT ? &MFAudioFormat_Float : &MFAudioFormat_PCM));
-        DEMO_MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(*input_media_type, &MF_MT_AUDIO_BITS_PER_SAMPLE, audio_spec->bits_per_channel));
-        DEMO_MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(*input_media_type, &MF_MT_AUDIO_SAMPLES_PER_SECOND, audio_spec->sample_rate));
-        DEMO_MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(*input_media_type, &MF_MT_AUDIO_NUM_CHANNELS, audio_spec->channel_count));
+        IMFMediaType* media_type = *input_media_type;
+#ifdef __cplusplus
+        DEMO_MAKE_MEDIA_HELPER(IMFMediaType_SetGUID(media_type, MF_MT_MAJOR_TYPE, MFMediaType_Audio));
+        DEMO_MAKE_MEDIA_HELPER(IMFMediaType_SetGUID(media_type, MF_MT_SUBTYPE, audio_spec->audio_type == OSWRAPPER_AUDIO_FORMAT_PCM_FLOAT ? MFAudioFormat_Float : MFAudioFormat_PCM));
+        DEMO_MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, MF_MT_AUDIO_BITS_PER_SAMPLE, audio_spec->bits_per_channel));
+        DEMO_MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, MF_MT_AUDIO_SAMPLES_PER_SECOND, audio_spec->sample_rate));
+        DEMO_MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, MF_MT_AUDIO_NUM_CHANNELS, audio_spec->channel_count));
+#else
+        DEMO_MAKE_MEDIA_HELPER(IMFMediaType_SetGUID(media_type, &MF_MT_MAJOR_TYPE, &MFMediaType_Audio));
+        DEMO_MAKE_MEDIA_HELPER(IMFMediaType_SetGUID(media_type, &MF_MT_SUBTYPE, audio_spec->audio_type == OSWRAPPER_AUDIO_FORMAT_PCM_FLOAT ? &MFAudioFormat_Float : &MFAudioFormat_PCM));
+        DEMO_MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, &MF_MT_AUDIO_BITS_PER_SAMPLE, audio_spec->bits_per_channel));
+        DEMO_MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, &MF_MT_AUDIO_SAMPLES_PER_SECOND, audio_spec->sample_rate));
+        DEMO_MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, &MF_MT_AUDIO_NUM_CHANNELS, audio_spec->channel_count));
+#endif
         return OSWRAPPER_AUDIO_RESULT_SUCCESS;
 cleanup:
-        IMFMediaType_Release(*input_media_type);
+        IMFMediaType_Release(media_type);
     }
 
     return OSWRAPPER_AUDIO_RESULT_FAILURE;
@@ -113,19 +151,33 @@ cleanup:
 
 static OSWRAPPER_AUDIO_RESULT_TYPE make_media_type_for_output_format(IMFMediaType** output_media_type, OSWrapper_audio_spec* audio_spec) {
     if (SUCCEEDED(MFCreateMediaType(output_media_type))) {
-        DEMO_MAKE_MEDIA_HELPER(IMFMediaType_SetGUID(*output_media_type, &MF_MT_MAJOR_TYPE, &MFMediaType_Audio));
-        DEMO_MAKE_MEDIA_HELPER(IMFMediaType_SetGUID(*output_media_type, &MF_MT_SUBTYPE, DEMO_WIN_CONV_FORMAT));
-        DEMO_MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(*output_media_type, &MF_MT_AUDIO_BITS_PER_SAMPLE, audio_spec->bits_per_channel));
-        DEMO_MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(*output_media_type, &MF_MT_AUDIO_SAMPLES_PER_SECOND, audio_spec->sample_rate));
-        DEMO_MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(*output_media_type, &MF_MT_AUDIO_NUM_CHANNELS, audio_spec->channel_count));
+        IMFMediaType* media_type = *output_media_type;
+#ifdef __cplusplus
+        DEMO_MAKE_MEDIA_HELPER(IMFMediaType_SetGUID(media_type, MF_MT_MAJOR_TYPE, MFMediaType_Audio));
+        DEMO_MAKE_MEDIA_HELPER(IMFMediaType_SetGUID(media_type, MF_MT_SUBTYPE, DEMO_WIN_CONV_FORMAT));
+        DEMO_MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, MF_MT_AUDIO_BITS_PER_SAMPLE, audio_spec->bits_per_channel));
+        DEMO_MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, MF_MT_AUDIO_SAMPLES_PER_SECOND, audio_spec->sample_rate));
+        DEMO_MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, MF_MT_AUDIO_NUM_CHANNELS, audio_spec->channel_count));
 #ifdef DEMO_WIN_CONVERT_TO_M4A
-        DEMO_MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(*output_media_type, &MF_MT_AUDIO_AVG_BYTES_PER_SECOND, 128 * 1000 / 8));
+        DEMO_MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, MF_MT_AUDIO_AVG_BYTES_PER_SECOND, 128 * 1000 / 8));
 #elif defined(DEMO_WIN_CONVERT_TO_MP3)
-        DEMO_MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(*output_media_type, &MF_MT_AUDIO_AVG_BYTES_PER_SECOND, 320 * 1000 / 8));
+        DEMO_MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, MF_MT_AUDIO_AVG_BYTES_PER_SECOND, 320 * 1000 / 8));
+#endif
+#else
+        DEMO_MAKE_MEDIA_HELPER(IMFMediaType_SetGUID(media_type, &MF_MT_MAJOR_TYPE, &MFMediaType_Audio));
+        DEMO_MAKE_MEDIA_HELPER(IMFMediaType_SetGUID(media_type, &MF_MT_SUBTYPE, DEMO_WIN_CONV_FORMAT));
+        DEMO_MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, &MF_MT_AUDIO_BITS_PER_SAMPLE, audio_spec->bits_per_channel));
+        DEMO_MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, &MF_MT_AUDIO_SAMPLES_PER_SECOND, audio_spec->sample_rate));
+        DEMO_MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, &MF_MT_AUDIO_NUM_CHANNELS, audio_spec->channel_count));
+#ifdef DEMO_WIN_CONVERT_TO_M4A
+        DEMO_MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, &MF_MT_AUDIO_AVG_BYTES_PER_SECOND, 128 * 1000 / 8));
+#elif defined(DEMO_WIN_CONVERT_TO_MP3)
+        DEMO_MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, &MF_MT_AUDIO_AVG_BYTES_PER_SECOND, 320 * 1000 / 8));
+#endif
 #endif
         return OSWRAPPER_AUDIO_RESULT_SUCCESS;
 cleanup:
-        IMFMediaType_Release(*output_media_type);
+        IMFMediaType_Release(media_type);
     }
 
     return OSWRAPPER_AUDIO_RESULT_FAILURE;

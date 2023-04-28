@@ -50,6 +50,7 @@ jobs:
             test/test_oswrapper_audio_cpp.exe
             test/test_oswrapper_audio_no_crt.exe
             test/test_oswrapper_audio_win_encoder.exe
+            test/test_oswrapper_audio_win_encoder_cpp.exe
             test/demo_oswrapper_audio_miniaudio.exe
             test/demo_oswrapper_audio_miniaudio_cpp.exe
             test/demo_oswrapper_audio_sokol_audio.exe

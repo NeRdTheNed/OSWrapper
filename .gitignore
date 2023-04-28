@@ -44,3 +44,5 @@ test/test_oswrapper_audio_mac_encoder
 test/test_oswrapper_audio_mac_encoder_cpp
 test/test_oswrapper_audio_win_encoder.exe
 test/test_oswrapper_audio_win_encoder.obj
+test/test_oswrapper_audio_win_encoder_cpp.exe
+test/test_oswrapper_audio_win_encoder_cpp.obj

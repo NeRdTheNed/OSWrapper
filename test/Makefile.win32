@@ -17,6 +17,7 @@ all:
 	$(CC) $(INCLUDES) $(CFLAGS_NO_CRT) test_oswrapper_audio_no_crt.c
 	$(LINK) /OUT:test_oswrapper_audio_no_crt.exe $(LDFLAGS_NO_CRT) $(AUDIO_LIBS) test_oswrapper_audio_no_crt.obj
 	$(CC) $(INCLUDES) $(CFLAGS) $(LDFLAGS) test_oswrapper_audio_win_encoder.c -o test_oswrapper_audio_win_encoder.exe
+	$(CXX) $(INCLUDES) $(CXXFLAGS) $(LDFLAGS) test_oswrapper_audio_win_encoder.c -o test_oswrapper_audio_win_encoder_cpp.exe
 	$(CC) $(INCLUDES) $(CFLAGS) $(LDFLAGS) demo_oswrapper_audio_miniaudio.c -o demo_oswrapper_audio_miniaudio.exe
 	$(CXX) $(INCLUDES) $(CXXFLAGS) $(LDFLAGS) demo_oswrapper_audio_miniaudio.c -o demo_oswrapper_audio_miniaudio_cpp.exe
 	$(CC) $(INCLUDES) $(CFLAGS) $(LDFLAGS) demo_oswrapper_audio_sokol_audio.c -o demo_oswrapper_audio_sokol_audio.exe
@@ -27,6 +28,6 @@ all:
 clean:
 	del test_oswrapper_image.obj test_oswrapper_image.exe test_oswrapper_image_cpp.obj test_oswrapper_image_cpp.exe test_oswrapper_image_no_crt.obj test_oswrapper_image_no_crt.exe
 	del test_oswrapper_audio.obj test_oswrapper_audio.exe test_oswrapper_audio_cpp.obj test_oswrapper_audio_cpp.exe test_oswrapper_audio_no_crt.obj test_oswrapper_audio_no_crt.exe
-	del test_oswrapper_audio_win_encoder.obj test_oswrapper_audio_win_encoder.exe
+	del test_oswrapper_audio_win_encoder.obj test_oswrapper_audio_win_encoder.exe test_oswrapper_audio_win_encoder_cpp.obj test_oswrapper_audio_win_encoder_cpp.exe
 	del demo_oswrapper_audio_miniaudio.obj demo_oswrapper_audio_miniaudio.exe demo_oswrapper_audio_miniaudio_cpp.obj demo_oswrapper_audio_miniaudio_cpp.exe
 	del demo_oswrapper_audio_sokol_audio.obj demo_oswrapper_audio_sokol_audio.exe demo_oswrapper_audio_sokol_audio_no_crt.obj demo_oswrapper_audio_sokol_audio_no_crt.exe demo_oswrapper_audio_sokol_audio_cpp.obj demo_oswrapper_audio_sokol_audio_cpp.exe
