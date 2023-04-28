@@ -70,6 +70,9 @@ https://github.com/NeRdTheNed/OSWrapper/blob/main/test/test_oswrapper_audio_win_
 #error No format defined
 #endif
 
+#define DEMO_ENC_XSTR(X) DEMO_ENC_STR(X)
+#define DEMO_ENC_STR(X) #X
+
 static OSWRAPPER_AUDIO_RESULT_TYPE make_sink_writer_from_path(const char* path, IMFSinkWriter** writer) {
     HRESULT result;
     /* TODO Ugly hack */
@@ -87,7 +90,7 @@ static OSWRAPPER_AUDIO_RESULT_TYPE make_sink_writer_from_path(const char* path, 
     return OSWRAPPER_AUDIO_RESULT_FAILURE;
 }
 
-#define DEMO_MAKE_MEDIA_HELPER(X) if (FAILED(X)) { goto cleanup; }
+#define DEMO_MAKE_MEDIA_HELPER(X) if (FAILED(X)) { puts(DEMO_ENC_XSTR(X) " failed!"); goto cleanup; }
 
 static OSWRAPPER_AUDIO_RESULT_TYPE make_media_type_for_input_format(IMFMediaType** input_media_type, OSWrapper_audio_spec* audio_spec) {
     HRESULT result;
@@ -130,8 +133,62 @@ cleanup:
     return OSWRAPPER_AUDIO_RESULT_FAILURE;
 }
 
-#define DEMO_ENC_XSTR(X) DEMO_ENC_STR(X)
-#define DEMO_ENC_STR(X) #X
+#define DEMO_WRITE_TO_BUFFER_HELPER_FAIL(X) if (FAILED(X)) { if (media_buffer != NULL) { IMFMediaBuffer_Release(media_buffer); } if (sample != NULL) { IMFSample_Release(sample); } puts(DEMO_ENC_XSTR(X) " failed!"); return 0; }
+
+static LONGLONG write_buffer_to_writer(IMFSinkWriter* writer, short* buffer, size_t this_iter, size_t frame_size, DWORD audio_stream_index, LONGLONG output_pos, unsigned long sample_rate) {
+    /* Create IMFSample */
+    IMFSample* sample = NULL;
+    IMFMediaBuffer* media_buffer = NULL;
+    DEMO_WRITE_TO_BUFFER_HELPER_FAIL(MFCreateSample(&sample));
+    DEMO_WRITE_TO_BUFFER_HELPER_FAIL(MFCreateMemoryBuffer(this_iter * frame_size, &media_buffer));
+    DEMO_WRITE_TO_BUFFER_HELPER_FAIL(IMFSample_AddBuffer(sample, media_buffer));
+    size_t this_multi = this_iter * frame_size;
+    DWORD current_length;
+    BYTE* sample_audio_data = NULL;
+    HRESULT result = IMFMediaBuffer_Lock(media_buffer, &sample_audio_data, &current_length, NULL);
+    LONGLONG this_dur = 0;
+
+    if (SUCCEEDED(result)) {
+        memcpy(sample_audio_data, buffer, this_multi);
+        IMFMediaBuffer_Unlock(media_buffer);
+        result = IMFMediaBuffer_SetCurrentLength(media_buffer, this_multi);
+
+        if (SUCCEEDED(result)) {
+            this_dur = MFllMulDiv(this_iter, 10000000ULL, sample_rate, 0);
+            result = IMFSample_SetSampleDuration(sample, this_dur);
+
+            if (FAILED(result)) {
+                puts("IMFSample_SetSampleDuration failed!");
+            }
+
+            result = IMFSample_SetSampleTime(sample, output_pos);
+
+            if (FAILED(result)) {
+                puts("IMFSample_SetSampleTime failed!");
+            }
+
+            result = IMFSinkWriter_WriteSample(writer, audio_stream_index, sample);
+
+            if (FAILED(result)) {
+                puts("IMFSinkWriter_WriteSample failed!");
+            }
+        } else {
+            puts("IMFMediaBuffer_SetCurrentLength failed!");
+        }
+    } else {
+        puts("IMFMediaBuffer_Lock failed!");
+    }
+
+    if (sample != NULL) {
+        IMFSample_Release(sample);
+    }
+
+    if (media_buffer != NULL) {
+        IMFMediaBuffer_Release(media_buffer);
+    }
+
+    return this_dur;
+}
 
 #define DEMO_WIN_ENC__END_FAIL_FALSE(cond) if(!cond) { puts(DEMO_ENC_XSTR(cond) " failed!"); goto exit; }
 #define DEMO_WIN_ENC__END_FAIL(hres) DEMO_WIN_ENC__END_FAIL_FALSE(SUCCEEDED(hres))
@@ -233,12 +290,6 @@ int main(int argc, char** argv) {
         IMFMediaType_Release(input_media_type);
         /* Initialise sink writer */
         DEMO_WIN_ENC__END_FAIL(IMFSinkWriter_BeginWriting(writer));
-        /* Create IMFSample to use when encoding */
-        IMFSample* sample = NULL;
-        IMFMediaBuffer* media_buffer = NULL;
-        DEMO_WIN_ENC__END_FAIL(MFCreateSample(&sample));
-        DEMO_WIN_ENC__END_FAIL(MFCreateMemoryBuffer(TEST_PROGRAM_BUFFER_SIZE * frame_size, &media_buffer));
-        DEMO_WIN_ENC__END_FAIL(IMFSample_AddBuffer(sample, media_buffer));
 
         if (buffer == NULL) {
             puts("calloc failed for audio decoding buffer!");
@@ -247,49 +298,12 @@ int main(int argc, char** argv) {
 
         while (1) {
             size_t this_iter = oswrapper_audio_get_samples(audio_spec, buffer, TEST_PROGRAM_BUFFER_SIZE);
-            size_t this_multi = this_iter * frame_size;
 
             if (this_iter == 0) {
                 break;
             }
 
-            DWORD current_length;
-            BYTE* sample_audio_data = NULL;
-            result = IMFMediaBuffer_Lock(media_buffer, &sample_audio_data, &current_length, NULL);
-
-            if (SUCCEEDED(result)) {
-                memcpy(sample_audio_data, buffer, this_multi);
-                IMFMediaBuffer_Unlock(media_buffer);
-                result = IMFMediaBuffer_SetCurrentLength(media_buffer, this_multi);
-
-                if (SUCCEEDED(result)) {
-                    /* TODO This is probably wrong */
-                    LONGLONG this_dur = MFllMulDiv(this_iter, 10000000ULL, audio_spec->sample_rate, 0);
-                    result = IMFSample_SetSampleDuration(sample, this_dur);
-
-                    if (FAILED(result)) {
-                        puts("IMFSample_SetSampleDuration failed!");
-                    }
-
-                    result = IMFSample_SetSampleTime(sample, output_pos);
-                    output_pos += this_dur;
-
-                    if (FAILED(result)) {
-                        puts("IMFSample_SetSampleTime failed!");
-                    }
-
-                    result = IMFSinkWriter_WriteSample(writer, audio_stream_index, sample);
-
-                    if (FAILED(result)) {
-                        puts("IMFSinkWriter_WriteSample failed!");
-                    }
-                } else {
-                    puts("IMFMediaBuffer_SetCurrentLength failed!");
-                }
-            } else {
-                puts("IMFMediaBuffer_Lock failed!");
-            }
-
+            output_pos += write_buffer_to_writer(writer, buffer, this_iter, frame_size, audio_stream_index, output_pos, audio_spec->sample_rate);
             frames_done += this_iter;
         }
 
