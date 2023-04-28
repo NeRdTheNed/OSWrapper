@@ -90,13 +90,14 @@ static OSWRAPPER_AUDIO_RESULT_TYPE make_sink_writer_from_path(const char* path, 
     return OSWRAPPER_AUDIO_RESULT_FAILURE;
 }
 
+#ifdef _DEBUG
 #define DEMO_MAKE_MEDIA_HELPER(X) if (FAILED(X)) { puts(DEMO_ENC_XSTR(X) " failed!"); goto cleanup; }
+#else
+#define DEMO_MAKE_MEDIA_HELPER(X) if (FAILED(X)) { goto cleanup; }
+#endif
 
 static OSWRAPPER_AUDIO_RESULT_TYPE make_media_type_for_input_format(IMFMediaType** input_media_type, OSWrapper_audio_spec* audio_spec) {
-    HRESULT result;
-    result = MFCreateMediaType(input_media_type);
-
-    if (SUCCEEDED(result)) {
+    if (SUCCEEDED(MFCreateMediaType(input_media_type))) {
         DEMO_MAKE_MEDIA_HELPER(IMFMediaType_SetGUID(*input_media_type, &MF_MT_MAJOR_TYPE, &MFMediaType_Audio));
         DEMO_MAKE_MEDIA_HELPER(IMFMediaType_SetGUID(*input_media_type, &MF_MT_SUBTYPE, audio_spec->audio_type == OSWRAPPER_AUDIO_FORMAT_PCM_FLOAT ? &MFAudioFormat_Float : &MFAudioFormat_PCM));
         DEMO_MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(*input_media_type, &MF_MT_AUDIO_BITS_PER_SAMPLE, audio_spec->bits_per_channel));
@@ -111,10 +112,7 @@ cleanup:
 }
 
 static OSWRAPPER_AUDIO_RESULT_TYPE make_media_type_for_output_format(IMFMediaType** output_media_type, OSWrapper_audio_spec* audio_spec) {
-    HRESULT result;
-    result = MFCreateMediaType(output_media_type);
-
-    if (SUCCEEDED(result)) {
+    if (SUCCEEDED(MFCreateMediaType(output_media_type))) {
         DEMO_MAKE_MEDIA_HELPER(IMFMediaType_SetGUID(*output_media_type, &MF_MT_MAJOR_TYPE, &MFMediaType_Audio));
         DEMO_MAKE_MEDIA_HELPER(IMFMediaType_SetGUID(*output_media_type, &MF_MT_SUBTYPE, DEMO_WIN_CONV_FORMAT));
         DEMO_MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(*output_media_type, &MF_MT_AUDIO_BITS_PER_SAMPLE, audio_spec->bits_per_channel));
