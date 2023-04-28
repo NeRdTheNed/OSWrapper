@@ -80,9 +80,6 @@ so as long as the buffer is at least 1025 characters, it's "safe" to use. */
 #include <mfidl.h>
 #include <mfreadwrite.h>
 
-//#include <stdio.h>
-//#include <stdlib.h>
-
 #if defined(__cplusplus) && !defined(CINTERFACE)
 #define IMFSample_AddBuffer(sample, ...) sample->AddBuffer(__VA_ARGS__)
 #define IMFMediaBuffer_SetCurrentLength(media_buffer, ...) media_buffer->SetCurrentLength(__VA_ARGS__)
