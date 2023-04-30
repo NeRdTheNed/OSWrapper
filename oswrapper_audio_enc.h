@@ -601,14 +601,23 @@ static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__make_media_type_for_
         OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, MF_MT_AUDIO_BITS_PER_SAMPLE, audio_spec->bits_per_channel));
         OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, MF_MT_AUDIO_SAMPLES_PER_SECOND, audio_spec->sample_rate));
         OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, MF_MT_AUDIO_NUM_CHANNELS, audio_spec->channel_count));
+
+        if (audio_spec->bitrate != 0 && oswrapper_audio_enc__is_format_lossy(audio_spec->output_type) == OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS) {
+            OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, MF_MT_AUDIO_AVG_BYTES_PER_SECOND, audio_spec->bitrate / 8));
+        }
+
 #else
         OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetGUID(media_type, &MF_MT_MAJOR_TYPE, &MFMediaType_Audio));
         OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetGUID(media_type, &MF_MT_SUBTYPE, &output_format_guid));
         OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, &MF_MT_AUDIO_BITS_PER_SAMPLE, audio_spec->bits_per_channel));
         OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, &MF_MT_AUDIO_SAMPLES_PER_SECOND, audio_spec->sample_rate));
         OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, &MF_MT_AUDIO_NUM_CHANNELS, audio_spec->channel_count));
+
+        if (audio_spec->bitrate != 0 && oswrapper_audio_enc__is_format_lossy(audio_spec->output_type) == OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS) {
+            OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, &MF_MT_AUDIO_AVG_BYTES_PER_SECOND, audio_spec->bitrate / 8));
+        }
+
 #endif
-        /* TODO if (audio->bitrate != 0 && oswrapper_audio_enc__is_format_lossy(audio->output_type) == OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS) */
         return OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS;
 cleanup:
         IMFMediaType_Release(media_type);
