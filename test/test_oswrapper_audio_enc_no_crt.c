@@ -179,7 +179,7 @@ int mainCRTStartup(void) {
 
 #define TEST_PROGRAM_BUFFER_SIZE 0x50
 
-static int strcmp_impl(const char *str1, const char *str2) {
+static int strcmp_impl(const char* str1, const char* str2) {
     unsigned char u1, u2;
 
     while (1) {
