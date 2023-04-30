@@ -416,25 +416,383 @@ OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_enco
 /* End macOS AudioToolbox implementation */
 #elif defined(OSWRAPPER_AUDIO_ENC_USE_WIN_MF_IMPL)
 /* Start Win32 MF implementation */
-OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_init(void) {
+#ifndef COBJMACROS
+#define COBJMACROS
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#include <cguid.h>
+#include <initguid.h>
+#include <mfapi.h>
+#include <mfidl.h>
+#include <mfreadwrite.h>
+#include <shlwapi.h>
+#include <stdio.h>
+
+/* Using CINTERFACE breaks some headers, so we have to define these ourselves */
+#if defined(__cplusplus) && !defined(CINTERFACE) && !defined(OSWRAPPER_AUDIO_NO_DEFINE_WINMF_C_INTERFACE)
+#ifndef IMFAttributes_GetGUID
+#define IMFAttributes_GetGUID(attributes, ...) attributes->GetGUID(__VA_ARGS__)
+#endif
+#ifndef IMFByteStream_Release
+#define IMFByteStream_Release(byte_stream) byte_stream->Release()
+#endif
+#ifndef IMFMediaBuffer_Lock
+#define IMFMediaBuffer_Lock(media_buffer, ...) media_buffer->Lock(__VA_ARGS__)
+#endif
+#ifndef IMFMediaBuffer_Release
+#define IMFMediaBuffer_Release(media_buffer) media_buffer->Release()
+#endif
+#ifndef IMFMediaBuffer_Unlock
+#define IMFMediaBuffer_Unlock(media_buffer) media_buffer->Unlock()
+#endif
+#ifndef IMFMediaType_GetUINT32
+#define IMFMediaType_GetUINT32(media_type, ...) media_type->GetUINT32(__VA_ARGS__)
+#endif
+#ifndef IMFMediaType_Release
+#define IMFMediaType_Release(media_type) media_type->Release()
+#endif
+#ifndef IMFMediaType_SetGUID
+#define IMFMediaType_SetGUID(media_type, ...) media_type->SetGUID(__VA_ARGS__)
+#endif
+#ifndef IMFMediaType_SetUINT32
+#define IMFMediaType_SetUINT32(media_type, ...) media_type->SetUINT32(__VA_ARGS__)
+#endif
+#ifndef IMFSample_ConvertToContiguousBuffer
+#define IMFSample_ConvertToContiguousBuffer(sample, ...) sample->ConvertToContiguousBuffer(__VA_ARGS__)
+#endif
+#ifndef IMFSample_Release
+#define IMFSample_Release(sample) sample->Release()
+#endif
+#ifndef IMFSourceReader_GetNativeMediaType
+#define IMFSourceReader_GetNativeMediaType(source_reader, ...) source_reader->GetNativeMediaType(__VA_ARGS__)
+#endif
+#ifndef IMFSourceReader_ReadSample
+#define IMFSourceReader_ReadSample(source_reader, ...) source_reader->ReadSample(__VA_ARGS__)
+#endif
+#ifndef IMFSourceReader_Release
+#define IMFSourceReader_Release(source_reader) source_reader->Release()
+#endif
+#ifndef IMFSourceReader_SetCurrentMediaType
+#define IMFSourceReader_SetCurrentMediaType(source_reader, ...) source_reader->SetCurrentMediaType(__VA_ARGS__)
+#endif
+#ifndef IMFSourceReader_SetCurrentPosition
+#define IMFSourceReader_SetCurrentPosition(source_reader, ...) source_reader->SetCurrentPosition(__VA_ARGS__)
+#endif
+#ifndef IMFSourceReader_SetStreamSelection
+#define IMFSourceReader_SetStreamSelection(source_reader, ...) source_reader->SetStreamSelection(__VA_ARGS__)
+#endif
+#ifndef IStream_Release
+#define IStream_Release(istream) istream->Release()
+#endif
+#ifndef IMFSample_AddBuffer
+#define IMFSample_AddBuffer(sample, ...) sample->AddBuffer(__VA_ARGS__)
+#endif
+#ifndef IMFMediaBuffer_SetCurrentLength
+#define IMFMediaBuffer_SetCurrentLength(media_buffer, ...) media_buffer->SetCurrentLength(__VA_ARGS__)
+#endif
+#ifndef IMFSample_SetSampleDuration
+#define IMFSample_SetSampleDuration(sample, ...) sample->SetSampleDuration(__VA_ARGS__)
+#endif
+#ifndef IMFSample_SetSampleTime
+#define IMFSample_SetSampleTime(sample, ...) sample->SetSampleTime(__VA_ARGS__)
+#endif
+#ifndef IMFSinkWriter_WriteSample
+#define IMFSinkWriter_WriteSample(sink_writer, ...) sink_writer->WriteSample(__VA_ARGS__)
+#endif
+#ifndef IMFSinkWriter_AddStream
+#define IMFSinkWriter_AddStream(sink_writer, ...) sink_writer->AddStream(__VA_ARGS__)
+#endif
+#ifndef IMFSinkWriter_SetInputMediaType
+#define IMFSinkWriter_SetInputMediaType(sink_writer, ...) sink_writer->SetInputMediaType(__VA_ARGS__)
+#endif
+#ifndef IMFSinkWriter_BeginWriting
+#define IMFSinkWriter_BeginWriting(sink_writer) sink_writer->BeginWriting()
+#endif
+#ifndef IMFSinkWriter_Finalize
+#define IMFSinkWriter_Finalize(sink_writer) sink_writer->Finalize()
+#endif
+#ifndef IMFSinkWriter_Release
+#define IMFSinkWriter_Release(sink_writer) sink_writer->Release()
+#endif
+#endif
+
+/* TODO Ugly hack */
+#ifndef OSWRAPPER_AUDIO_ENC_PATH_MAX
+#define OSWRAPPER_AUDIO_ENC_PATH_MAX MAX_PATH
+#endif
+
+#ifdef OSWRAPPER_AUDIO_ENC_MANAGE_COINIT
+#include <objbase.h>
+
+#ifndef OSWRAPPER_AUDIO_ENC_COINIT_VALUE
+#define OSWRAPPER_AUDIO_ENC_COINIT_VALUE COINIT_MULTITHREADED
+#endif
+#endif
+
+/* The startup flags for MFStartup */
+#ifndef OSWRAPPER_AUDIO_ENC__MF_STARTUP_VAL
+#define OSWRAPPER_AUDIO_ENC__MF_STARTUP_VAL MFSTARTUP_LITE
+#endif
+
+typedef struct oswrapper_audio_enc__internal_data_win {
+    IMFSinkWriter* writer;
+    DWORD audio_stream_index;
+    LONGLONG output_pos;
+} oswrapper_audio_enc__internal_data_win;
+
+static GUID oswrapper_audio_enc__get_guid_from_enum(OSWrapper_audio_enc_output_type type) {
+    switch (type) {
+    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC:
+    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_PREFERRED_LOSSY:
+        return MFAudioFormat_AAC;
+
+    /*case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_MP3:
+        return MFAudioFormat_MP3;*/
+
+    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_ALAC:
+        return MFAudioFormat_ALAC;
+
+    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_FLAC:
+        return MFAudioFormat_FLAC;
+
+    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_PREFERRED_LOSSLESS:
+    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_WAV:
+    default:
+        return MFAudioFormat_PCM;
+    }
+}
+
+#define OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(X) if (FAILED(X)) { goto cleanup; }
+
+static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__make_media_type_for_input_format(IMFMediaType** input_media_type, OSWrapper_audio_enc_spec* audio_spec) {
+    if (SUCCEEDED(MFCreateMediaType(input_media_type))) {
+        IMFMediaType* media_type = *input_media_type;
+#ifdef __cplusplus
+        OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetGUID(media_type, MF_MT_MAJOR_TYPE, MFMediaType_Audio));
+        OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetGUID(media_type, MF_MT_SUBTYPE, audio_spec->input_pcm_type == OSWRAPPER_AUDIO_ENC_PCM_FLOAT ? MFAudioFormat_Float : MFAudioFormat_PCM));
+        OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, MF_MT_AUDIO_BITS_PER_SAMPLE, audio_spec->bits_per_channel));
+        OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, MF_MT_AUDIO_SAMPLES_PER_SECOND, audio_spec->sample_rate));
+        OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, MF_MT_AUDIO_NUM_CHANNELS, audio_spec->channel_count));
+#else
+        OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetGUID(media_type, &MF_MT_MAJOR_TYPE, &MFMediaType_Audio));
+        OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetGUID(media_type, &MF_MT_SUBTYPE, audio_spec->input_pcm_type == OSWRAPPER_AUDIO_ENC_PCM_FLOAT ? &MFAudioFormat_Float : &MFAudioFormat_PCM));
+        OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, &MF_MT_AUDIO_BITS_PER_SAMPLE, audio_spec->bits_per_channel));
+        OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, &MF_MT_AUDIO_SAMPLES_PER_SECOND, audio_spec->sample_rate));
+        OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, &MF_MT_AUDIO_NUM_CHANNELS, audio_spec->channel_count));
+#endif
+        return OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS;
+cleanup:
+        IMFMediaType_Release(media_type);
+    }
+
     return OSWRAPPER_AUDIO_ENC_RESULT_FAILURE;
 }
+
+static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__make_media_type_for_output_format(IMFMediaType** output_media_type, OSWrapper_audio_enc_spec* audio_spec) {
+    if (SUCCEEDED(MFCreateMediaType(output_media_type))) {
+        GUID output_format_guid;
+        IMFMediaType* media_type = *output_media_type;
+        output_format_guid = oswrapper_audio_enc__get_guid_from_enum(audio_spec->output_type);
+#ifdef __cplusplus
+        OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetGUID(media_type, MF_MT_MAJOR_TYPE, MFMediaType_Audio));
+        OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetGUID(media_type, MF_MT_SUBTYPE, output_format_guid));
+        OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, MF_MT_AUDIO_BITS_PER_SAMPLE, audio_spec->bits_per_channel));
+        OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, MF_MT_AUDIO_SAMPLES_PER_SECOND, audio_spec->sample_rate));
+        OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, MF_MT_AUDIO_NUM_CHANNELS, audio_spec->channel_count));
+#else
+        OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetGUID(media_type, &MF_MT_MAJOR_TYPE, &MFMediaType_Audio));
+        OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetGUID(media_type, &MF_MT_SUBTYPE, &output_format_guid));
+        OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, &MF_MT_AUDIO_BITS_PER_SAMPLE, audio_spec->bits_per_channel));
+        OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, &MF_MT_AUDIO_SAMPLES_PER_SECOND, audio_spec->sample_rate));
+        OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, &MF_MT_AUDIO_NUM_CHANNELS, audio_spec->channel_count));
+#endif
+        /* TODO if (audio->bitrate != 0 && oswrapper_audio_enc__is_format_lossy(audio->output_type) == OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS) */
+        return OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS;
+cleanup:
+        IMFMediaType_Release(media_type);
+    }
+
+    return OSWRAPPER_AUDIO_ENC_RESULT_FAILURE;
+}
+
+OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_init(void) {
+#ifdef OSWRAPPER_AUDIO_ENC_MANAGE_COINIT
+    HRESULT result = CoInitializeEx(NULL, OSWRAPPER_AUDIO_ENC_COINIT_VALUE);
+
+    if (SUCCEEDED(result)) {
+        result = MFStartup(MF_VERSION, OSWRAPPER_AUDIO_ENC__MF_STARTUP_VAL);
+
+        if (SUCCEEDED(result)) {
+            return OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS;
+        }
+
+        CoUninitialize();
+    }
+
+    return OSWRAPPER_AUDIO_ENC_RESULT_FAILURE;
+#else
+    return SUCCEEDED(MFStartup(MF_VERSION, OSWRAPPER_AUDIO_ENC__MF_STARTUP_VAL)) ? OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS : OSWRAPPER_AUDIO_ENC_RESULT_FAILURE;
+#endif
+}
+
 OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_uninit(void) {
+#ifdef OSWRAPPER_AUDIO_ENC_MANAGE_COINIT
+
+    if (FAILED(MFShutdown())) {
+        return OSWRAPPER_AUDIO_ENC_RESULT_FAILURE;
+    }
+
+    CoUninitialize();
     return OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS;
+#else
+    return SUCCEEDED(MFShutdown()) ? OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS : OSWRAPPER_AUDIO_ENC_RESULT_FAILURE;
+#endif
 }
 
 #ifndef OSWRAPPER_AUDIO_ENC_NO_PATH
-OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_finalise_file_context(OSWrapper_audio_enc_spec* audio) {
+static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__make_sink_writer_from_path(const char* path, IMFSinkWriter** writer) {
+    HRESULT result;
+    /* TODO Ugly hack */
+    wchar_t path_buffer[OSWRAPPER_AUDIO_ENC_PATH_MAX];
+    result = MultiByteToWideChar(CP_UTF8, 0, path, -1, path_buffer, OSWRAPPER_AUDIO_ENC_PATH_MAX);
+
+    if (SUCCEEDED(result)) {
+        result = MFCreateSinkWriterFromURL(path_buffer, NULL, NULL, writer);
+
+        if (SUCCEEDED(result)) {
+            return OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS;
+        }
+    }
+
     return OSWRAPPER_AUDIO_ENC_RESULT_FAILURE;
 }
 
+OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_finalise_file_context(OSWrapper_audio_enc_spec* audio) {
+    /* TODO Error checking */
+    oswrapper_audio_enc__internal_data_win* internal_data = (oswrapper_audio_enc__internal_data_win*) audio->internal_data;
+    IMFSinkWriter_Finalize(internal_data->writer);
+    IMFSinkWriter_Release(internal_data->writer);
+    OSWRAPPER_AUDIO_ENC_FREE(audio->internal_data);
+    return OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS;
+}
+
 OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_make_file_from_path(const char* path, OSWrapper_audio_enc_spec* audio) {
+    IMFSinkWriter* writer;
+
+    if (oswrapper_audio_enc__make_sink_writer_from_path(path, &writer)) {
+        /* Output stream format */
+        IMFMediaType* output_media_type;
+
+        if (oswrapper_audio_enc__make_media_type_for_output_format(&output_media_type, audio) == OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS) {
+            DWORD audio_stream_index;
+            HRESULT result = IMFSinkWriter_AddStream(writer, output_media_type, &audio_stream_index);
+            IMFMediaType_Release(output_media_type);
+
+            if (SUCCEEDED(result)) {
+                /* Input stream format */
+                IMFMediaType* input_media_type;
+
+                if (oswrapper_audio_enc__make_media_type_for_input_format(&input_media_type, audio) == OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS) {
+                    result = IMFSinkWriter_SetInputMediaType(writer, audio_stream_index, input_media_type, NULL);
+                    IMFMediaType_Release(input_media_type);
+
+                    if (SUCCEEDED(result)) {
+                        /* Initialise sink writer */
+                        result = IMFSinkWriter_BeginWriting(writer);
+
+                        if (SUCCEEDED(result)) {
+                            oswrapper_audio_enc__internal_data_win* internal_data = (oswrapper_audio_enc__internal_data_win*) OSWRAPPER_AUDIO_ENC_MALLOC(sizeof(oswrapper_audio_enc__internal_data_win));
+
+                            if (internal_data != NULL) {
+                                audio->internal_data = (void*) internal_data;
+                                internal_data->writer = writer;
+                                internal_data->audio_stream_index = audio_stream_index;
+                                internal_data->output_pos = 0;
+                                return OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS;
+                            }
+
+                            IMFSinkWriter_Finalize(writer);
+                        }
+                    }
+                }
+            }
+        }
+
+        IMFSinkWriter_Release(writer);
+    }
+
     return OSWRAPPER_AUDIO_ENC_RESULT_FAILURE;
 }
 #endif /* OSWRAPPER_AUDIO_ENC_NO_PATH */
 
+#define OSWRAPPER_AUDIO_ENC__WRITE_TO_BUFFER_HELPER_FAIL(X) if (FAILED(X)) { if (media_buffer != NULL) { IMFMediaBuffer_Release(media_buffer); } if (sample != NULL) { IMFSample_Release(sample); } return OSWRAPPER_AUDIO_ENC_RESULT_FAILURE; }
+
 OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_encode_samples(OSWrapper_audio_enc_spec* audio, short* buffer, size_t frames_to_do) {
-    return OSWRAPPER_AUDIO_ENC_RESULT_FAILURE;
+    HRESULT result;
+    DWORD current_length;
+    BYTE* sample_audio_data;
+    LONGLONG this_dur;
+    IMFSample* sample;
+    IMFMediaBuffer* media_buffer;
+    size_t frame_size;
+    size_t this_multi;
+    oswrapper_audio_enc__internal_data_win* internal_data = (oswrapper_audio_enc__internal_data_win*) audio->internal_data;
+    /* Create IMFSample */
+    sample = NULL;
+    media_buffer = NULL;
+    sample_audio_data = NULL;
+    this_dur = 0;
+    frame_size = ((audio->bits_per_channel / 8) * audio->channel_count);
+    this_multi = frames_to_do * frame_size;
+    OSWRAPPER_AUDIO_ENC__WRITE_TO_BUFFER_HELPER_FAIL(MFCreateSample(&sample));
+    OSWRAPPER_AUDIO_ENC__WRITE_TO_BUFFER_HELPER_FAIL(MFCreateMemoryBuffer(this_multi, &media_buffer));
+    OSWRAPPER_AUDIO_ENC__WRITE_TO_BUFFER_HELPER_FAIL(IMFSample_AddBuffer(sample, media_buffer));
+    result = IMFMediaBuffer_Lock(media_buffer, &sample_audio_data, &current_length, NULL);
+
+    if (SUCCEEDED(result)) {
+        memcpy(sample_audio_data, buffer, this_multi);
+        IMFMediaBuffer_Unlock(media_buffer);
+        result = IMFMediaBuffer_SetCurrentLength(media_buffer, this_multi);
+
+        if (SUCCEEDED(result)) {
+            this_dur = MFllMulDiv(frames_to_do, 10000000ULL, audio->sample_rate, 0);
+            result = IMFSample_SetSampleDuration(sample, this_dur);
+
+            if (FAILED(result)) {
+                puts("IMFSample_SetSampleDuration failed!");
+            }
+
+            result = IMFSample_SetSampleTime(sample, internal_data->output_pos);
+            internal_data->output_pos += this_dur;
+
+            if (FAILED(result)) {
+                puts("IMFSample_SetSampleTime failed!");
+            }
+
+            result = IMFSinkWriter_WriteSample(internal_data->writer, internal_data->audio_stream_index, sample);
+
+            if (FAILED(result)) {
+                puts("IMFSinkWriter_WriteSample failed!");
+            }
+        } else {
+            puts("IMFMediaBuffer_SetCurrentLength failed!");
+        }
+    } else {
+        puts("IMFMediaBuffer_Lock failed!");
+    }
+
+    if (sample != NULL) {
+        IMFSample_Release(sample);
+    }
+
+    if (media_buffer != NULL) {
+        IMFMediaBuffer_Release(media_buffer);
+    }
+
+    return OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS;
 }
 /* End Win32 MF implementation */
 #else
