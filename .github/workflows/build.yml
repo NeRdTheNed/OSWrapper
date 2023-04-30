@@ -68,6 +68,7 @@ jobs:
             test/test_oswrapper_audio_no_crt.exe
             test/test_oswrapper_audio_enc.exe
             test/test_oswrapper_audio_enc_cpp.exe
+            test/test_oswrapper_audio_enc_no_crt.exe
             test/test_oswrapper_audio_enc_mod.exe
             test/test_oswrapper_audio_enc_mod_cpp.exe
             test/test_oswrapper_audio_win_encoder.exe
