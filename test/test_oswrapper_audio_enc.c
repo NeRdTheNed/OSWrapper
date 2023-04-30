@@ -110,7 +110,7 @@ int main(int argc, char** argv) {
     OSWrapper_audio_enc_output_type output_type = demo_get_enum_for_str(type);
     ext = demo_get_ext_for_enum(output_type);
     size_t input_string_length = strlen(path);
-    size_t output_ext_length = strlen(ext + 1);
+    size_t output_ext_length = strlen(ext) + 1;
 
     if (!oswrapper_audio_init()) {
         puts("Could not initialise oswrapper_audio!");
@@ -136,7 +136,7 @@ int main(int argc, char** argv) {
         goto exit;
     }
 
-    output_path = (char*) malloc(input_string_length + output_ext_length + 2);
+    output_path = (char*) malloc(input_string_length + output_ext_length);
 
     if (output_path == NULL) {
         puts("malloc failed for output path!");
@@ -144,8 +144,7 @@ int main(int argc, char** argv) {
     }
 
     memcpy(output_path, path, input_string_length);
-    memcpy(output_path + input_string_length, ext, output_ext_length + 1);
-    output_path[input_string_length + output_ext_length + 1] = '\0';
+    memcpy(output_path + input_string_length, ext, output_ext_length);
     output_file = fopen(output_path, "rb");
 
     if (output_file != NULL) {
