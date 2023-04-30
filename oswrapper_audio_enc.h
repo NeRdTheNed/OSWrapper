@@ -130,9 +130,6 @@ OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_enco
 #ifndef OSWRAPPER_AUDIO_ENC_MEMCPY
 #define OSWRAPPER_AUDIO_ENC_MEMCPY(x, y, amount) memcpy(x, y, amount)
 #endif /* OSWRAPPER_AUDIO_ENC_MEMCPY */
-#ifndef OSWRAPPER_AUDIO_ENC_MEMCMP
-#define OSWRAPPER_AUDIO_ENC_MEMCMP(ptr1, ptr2, amount) memcmp(ptr1, ptr2, amount)
-#endif /* OSWRAPPER_AUDIO_ENC_MEMCMP */
 
 #ifdef __APPLE__
 #include <AvailabilityMacros.h>
@@ -757,7 +754,7 @@ OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_enco
     result = IMFMediaBuffer_Lock(media_buffer, &sample_audio_data, &current_length, NULL);
 
     if (SUCCEEDED(result)) {
-        memcpy(sample_audio_data, buffer, this_multi);
+        OSWRAPPER_AUDIO_ENC_MEMCPY(sample_audio_data, buffer, this_multi);
         IMFMediaBuffer_Unlock(media_buffer);
         result = IMFMediaBuffer_SetCurrentLength(media_buffer, this_multi);
 
