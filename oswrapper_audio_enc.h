@@ -345,7 +345,7 @@ OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_fina
     /* TODO Error checking */
     oswrapper_audio_enc__internal_data_mac* internal_data = (oswrapper_audio_enc__internal_data_mac*) audio->internal_data;
     ExtAudioFileDispose(internal_data->audio_file_ext);
-    OSWRAPPER_AUDIO_FREE(audio->internal_data);
+    OSWRAPPER_AUDIO_ENC_FREE(audio->internal_data);
     return OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS;
 }
 
