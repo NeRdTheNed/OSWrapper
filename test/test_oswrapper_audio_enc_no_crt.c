@@ -179,43 +179,33 @@ int mainCRTStartup(void) {
 
 #define TEST_PROGRAM_BUFFER_SIZE 0x50
 
-static int contains_subs(const char* string, const char* subs) {
-    while (*string != '\0') {
-        if (*string != *subs) {
-            goto nextLoop;
+static int strcmp_impl(const char *str1, const char *str2) {
+    unsigned char u1, u2;
+
+    while (1) {
+        u1 = (unsigned char) * str1++;
+        u2 = (unsigned char) * str2++;
+
+        if (u1 != u2) {
+            return u1 - u2;
         }
 
-        {
-            const char* search = string;
-            const char* search_subs = subs;
-
-            while (*search == *search_subs) {
-                ++search;
-                ++search_subs;
-            }
-
-            if (*search_subs == '\0') {
-                return 1;
-            }
+        if (u1 == '\0') {
+            return 0;
         }
-
-nextLoop:
-        ++string;
     }
-
-    return 0;
 }
 
 static OSWrapper_audio_enc_output_type demo_get_enum_for_str(const char* type) {
-    if (contains_subs(type, "alac") == 0) {
+    if (strcmp_impl(type, "alac") == 0) {
         return OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_ALAC;
-    } else if (contains_subs(type, "flac") == 0) {
+    } else if (strcmp_impl(type, "flac") == 0) {
         return OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_FLAC;
-    } else if (contains_subs(type, "wav") == 0) {
+    } else if (strcmp_impl(type, "wav") == 0) {
         return OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_WAV;
-    } else if (contains_subs(type, "snd") == 0 || contains_subs(type, "au") == 0) {
+    } else if (strcmp_impl(type, "snd") == 0 || strcmp_impl(type, "au") == 0) {
         return OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_SND;
-    } else if (contains_subs(type, "m4a") == 0 || contains_subs(type, "aac") == 0) {
+    } else if (strcmp_impl(type, "m4a") == 0 || strcmp_impl(type, "aac") == 0) {
         return OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC;
     } else {
         return OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_WAV;
