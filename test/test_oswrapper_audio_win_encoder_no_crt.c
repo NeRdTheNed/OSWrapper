@@ -239,7 +239,7 @@ int mainCRTStartup(void) {
 static OSWRAPPER_AUDIO_RESULT_TYPE make_sink_writer_from_path(const char* path, IMFSinkWriter** writer) {
     HRESULT result;
     /* TODO Ugly hack */
-    wchar_t path_buffer[OSWRAPPER_AUDIO_PATH_MAX];
+    wchar_t path_buffer[DEMO_WIN_MAX_PATH];
     result = MultiByteToWideChar(CP_UTF8, 0, path, -1, path_buffer, DEMO_WIN_MAX_PATH);
 
     if (SUCCEEDED(result)) {
