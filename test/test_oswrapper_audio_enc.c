@@ -44,7 +44,7 @@ https://github.com/NeRdTheNed/OSWrapper/blob/main/test/test_oswrapper_audio_enc.
 
 #define TEST_PROGRAM_BUFFER_SIZE 0x50
 
-static const OSWrapper_audio_enc_output_type demo_get_enum_for_str(const char* type) {
+static OSWrapper_audio_enc_output_type demo_get_enum_for_str(const char* type) {
     if (strcmp(type, "alac") == 0) {
         return OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_ALAC;
     } else if (strcmp(type, "flac") == 0) {
