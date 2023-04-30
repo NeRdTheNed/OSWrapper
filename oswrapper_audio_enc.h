@@ -765,12 +765,12 @@ OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_enco
 
             if (SUCCEEDED(result)) {
                 result = IMFSample_SetSampleTime(sample, internal_data->output_pos);
-                internal_data->output_pos += this_dur;
 
                 if (SUCCEEDED(result)) {
                     result = IMFSinkWriter_WriteSample(internal_data->writer, internal_data->audio_stream_index, sample);
 
                     if (SUCCEEDED(result)) {
+                        internal_data->output_pos += this_dur;
                         return_val = OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS;
                     }
                 }
