@@ -16,6 +16,8 @@ defaulttests:
 	$(CXX) $(INCLUDES) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_AUDIO) test_oswrapper_audio.c -o test_oswrapper_audio_cpp
 	$(CC) $(INCLUDES) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_AUDIO) test_oswrapper_audio_enc.c -o test_oswrapper_audio_enc
 	$(CXX) $(INCLUDES) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_AUDIO) test_oswrapper_audio_enc.c -o test_oswrapper_audio_enc_cpp
+	$(CC) $(INCLUDES) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_AUDIO) test_oswrapper_audio_enc_mod.c -o test_oswrapper_audio_enc_mod
+	$(CXX) $(INCLUDES) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_AUDIO) test_oswrapper_audio_enc_mod.c -o test_oswrapper_audio_enc_mod_cpp
 	$(CC) $(INCLUDES) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_AUDIO) test_oswrapper_audio_mac_encoder.c -o test_oswrapper_audio_mac_encoder
 	$(CXX) $(INCLUDES) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_AUDIO) test_oswrapper_audio_mac_encoder.c -o test_oswrapper_audio_mac_encoder_cpp
 	$(CC) $(INCLUDES) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_AUDIO) demo_oswrapper_audio_mac.c -o demo_oswrapper_audio_mac
@@ -33,6 +35,7 @@ clean:
 	rm -f test_oswrapper_image test_oswrapper_image_cpp
 	rm -f test_oswrapper_audio test_oswrapper_audio_cpp
 	rm -f test_oswrapper_audio_enc test_oswrapper_audio_enc_cpp
+	rm -f test_oswrapper_audio_enc_mod test_oswrapper_audio_enc_mod_cpp
 	rm -f test_oswrapper_audio_mac_encoder test_oswrapper_audio_mac_encoder_cpp
 	rm -f demo_oswrapper_audio_mac demo_oswrapper_audio_mac_cpp
 	rm -f demo_oswrapper_audio_miniaudio demo_oswrapper_audio_miniaudio_cpp

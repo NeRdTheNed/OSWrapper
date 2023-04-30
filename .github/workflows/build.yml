@@ -27,6 +27,8 @@ jobs:
             test/test_oswrapper_audio_cpp
             test/test_oswrapper_audio_enc
             test/test_oswrapper_audio_enc_cpp
+            test/test_oswrapper_audio_enc_mod
+            test/test_oswrapper_audio_enc_mod_cpp
             test/test_oswrapper_audio_mac_encoder
             test/test_oswrapper_audio_mac_encoder_cpp
             test/demo_oswrapper_audio_mac
