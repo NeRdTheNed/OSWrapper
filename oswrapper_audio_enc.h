@@ -728,9 +728,10 @@ OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_make
 }
 #endif /* OSWRAPPER_AUDIO_ENC_NO_PATH */
 
-#define OSWRAPPER_AUDIO_ENC__WRITE_TO_BUFFER_HELPER_FAIL(X) if (FAILED(X)) { if (media_buffer != NULL) { IMFMediaBuffer_Release(media_buffer); } if (sample != NULL) { IMFSample_Release(sample); } return OSWRAPPER_AUDIO_ENC_RESULT_FAILURE; }
+#define OSWRAPPER_AUDIO_ENC__WRITE_TO_BUFFER_HELPER_FAIL(X) if (FAILED(X)) { goto fast_fail; }
 
 OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_encode_samples(OSWrapper_audio_enc_spec* audio, short* buffer, size_t frames_to_do) {
+    OSWRAPPER_AUDIO_ENC_RESULT_TYPE return_val;
     HRESULT result;
     DWORD current_length;
     BYTE* sample_audio_data;
@@ -745,6 +746,7 @@ OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_enco
     media_buffer = NULL;
     sample_audio_data = NULL;
     this_dur = 0;
+    return_val = OSWRAPPER_AUDIO_ENC_RESULT_FAILURE;
     frame_size = ((audio->bits_per_channel / 8) * audio->channel_count);
     this_multi = frames_to_do * frame_size;
     OSWRAPPER_AUDIO_ENC__WRITE_TO_BUFFER_HELPER_FAIL(MFCreateSample(&sample));
@@ -761,28 +763,22 @@ OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_enco
             this_dur = MFllMulDiv(frames_to_do, 10000000ULL, audio->sample_rate, 0);
             result = IMFSample_SetSampleDuration(sample, this_dur);
 
-            if (FAILED(result)) {
-                puts("IMFSample_SetSampleDuration failed!");
+            if (SUCCEEDED(result)) {
+                result = IMFSample_SetSampleTime(sample, internal_data->output_pos);
+                internal_data->output_pos += this_dur;
+
+                if (SUCCEEDED(result)) {
+                    result = IMFSinkWriter_WriteSample(internal_data->writer, internal_data->audio_stream_index, sample);
+
+                    if (SUCCEEDED(result)) {
+                        return_val = OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS;
+                    }
+                }
             }
-
-            result = IMFSample_SetSampleTime(sample, internal_data->output_pos);
-            internal_data->output_pos += this_dur;
-
-            if (FAILED(result)) {
-                puts("IMFSample_SetSampleTime failed!");
-            }
-
-            result = IMFSinkWriter_WriteSample(internal_data->writer, internal_data->audio_stream_index, sample);
-
-            if (FAILED(result)) {
-                puts("IMFSinkWriter_WriteSample failed!");
-            }
-        } else {
-            puts("IMFMediaBuffer_SetCurrentLength failed!");
         }
-    } else {
-        puts("IMFMediaBuffer_Lock failed!");
     }
+
+fast_fail:
 
     if (sample != NULL) {
         IMFSample_Release(sample);
@@ -792,7 +788,7 @@ OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_enco
         IMFMediaBuffer_Release(media_buffer);
     }
 
-    return OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS;
+    return return_val;
 }
 /* End Win32 MF implementation */
 #else
