@@ -205,7 +205,7 @@ int main(int argc, char** argv) {
             goto audio_cleanup;
         }
 
-        while (pocketmod_loop_count(&context) == 0) {
+        while (pocketmod_loop_count(&context) < 2) {
             size_t this_iter = pocketmod_render(&context, buffer, TEST_PROGRAM_BUFFER_SIZE * frame_size) / frame_size;
 
             if (this_iter == 0) {
