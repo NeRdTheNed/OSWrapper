@@ -293,7 +293,7 @@ static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__create_desc(AudioStr
                 }
             }
         } else {
-            desc->mFormatFlags = kAudioFormatFlagsAreAllClear;
+            desc->mFormatFlags = 0;
         }
     }
 
