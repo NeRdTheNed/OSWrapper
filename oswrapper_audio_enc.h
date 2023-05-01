@@ -64,6 +64,7 @@ typedef enum {
     OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_WAV,
     OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_SND,
     OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC,
+    OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC_HE,
     OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_ALAC,
     OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_FLAC
 } OSWrapper_audio_enc_output_type;
@@ -152,6 +153,7 @@ OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_enco
 static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__is_format_lossy(OSWrapper_audio_enc_output_type type) {
     switch (type) {
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC:
+    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC_HE:
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_PREFERRED_LOSSY:
         return OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS;
 
@@ -195,6 +197,7 @@ static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__is_apple_format_loss
     /* TODO Add more types */
     switch (type) {
     case kAudioFormatMPEG4AAC:
+    case kAudioFormatMPEG4AAC_HE:
         return OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS;
 
     default:
@@ -207,6 +210,9 @@ static OSWRAPPER_AUDIO_ENC__AUDIO_FORMAT_ID_TYPE oswrapper_audio_enc__get_audio_
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC:
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_PREFERRED_LOSSY:
         return kAudioFormatMPEG4AAC;
+
+    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC_HE:
+        return kAudioFormatMPEG4AAC_HE;
 
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_ALAC:
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_PREFERRED_LOSSLESS:
@@ -234,6 +240,7 @@ static AudioFileTypeID oswrapper_audio_enc__get_audio_file_type_id_from_enum(OSW
         return kAudioFileNextType;
 
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC:
+    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC_HE:
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_ALAC:
         return kAudioFileM4AType;
 
@@ -565,6 +572,7 @@ typedef struct oswrapper_audio_enc__internal_data_win {
 static GUID oswrapper_audio_enc__get_guid_from_enum(OSWrapper_audio_enc_output_type type) {
     switch (type) {
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC:
+    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC_HE:
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_PREFERRED_LOSSY:
         return MFAudioFormat_AAC;
 

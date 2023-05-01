@@ -55,6 +55,8 @@ static OSWrapper_audio_enc_output_type demo_get_enum_for_str(const char* type) {
         return OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_SND;
     } else if (strcmp(type, "m4a") == 0 || strcmp(type, "aac") == 0) {
         return OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC;
+    } else if (strcmp(type, "aac-he") == 0) {
+        return OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC_HE;
     } else {
         return OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_WAV;
     }
@@ -66,6 +68,7 @@ static const char* demo_get_ext_for_enum(OSWrapper_audio_enc_output_type type) {
         return ".snd";
 
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC:
+    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC_HE:
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_ALAC:
         return ".m4a";
 
