@@ -130,6 +130,9 @@ OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_enco
 #ifndef OSWRAPPER_AUDIO_ENC_MEMCPY
 #define OSWRAPPER_AUDIO_ENC_MEMCPY(x, y, amount) memcpy(x, y, amount)
 #endif /* OSWRAPPER_AUDIO_ENC_MEMCPY */
+#ifndef OSWRAPPER_AUDIO_ENC_STRLEN
+#define OSWRAPPER_AUDIO_ENC_STRLEN(str) strlen(str)
+#endif /* OSWRAPPER_AUDIO_ENC_STRLEN */
 
 #ifdef __APPLE__
 #include <AvailabilityMacros.h>
@@ -315,29 +318,35 @@ OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_unin
 #ifndef OSWRAPPER_AUDIO_ENC_NO_PATH
 static OSStatus oswrapper_audio_enc__create_from_path(const char* path, AudioStreamBasicDescription* output_format, ExtAudioFileRef* audio_file, AudioFileTypeID file_type) {
     OSStatus error;
-    CFStringRef path_cfstr;
     CFURLRef path_url;
 #if !defined(MAC_OS_X_VERSION_10_5) || MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_5
-    FSRef path_fsref;
-    const UInt8* base_dir;
-    Boolean is_dir;
+    CFURLRef base_path_url;
 #endif
-    path_cfstr = CFStringCreateWithCString(kCFAllocatorDefault, path, kCFStringEncodingUTF8);
-    path_url = CFURLCreateWithFileSystemPath(NULL, path_cfstr, kCFURLPOSIXPathStyle, false);
+    path_url = CFURLCreateFromFileSystemRepresentation(kCFAllocatorDefault, (const UInt8*) path, OSWRAPPER_AUDIO_ENC_STRLEN(path), false);
 #if !defined(MAC_OS_X_VERSION_10_5) || MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_5
-    /* TODO Assumes a relative path */
-    base_dir = (const UInt8*) "./";
-    error = FSPathMakeRef(base_dir, &path_fsref, &is_dir);
+    error = kAudioFileUnspecifiedError;
+    base_path_url = CFURLCreateCopyDeletingLastPathComponent(kCFAllocatorDefault, path_url);
 
-    if (!error && is_dir) {
-        error = ExtAudioFileCreateNew(&path_fsref, path_cfstr, file_type, output_format, NULL, audio_file);
+    if (base_path_url != NULL) {
+        CFStringRef out_file_name = CFURLCopyLastPathComponent(path_url);
+
+        if (out_file_name != NULL) {
+            FSRef base_path_fsref;
+
+            if (CFURLGetFSRef(base_path_url, &base_path_fsref)) {
+                error = ExtAudioFileCreateNew(&base_path_fsref, out_file_name, file_type, output_format, NULL, audio_file);
+            }
+
+            CFRelease(out_file_name);
+        }
+
+        CFRelease(base_path_url);
     }
 
 #else
     error = ExtAudioFileCreateWithURL(path_url, file_type, output_format, NULL, 0, audio_file);
 #endif
     CFRelease(path_url);
-    CFRelease(path_cfstr);
     return error;
 }
 
