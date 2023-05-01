@@ -263,8 +263,8 @@ static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__create_desc(AudioStr
     } else {
         if (format_id == kAudioFormatAppleLossless || format_id == kAudioFormatFLAC) {
             if (audio->input_pcm_type == OSWRAPPER_AUDIO_ENC_PCM_FLOAT) {
-                /* Unsupported input audio format, was not integer */
-                return OSWRAPPER_AUDIO_ENC_RESULT_FAILURE;
+                /* Source bit depth can't be represented by any flags */
+                desc->mFormatFlags = 0;
             } else {
                 switch (audio->bits_per_channel) {
                 case 16:
@@ -284,8 +284,9 @@ static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__create_desc(AudioStr
                     break;
 
                 default:
-                    /* Unsupported input bit depth */
-                    return OSWRAPPER_AUDIO_ENC_RESULT_FAILURE;
+                    /* Source bit depth can't be represented by any flags */
+                    desc->mFormatFlags = 0;
+                    break;
                 }
             }
         } else {
