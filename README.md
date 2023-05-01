@@ -8,7 +8,7 @@
 | --------------------- | -------------------------------- | ----------------------------------------------- |
 | oswrapper_image.h     | Image decoder using OS libraries | macOS, Windows (Vista and higher), Emscripten   |
 | oswrapper_audio.h     | Audio decoder using OS libraries | macOS (10.4 and higher), Windows (7 and higher) |
-| oswrapper_audio_enc.h | Audio encoder using OS libraries | macOS (10.4 and higher)                         |
+| oswrapper_audio_enc.h | Audio encoder using OS libraries | macOS (10.4 and higher), Windows (7 and higher) |
 
 ## Usage
 
@@ -31,7 +31,7 @@ Here's the requirements:
 | --------------------- | --------------------------------- | ------------------------------------------------------------------------------------ | --------------------- |
 | oswrapper_image.h     | Link with -framework AppKit       | Initialise the COM library, link with windowscodecs.lib                              | Compile with Asyncify |
 | oswrapper_audio.h     | Link with -framework AudioToolbox | Initialise the COM library, link with mfplat.lib, mfreadwrite.lib, and shlwapi.lib   | N/A                   |
-| oswrapper_audio_enc.h | Link with -framework AudioToolbox | N/A                                                                                  | N/A                   |
+| oswrapper_audio_enc.h | Link with -framework AudioToolbox | Initialise the COM library, link with mfplat.lib, mfreadwrite.lib, and shlwapi.lib   | N/A                   |
 
 Full examples of linking and using OSWrapper libraries can be found in the test folder.
 
