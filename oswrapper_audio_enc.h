@@ -324,6 +324,47 @@ static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__create_desc(AudioStr
     return OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS;
 }
 
+static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__get_bitrates(AudioConverterRef converter, Float64* minimum, Float64* maximum) {
+    OSWRAPPER_AUDIO_ENC_RESULT_TYPE return_val;
+    UInt32 property_size;
+    OSStatus error = AudioConverterGetPropertyInfo(converter, kAudioConverterAvailableEncodeBitRates, &property_size, NULL);
+    return_val = OSWRAPPER_AUDIO_ENC_RESULT_FAILURE;
+
+    if (!error && property_size > 0) {
+        AudioValueRange* bitrates = (AudioValueRange*) OSWRAPPER_AUDIO_ENC_MALLOC(property_size);
+
+        if (bitrates != NULL) {
+            error = AudioConverterGetProperty(converter, kAudioConverterApplicableEncodeBitRates, &property_size, bitrates);
+
+            if (!error) {
+                size_t bitrates_amount = property_size / sizeof(AudioValueRange);
+
+                if (bitrates_amount > 0) {
+                    size_t i;
+                    *minimum = bitrates[0].mMinimum;
+                    *minimum = bitrates[0].mMaximum;
+
+                    for (i = 1; i < bitrates_amount; i++) {
+                        if (bitrates[i].mMinimum < *minimum) {
+                            *minimum = bitrates[i].mMinimum;
+                        }
+
+                        if (bitrates[i].mMaximum > *maximum) {
+                            *maximum = bitrates[i].mMaximum;
+                        }
+                    }
+
+                    return_val = OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS;
+                }
+            }
+
+            OSWRAPPER_AUDIO_ENC_FREE(bitrates);
+        }
+    }
+
+    return return_val;
+}
+
 OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_init(void) {
     return OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS;
 }
@@ -404,8 +445,22 @@ OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_make
                     property_size = sizeof(AudioConverterRef);
 
                     if (audio->bitrate != 0 && oswrapper_audio_enc__is_format_lossy(audio->output_type) == OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS && !ExtAudioFileGetProperty(audio_file_ext, kExtAudioFileProperty_AudioConverter, &property_size, &converter) && converter != NULL) {
+                        Float64 minimum;
+                        Float64 maximum;
                         /* Set encoding bitrate */
                         UInt32 bitrate = audio->bitrate;
+
+                        if (oswrapper_audio_enc__get_bitrates(converter, &minimum, &maximum) == OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS) {
+                            /* Clamp bitrate to allowed values */
+                            if (bitrate > (UInt32) maximum) {
+                                bitrate = (UInt32) maximum;
+                            }
+
+                            if (bitrate < (UInt32) minimum) {
+                                bitrate = (UInt32) minimum;
+                            }
+                        }
+
                         /* Failure is mostly harmless */
                         AudioConverterSetProperty(converter, kAudioConverterEncodeBitRate, sizeof(bitrate), &bitrate);
                         CFArrayRef converter_config = NULL;
