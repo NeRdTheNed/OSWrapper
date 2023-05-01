@@ -327,7 +327,7 @@ static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__create_desc(AudioStr
 static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__get_bitrates(AudioConverterRef converter, Float64* minimum, Float64* maximum) {
     OSWRAPPER_AUDIO_ENC_RESULT_TYPE return_val;
     UInt32 property_size;
-    OSStatus error = AudioConverterGetPropertyInfo(converter, kAudioConverterAvailableEncodeBitRates, &property_size, NULL);
+    OSStatus error = AudioConverterGetPropertyInfo(converter, kAudioConverterApplicableEncodeBitRates, &property_size, NULL);
     return_val = OSWRAPPER_AUDIO_ENC_RESULT_FAILURE;
 
     if (!error && property_size > 0) {
