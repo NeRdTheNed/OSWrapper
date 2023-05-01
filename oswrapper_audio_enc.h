@@ -191,6 +191,17 @@ typedef struct oswrapper_audio_enc__internal_data_mac {
     ExtAudioFileRef audio_file_ext;
 } oswrapper_audio_enc__internal_data_mac;
 
+static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__is_apple_format_lossy(OSWRAPPER_AUDIO_ENC__AUDIO_FORMAT_ID_TYPE type) {
+    /* TODO Add more types */
+    switch (type) {
+    case kAudioFormatMPEG4AAC:
+        return OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS;
+
+    default:
+        return OSWRAPPER_AUDIO_ENC_RESULT_FAILURE;
+    }
+}
+
 static OSWRAPPER_AUDIO_ENC__AUDIO_FORMAT_ID_TYPE oswrapper_audio_enc__get_audio_format_id_from_enum(OSWrapper_audio_enc_output_type type) {
     switch (type) {
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC:
@@ -236,8 +247,7 @@ static AudioFileTypeID oswrapper_audio_enc__get_audio_file_type_id_from_enum(OSW
 static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__create_desc(AudioStreamBasicDescription* desc, OSWRAPPER_AUDIO_ENC__AUDIO_FORMAT_ID_TYPE format_id, OSWrapper_audio_enc_spec* audio) {
     desc->mFormatID = format_id;
     /* This may be set to 0 when creating compressed formats */
-    /* TODO oswrapper_audio_enc__is_format_lossy */
-    desc->mSampleRate = format_id == kAudioFormatMPEG4AAC ? 0 : audio->sample_rate;
+    desc->mSampleRate = oswrapper_audio_enc__is_apple_format_lossy(format_id) == OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS ? 0 : audio->sample_rate;
     desc->mChannelsPerFrame = audio->channel_count;
 
     if (format_id == kAudioFormatLinearPCM) {
