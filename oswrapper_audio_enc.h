@@ -342,7 +342,7 @@ static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__get_bitrates(AudioCo
                 if (bitrates_amount > 0) {
                     size_t i;
                     *minimum = bitrates[0].mMinimum;
-                    *minimum = bitrates[0].mMaximum;
+                    *maximum = bitrates[0].mMaximum;
 
                     for (i = 1; i < bitrates_amount; i++) {
                         if (bitrates[i].mMinimum < *minimum) {
