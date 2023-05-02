@@ -579,7 +579,7 @@ DEFINE_MEDIATYPE_GUID(MFAudioFormat_ALAC, 0x6C61);
 #endif
 
 /* Using CINTERFACE breaks some headers, so we have to define these ourselves */
-#if defined(__cplusplus) && !defined(CINTERFACE) && !defined(OSWRAPPER_AUDIO_NO_DEFINE_WINMF_C_INTERFACE)
+#if defined(__cplusplus) && !defined(CINTERFACE) && !defined(OSWRAPPER_AUDIO_ENC_NO_DEFINE_WINMF_C_INTERFACE)
 #ifndef IMFMediaBuffer_Lock
 #define IMFMediaBuffer_Lock(media_buffer, ...) media_buffer->Lock(__VA_ARGS__)
 #endif
