@@ -598,6 +598,9 @@ DEFINE_MEDIATYPE_GUID(MFAudioFormat_ALAC, 0x6C61);
 #ifndef IMFMediaBuffer_Release
 #define IMFMediaBuffer_Release(media_buffer) media_buffer->Release()
 #endif
+#ifndef IMFMediaBuffer_SetCurrentLength
+#define IMFMediaBuffer_SetCurrentLength(media_buffer, ...) media_buffer->SetCurrentLength(__VA_ARGS__)
+#endif
 #ifndef IMFMediaBuffer_Unlock
 #define IMFMediaBuffer_Unlock(media_buffer) media_buffer->Unlock()
 #endif
@@ -610,14 +613,11 @@ DEFINE_MEDIATYPE_GUID(MFAudioFormat_ALAC, 0x6C61);
 #ifndef IMFMediaType_SetUINT32
 #define IMFMediaType_SetUINT32(media_type, ...) media_type->SetUINT32(__VA_ARGS__)
 #endif
-#ifndef IMFSample_Release
-#define IMFSample_Release(sample) sample->Release()
-#endif
 #ifndef IMFSample_AddBuffer
 #define IMFSample_AddBuffer(sample, ...) sample->AddBuffer(__VA_ARGS__)
 #endif
-#ifndef IMFMediaBuffer_SetCurrentLength
-#define IMFMediaBuffer_SetCurrentLength(media_buffer, ...) media_buffer->SetCurrentLength(__VA_ARGS__)
+#ifndef IMFSample_Release
+#define IMFSample_Release(sample) sample->Release()
 #endif
 #ifndef IMFSample_SetSampleDuration
 #define IMFSample_SetSampleDuration(sample, ...) sample->SetSampleDuration(__VA_ARGS__)
@@ -625,14 +625,8 @@ DEFINE_MEDIATYPE_GUID(MFAudioFormat_ALAC, 0x6C61);
 #ifndef IMFSample_SetSampleTime
 #define IMFSample_SetSampleTime(sample, ...) sample->SetSampleTime(__VA_ARGS__)
 #endif
-#ifndef IMFSinkWriter_WriteSample
-#define IMFSinkWriter_WriteSample(sink_writer, ...) sink_writer->WriteSample(__VA_ARGS__)
-#endif
 #ifndef IMFSinkWriter_AddStream
 #define IMFSinkWriter_AddStream(sink_writer, ...) sink_writer->AddStream(__VA_ARGS__)
-#endif
-#ifndef IMFSinkWriter_SetInputMediaType
-#define IMFSinkWriter_SetInputMediaType(sink_writer, ...) sink_writer->SetInputMediaType(__VA_ARGS__)
 #endif
 #ifndef IMFSinkWriter_BeginWriting
 #define IMFSinkWriter_BeginWriting(sink_writer) sink_writer->BeginWriting()
@@ -642,6 +636,12 @@ DEFINE_MEDIATYPE_GUID(MFAudioFormat_ALAC, 0x6C61);
 #endif
 #ifndef IMFSinkWriter_Release
 #define IMFSinkWriter_Release(sink_writer) sink_writer->Release()
+#endif
+#ifndef IMFSinkWriter_SetInputMediaType
+#define IMFSinkWriter_SetInputMediaType(sink_writer, ...) sink_writer->SetInputMediaType(__VA_ARGS__)
+#endif
+#ifndef IMFSinkWriter_WriteSample
+#define IMFSinkWriter_WriteSample(sink_writer, ...) sink_writer->WriteSample(__VA_ARGS__)
 #endif
 #endif
 
