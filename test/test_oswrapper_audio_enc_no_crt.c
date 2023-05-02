@@ -333,11 +333,26 @@ int main(int argc, char** argv) {
         size_t frame_size = (audio_spec->bits_per_channel / 8) * (audio_spec->channel_count);
         buffer = (short*) AUDIO_DEMO_CALLOC(TEST_PROGRAM_BUFFER_SIZE, frame_size);
         size_t frames_done = 0;
-        audio_enc_spec->sample_rate = audio_spec->sample_rate;
-        audio_enc_spec->channel_count = audio_spec->channel_count;
-        audio_enc_spec->bits_per_channel = audio_spec->bits_per_channel;
-        audio_enc_spec->input_pcm_type = audio_spec->audio_type == OSWRAPPER_AUDIO_FORMAT_PCM_FLOAT ? OSWRAPPER_AUDIO_ENC_PCM_FLOAT : OSWRAPPER_AUDIO_ENC_PCM_INTEGER;
-        audio_enc_spec->input_pcm_endianness_type = audio_spec->endianness_type == OSWRAPPER_AUDIO_ENDIANNESS_BIG ? OSWRAPPER_AUDIO_ENC_ENDIANNESS_BIG : OSWRAPPER_AUDIO_ENC_ENDIANNESS_LITTLE;
+        /* Input data */
+        audio_enc_spec->input_data.sample_rate = SAMPLE_RATE;
+        audio_enc_spec->input_data.channel_count = CHANNEL_COUNT;
+        audio_enc_spec->input_data.bits_per_channel = BITS_PER_CHANNEL;
+#ifdef POCKETMOD_INT_PCM
+        audio_enc_spec->input_data.pcm_type = OSWRAPPER_AUDIO_ENC_PCM_INTEGER;
+#else
+        audio_enc_spec->input_data.pcm_type = OSWRAPPER_AUDIO_ENC_PCM_FLOAT;
+#endif
+        audio_enc_spec->input_data.pcm_endianness_type = OSWRAPPER_AUDIO_ENC_ENDIANNESS_LITTLE;
+        /* Output data */
+        audio_enc_spec->output_data.sample_rate = SAMPLE_RATE;
+        audio_enc_spec->output_data.channel_count = CHANNEL_COUNT;
+        audio_enc_spec->output_data.bits_per_channel = BITS_PER_CHANNEL;
+#ifdef POCKETMOD_INT_PCM
+        audio_enc_spec->output_data.pcm_type = OSWRAPPER_AUDIO_ENC_PCM_INTEGER;
+#else
+        audio_enc_spec->output_data.pcm_type = OSWRAPPER_AUDIO_ENC_PCM_FLOAT;
+#endif
+        audio_enc_spec->output_data.pcm_endianness_type = OSWRAPPER_AUDIO_ENC_ENDIANNESS_LITTLE;
         audio_enc_spec->output_type = output_type;
 
         if (!oswrapper_audio_enc_make_file_from_path(output_path, audio_enc_spec)) {
