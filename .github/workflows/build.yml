@@ -34,7 +34,7 @@ jobs:
       matrix:
         sdk:
           - 10.0.19041.0
-          - 8.1
+          - 10.0.22621.755
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
