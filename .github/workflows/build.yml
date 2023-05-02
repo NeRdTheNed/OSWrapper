@@ -4,7 +4,12 @@ on: [ push, pull_request ]
 
 jobs:
   build_macOS:
-    runs-on: macOS-11
+    strategy:
+      matrix:
+        version:
+          - 11
+          - latest
+    runs-on: macOS-${{ matrix.version }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -14,7 +19,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: Examples-macOS
+          name: Examples-macOS-${{ matrix.version }}
           path: |
             test/test_oswrapper_image
             test/test_oswrapper_image_cpp
