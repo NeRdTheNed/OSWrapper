@@ -265,18 +265,6 @@ typedef struct oswrapper_audio_enc__internal_data_mac {
     ExtAudioFileRef audio_file_ext;
 } oswrapper_audio_enc__internal_data_mac;
 
-static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__is_apple_format_lossy(OSWRAPPER_AUDIO_ENC__AUDIO_FORMAT_ID_TYPE type) {
-    /* TODO Add more types */
-    switch (type) {
-    case kAudioFormatMPEG4AAC:
-    case kAudioFormatMPEG4AAC_HE:
-        return OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS;
-
-    default:
-        return OSWRAPPER_AUDIO_ENC_RESULT_FAILURE;
-    }
-}
-
 static OSWRAPPER_AUDIO_ENC__AUDIO_FORMAT_ID_TYPE oswrapper_audio_enc__get_audio_format_id_from_enum(OSWrapper_audio_enc_output_type type) {
     switch (type) {
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC:
