@@ -180,7 +180,11 @@ int main(int argc, char** argv) {
 #else
         puts("Output format: floating point PCM\n");
 #endif
+#if defined(__ppc64__) || defined(__ppc__)
+        puts("Big-endian\n");
+#else
         puts("Little-endian\n");
+#endif
         size_t frame_size = (BITS_PER_CHANNEL / 8) * (CHANNEL_COUNT);
         buffer = (short*) calloc(TEST_PROGRAM_BUFFER_SIZE, frame_size);
         size_t frames_done = 0;
@@ -193,7 +197,7 @@ int main(int argc, char** argv) {
 #else
         audio_enc_spec->input_data.pcm_type = OSWRAPPER_AUDIO_ENC_PCM_FLOAT;
 #endif
-        audio_enc_spec->input_data.pcm_endianness_type = OSWRAPPER_AUDIO_ENC_ENDIANNESS_LITTLE;
+        audio_enc_spec->input_data.pcm_endianness_type = OSWRAPPER_AUDIO_ENC_ENDIANNESS_DEFAULT;
         /* Output data */
         audio_enc_spec->output_type = output_type;
 
