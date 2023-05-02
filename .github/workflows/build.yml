@@ -30,18 +30,25 @@ jobs:
             test/demo_oswrapper_audio_sokol_audio_cpp
   build_windows:
     runs-on: windows-latest
+    strategy:
+      matrix:
+        sdk:
+          - 10.0.10240.0
+          - 8.1
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
       - name: Set up MSVC Developer Command Prompt
         uses: ilammy/msvc-dev-cmd@v1
+        with:
+          sdk: ${{ matrix.sdk }}
       - name: Build examples
         working-directory: test
         run: nmake -f Makefile.win32
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: Examples-windows
+          name: Examples-windows-${{ matrix.sdk }}
           path: |
             test/test_oswrapper_image.exe
             test/test_oswrapper_image_cpp.exe
