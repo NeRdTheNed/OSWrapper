@@ -240,6 +240,10 @@ static void oswrapper_audio_enc__fill_output_from_input(OSWrapper_audio_enc_spec
 
 #if !defined(MAC_OS_X_VERSION_10_5) || MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_5
 #include <CoreServices/CoreServices.h>
+
+#ifndef kAudioFormatMPEG4AAC_HE
+#define kAudioFormatMPEG4AAC_HE 'aach'
+#endif
 #endif
 
 #if !defined(MAC_OS_X_VERSION_10_10) || MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_10
