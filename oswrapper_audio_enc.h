@@ -234,16 +234,15 @@ static void oswrapper_audio_enc__fill_output_from_input(OSWrapper_audio_enc_spec
 /* Start macOS AudioToolbox implementation */
 #include <AudioToolbox/AudioConverter.h>
 #include <AudioToolbox/AudioFormat.h>
+#if !defined(MAC_OS_X_VERSION_10_6) || MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_6
+#include <CoreServices/CoreServices.h>
+#endif
 #include <AudioToolbox/ExtendedAudioFile.h>
 
 #include <AvailabilityMacros.h>
 
-#if !defined(MAC_OS_X_VERSION_10_5) || MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_5
-#include <CoreServices/CoreServices.h>
-
-#ifndef kAudioFormatMPEG4AAC_HE
+#if (!defined(MAC_OS_X_VERSION_10_5) || MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_5) && !defined(kAudioFormatMPEG4AAC_HE)
 #define kAudioFormatMPEG4AAC_HE 'aach'
-#endif
 #endif
 
 #if !defined(MAC_OS_X_VERSION_10_10) || MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_10
