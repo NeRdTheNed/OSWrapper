@@ -322,7 +322,7 @@ static AudioFileTypeID oswrapper_audio_enc__get_audio_file_type_id_from_enum(OSW
 static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__create_desc(AudioStreamBasicDescription* desc, OSWRAPPER_AUDIO_ENC__AUDIO_FORMAT_ID_TYPE format_id, OSWrapper_audio_enc_format_spec* audio) {
     desc->mFormatID = format_id;
     /* This may be set to 0 when creating compressed formats */
-    desc->mSampleRate = oswrapper_audio_enc__is_apple_format_lossy(format_id) == OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS ? 0 : audio->sample_rate;
+    desc->mSampleRate = audio->sample_rate;
     desc->mChannelsPerFrame = audio->channel_count;
 
     if (format_id == kAudioFormatLinearPCM) {
