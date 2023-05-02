@@ -32,16 +32,17 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        sdk:
-          - 10.0.19041.0
-          - 10.0.22621.755
+        arch:
+          - amd64
+          - amd64_x86
+          - amd64_arm64
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
       - name: Set up MSVC Developer Command Prompt
         uses: ilammy/msvc-dev-cmd@v1
         with:
-          sdk: ${{ matrix.sdk }}
+          arch: ${{ matrix.arch }}
       - name: Build examples
         working-directory: test
         run: nmake -f Makefile.win32
