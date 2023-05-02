@@ -214,7 +214,7 @@ static void oswrapper_audio_enc__fill_output_from_input(OSWrapper_audio_enc_spec
     }
 
     if (audio->output_data.pcm_type == OSWRAPPER_AUDIO_ENC_PCM_DEFAULT) {
-        audio->output_data.pcm_type = OSWRAPPER_AUDIO_ENC_PCM_INTEGER;
+        audio->output_data.pcm_type = audio->input_data.pcm_type;
     }
 
     if (audio->output_data.pcm_endianness_type == OSWRAPPER_AUDIO_ENC_ENDIANNESS_DEFAULT) {
