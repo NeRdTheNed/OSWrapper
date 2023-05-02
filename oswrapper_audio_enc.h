@@ -592,12 +592,6 @@ DEFINE_MEDIATYPE_GUID(MFAudioFormat_ALAC, 0x6C61);
 
 /* Using CINTERFACE breaks some headers, so we have to define these ourselves */
 #if defined(__cplusplus) && !defined(CINTERFACE) && !defined(OSWRAPPER_AUDIO_NO_DEFINE_WINMF_C_INTERFACE)
-#ifndef IMFAttributes_GetGUID
-#define IMFAttributes_GetGUID(attributes, ...) attributes->GetGUID(__VA_ARGS__)
-#endif
-#ifndef IMFByteStream_Release
-#define IMFByteStream_Release(byte_stream) byte_stream->Release()
-#endif
 #ifndef IMFMediaBuffer_Lock
 #define IMFMediaBuffer_Lock(media_buffer, ...) media_buffer->Lock(__VA_ARGS__)
 #endif
@@ -606,9 +600,6 @@ DEFINE_MEDIATYPE_GUID(MFAudioFormat_ALAC, 0x6C61);
 #endif
 #ifndef IMFMediaBuffer_Unlock
 #define IMFMediaBuffer_Unlock(media_buffer) media_buffer->Unlock()
-#endif
-#ifndef IMFMediaType_GetUINT32
-#define IMFMediaType_GetUINT32(media_type, ...) media_type->GetUINT32(__VA_ARGS__)
 #endif
 #ifndef IMFMediaType_Release
 #define IMFMediaType_Release(media_type) media_type->Release()
@@ -619,32 +610,8 @@ DEFINE_MEDIATYPE_GUID(MFAudioFormat_ALAC, 0x6C61);
 #ifndef IMFMediaType_SetUINT32
 #define IMFMediaType_SetUINT32(media_type, ...) media_type->SetUINT32(__VA_ARGS__)
 #endif
-#ifndef IMFSample_ConvertToContiguousBuffer
-#define IMFSample_ConvertToContiguousBuffer(sample, ...) sample->ConvertToContiguousBuffer(__VA_ARGS__)
-#endif
 #ifndef IMFSample_Release
 #define IMFSample_Release(sample) sample->Release()
-#endif
-#ifndef IMFSourceReader_GetNativeMediaType
-#define IMFSourceReader_GetNativeMediaType(source_reader, ...) source_reader->GetNativeMediaType(__VA_ARGS__)
-#endif
-#ifndef IMFSourceReader_ReadSample
-#define IMFSourceReader_ReadSample(source_reader, ...) source_reader->ReadSample(__VA_ARGS__)
-#endif
-#ifndef IMFSourceReader_Release
-#define IMFSourceReader_Release(source_reader) source_reader->Release()
-#endif
-#ifndef IMFSourceReader_SetCurrentMediaType
-#define IMFSourceReader_SetCurrentMediaType(source_reader, ...) source_reader->SetCurrentMediaType(__VA_ARGS__)
-#endif
-#ifndef IMFSourceReader_SetCurrentPosition
-#define IMFSourceReader_SetCurrentPosition(source_reader, ...) source_reader->SetCurrentPosition(__VA_ARGS__)
-#endif
-#ifndef IMFSourceReader_SetStreamSelection
-#define IMFSourceReader_SetStreamSelection(source_reader, ...) source_reader->SetStreamSelection(__VA_ARGS__)
-#endif
-#ifndef IStream_Release
-#define IStream_Release(istream) istream->Release()
 #endif
 #ifndef IMFSample_AddBuffer
 #define IMFSample_AddBuffer(sample, ...) sample->AddBuffer(__VA_ARGS__)
