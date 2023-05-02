@@ -585,6 +585,11 @@ OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_enco
 #include <shlwapi.h>
 #include <stdio.h>
 
+#if WINVER < 0x0A00
+DEFINE_MEDIATYPE_GUID(MFAudioFormat_FLAC, 0xF1AC);
+DEFINE_MEDIATYPE_GUID(MFAudioFormat_ALAC, 0x6C61);
+#endif
+
 /* Using CINTERFACE breaks some headers, so we have to define these ourselves */
 #if defined(__cplusplus) && !defined(CINTERFACE) && !defined(OSWRAPPER_AUDIO_NO_DEFINE_WINMF_C_INTERFACE)
 #ifndef IMFAttributes_GetGUID
