@@ -46,12 +46,14 @@ https://github.com/NeRdTheNed/OSWrapper/blob/main/oswrapper_audio_enc.h
 
 /* PCM format enum. */
 typedef enum {
+    OSWRAPPER_AUDIO_ENC_PCM_DEFAULT = 0,
     OSWRAPPER_AUDIO_ENC_PCM_INTEGER,
     OSWRAPPER_AUDIO_ENC_PCM_FLOAT
 } OSWrapper_audio_enc_pcm_type;
 
 /* PCM endianness type. */
 typedef enum {
+    OSWRAPPER_AUDIO_ENC_ENDIANNESS_DEFAULT = 0,
     OSWRAPPER_AUDIO_ENC_ENDIANNESS_LITTLE,
     OSWRAPPER_AUDIO_ENC_ENDIANNESS_BIG
 } OSWrapper_audio_enc_pcm_endianness_type;
@@ -164,6 +166,67 @@ static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__is_format_lossy(OSWr
 
     default:
         return OSWRAPPER_AUDIO_ENC_RESULT_FAILURE;
+    }
+}
+
+static OSWrapper_audio_enc_pcm_endianness_type oswrapper_audio_enc__get_endianness_for_format(OSWrapper_audio_enc_output_type type) {
+    switch (type) {
+    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_WAV:
+        return OSWRAPPER_AUDIO_ENC_ENDIANNESS_LITTLE;
+
+    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_SND:
+        return OSWRAPPER_AUDIO_ENC_ENDIANNESS_BIG;
+
+    default:
+        return OSWRAPPER_AUDIO_ENC_ENDIANNESS_DEFAULT;
+    }
+}
+
+static void oswrapper_audio_enc__fill_output_from_input(OSWrapper_audio_enc_spec* audio) {
+    if (audio->input_data.pcm_type == OSWRAPPER_AUDIO_ENC_PCM_DEFAULT) {
+        audio->input_data.pcm_type = OSWRAPPER_AUDIO_ENC_PCM_INTEGER;
+    }
+
+    if (audio->input_data.pcm_endianness_type == OSWRAPPER_AUDIO_ENC_ENDIANNESS_DEFAULT) {
+#if defined(__ppc64__) || defined(__ppc__)
+        audio->input_data.pcm_endianness_type = OSWRAPPER_AUDIO_ENC_ENDIANNESS_BIG;
+#else
+        audio->input_data.pcm_endianness_type = OSWRAPPER_AUDIO_ENC_ENDIANNESS_LITTLE;
+#endif
+    }
+
+#ifdef __APPLE__
+
+    if (!oswrapper_audio_enc__is_format_lossy(audio->output_type))
+#endif
+    {
+        if (audio->output_data.sample_rate == 0) {
+            audio->output_data.sample_rate = audio->input_data.sample_rate;
+        }
+    }
+
+    if (audio->output_data.channel_count == 0) {
+        audio->output_data.channel_count = audio->input_data.channel_count;
+    }
+
+    if (audio->output_data.bits_per_channel == 0) {
+        audio->output_data.bits_per_channel = audio->input_data.bits_per_channel;
+    }
+
+    if (audio->output_data.pcm_type == OSWRAPPER_AUDIO_ENC_PCM_DEFAULT) {
+        audio->output_data.pcm_type = OSWRAPPER_AUDIO_ENC_PCM_INTEGER;
+    }
+
+    if (audio->output_data.pcm_endianness_type == OSWRAPPER_AUDIO_ENC_ENDIANNESS_DEFAULT) {
+        audio->output_data.pcm_endianness_type = oswrapper_audio_enc__get_endianness_for_format(audio->output_type);
+
+        if (audio->output_data.pcm_endianness_type == OSWRAPPER_AUDIO_ENC_ENDIANNESS_DEFAULT) {
+#if defined(__ppc64__) || defined(__ppc__)
+            audio->output_data.pcm_endianness_type = OSWRAPPER_AUDIO_ENC_ENDIANNESS_BIG;
+#else
+            audio->output_data.pcm_endianness_type = OSWRAPPER_AUDIO_ENC_ENDIANNESS_LITTLE;
+#endif
+        }
     }
 }
 
@@ -427,6 +490,7 @@ OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_make
 #else
     AudioStreamBasicDescription input_format = { 0 };
 #endif
+    oswrapper_audio_enc__fill_output_from_input(audio);
 
     if (oswrapper_audio_enc__create_desc(&input_format, kAudioFormatLinearPCM, &audio->input_data) == OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS) {
 #ifdef __cplusplus
@@ -777,6 +841,7 @@ OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_fina
 
 OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_make_file_from_path(const char* path, OSWrapper_audio_enc_spec* audio) {
     IMFSinkWriter* writer;
+    oswrapper_audio_enc__fill_output_from_input(audio);
 
     if (oswrapper_audio_enc__make_sink_writer_from_path(path, &writer)) {
         /* Output stream format */
