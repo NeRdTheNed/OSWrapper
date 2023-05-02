@@ -33,7 +33,7 @@ jobs:
     strategy:
       matrix:
         sdk:
-          - 10.0.10240.0
+          - 10.0.22000.755
           - 8.1
     steps:
       - name: Checkout repository
