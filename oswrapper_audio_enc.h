@@ -865,6 +865,8 @@ cleanup:
 #define OSWRAPPER_AUDIO_ENC__GET_WIN_TYPES_FLAGS ((MFT_ENUM_FLAG_ALL & (~MFT_ENUM_FLAG_FIELDOFUSE)) | MFT_ENUM_FLAG_SORTANDFILTER)
 #endif
 
+#define OSWRAPPER_AUDIO_ENC__ABS(X) ((X) < 0 ? -(X) : (X))
+
 /* TODO This code is not good */
 static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__find_media_type_for_output_format(IMFMediaType** output_media_type, OSWrapper_audio_enc_format_spec* audio_spec, OSWrapper_audio_enc_output_type output_type, unsigned int bitrate) {
     IMFCollection* available_types;
@@ -1020,7 +1022,7 @@ static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__find_media_type_for_
                                 if (!already_has_sample_rate_match && does_sample_rate_match) {
                                     should_replace_best = 1;
                                 } else if ((already_has_sample_rate_match && does_sample_rate_match) || (!already_has_sample_rate_match && candidate_sample_rate >= best_candidate_sample_rate && candidate_sample_rate <= audio_spec->sample_rate)) {
-                                    if ((!already_has_bitrate_match && does_bitrate_match) || (!already_has_bitrate_match && candidate_bitrate > best_candidate_bitrate && candidate_bitrate <= bitrate)) {
+                                    if ((!already_has_bitrate_match && does_bitrate_match) || (!already_has_bitrate_match && OSWRAPPER_AUDIO_ENC__ABS((int) candidate_bitrate - (int) bitrate) < OSWRAPPER_AUDIO_ENC__ABS((int) best_candidate_bitrate - (int) bitrate))) {
                                         should_replace_best = 1;
                                     }
                                 }
