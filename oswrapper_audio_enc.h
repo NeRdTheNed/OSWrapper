@@ -67,6 +67,7 @@ typedef enum {
     OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_SND,
     OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC,
     OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC_HE,
+    OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_MP3,
     OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_ALAC,
     OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_FLAC
 } OSWrapper_audio_enc_output_type;
@@ -161,6 +162,7 @@ static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__is_format_lossy(OSWr
     switch (type) {
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC:
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC_HE:
+    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_MP3:
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_PREFERRED_LOSSY:
         return OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS;
 
@@ -263,6 +265,17 @@ static void oswrapper_audio_enc__fill_output_from_input(OSWrapper_audio_enc_spec
 typedef struct oswrapper_audio_enc__internal_data_mac {
     ExtAudioFileRef audio_file_ext;
 } oswrapper_audio_enc__internal_data_mac;
+
+static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__is_format_supported_on_macos(OSWrapper_audio_enc_output_type type) {
+    /* TODO Check macOS version & return results based on supported formats */
+    switch (type) {
+    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_MP3:
+        return OSWRAPPER_AUDIO_ENC_RESULT_FAILURE;
+
+    default:
+        return OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS;
+    }
+}
 
 static OSWRAPPER_AUDIO_ENC__AUDIO_FORMAT_ID_TYPE oswrapper_audio_enc__get_audio_format_id_from_enum(OSWrapper_audio_enc_output_type type) {
     switch (type) {
@@ -481,6 +494,11 @@ OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_make
 #else
     AudioStreamBasicDescription input_format = { 0 };
 #endif
+
+    if (oswrapper_audio_enc__is_format_supported_on_macos(audio->output_type) == OSWRAPPER_AUDIO_ENC_RESULT_FAILURE) {
+        return OSWRAPPER_AUDIO_ENC_RESULT_FAILURE;
+    }
+
     oswrapper_audio_enc__fill_output_from_input(audio);
 
     if (oswrapper_audio_enc__create_desc(&input_format, kAudioFormatLinearPCM, &audio->input_data) == OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS) {
@@ -656,6 +674,14 @@ typedef struct oswrapper_audio_enc__internal_data_win {
     LONGLONG output_pos;
 } oswrapper_audio_enc__internal_data_win;
 
+static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__is_format_supported_on_windows(OSWrapper_audio_enc_output_type type) {
+    /* TODO Check Windows version & return results based on supported formats */
+    switch (type) {
+    default:
+        return OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS;
+    }
+}
+
 static GUID oswrapper_audio_enc__get_guid_from_enum(OSWrapper_audio_enc_output_type type) {
     switch (type) {
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC:
@@ -663,8 +689,8 @@ static GUID oswrapper_audio_enc__get_guid_from_enum(OSWrapper_audio_enc_output_t
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_PREFERRED_LOSSY:
         return MFAudioFormat_AAC;
 
-    /*case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_MP3:
-        return MFAudioFormat_MP3;*/
+    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_MP3:
+        return MFAudioFormat_MP3;
 
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_ALAC:
         return MFAudioFormat_ALAC;
@@ -810,6 +836,11 @@ OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_fina
 
 OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_make_file_from_path(const char* path, OSWrapper_audio_enc_spec* audio) {
     IMFSinkWriter* writer;
+
+    if (oswrapper_audio_enc__is_format_supported_on_windows(audio->output_type) == OSWRAPPER_AUDIO_ENC_RESULT_FAILURE) {
+        return OSWRAPPER_AUDIO_ENC_RESULT_FAILURE;
+    }
+
     oswrapper_audio_enc__fill_output_from_input(audio);
 
     if (oswrapper_audio_enc__make_sink_writer_from_path(path, &writer)) {
