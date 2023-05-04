@@ -600,6 +600,15 @@ DEFINE_MEDIATYPE_GUID(MFAudioFormat_ALAC, 0x6C61);
 
 /* Using CINTERFACE breaks some headers, so we have to define these ourselves */
 #if defined(__cplusplus) && !defined(CINTERFACE) && !defined(OSWRAPPER_AUDIO_ENC_NO_DEFINE_WINMF_C_INTERFACE)
+#ifndef IMFCollection_GetElement
+#define IMFCollection_GetElement(collection, ...) collection->GetElement(__VA_ARGS__)
+#endif
+#ifndef IMFCollection_GetElementCount
+#define IMFCollection_GetElementCount(collection, ...) collection->GetElementCount(__VA_ARGS__)
+#endif
+#ifndef IMFCollection_Release
+#define IMFCollection_Release(collection) collection->Release()
+#endif
 #ifndef IMFMediaBuffer_Lock
 #define IMFMediaBuffer_Lock(media_buffer, ...) media_buffer->Lock(__VA_ARGS__)
 #endif
@@ -611,6 +620,12 @@ DEFINE_MEDIATYPE_GUID(MFAudioFormat_ALAC, 0x6C61);
 #endif
 #ifndef IMFMediaBuffer_Unlock
 #define IMFMediaBuffer_Unlock(media_buffer) media_buffer->Unlock()
+#endif
+#ifndef IMFMediaType_AddRef
+#define IMFMediaType_AddRef(media_type) media_type->AddRef()
+#endif
+#ifndef IMFMediaType_GetUINT32
+#define IMFMediaType_GetUINT32(media_type, ...) media_type->GetUINT32(__VA_ARGS__)
 #endif
 #ifndef IMFMediaType_Release
 #define IMFMediaType_Release(media_type) media_type->Release()
@@ -791,6 +806,213 @@ cleanup:
     return OSWRAPPER_AUDIO_ENC_RESULT_FAILURE;
 }
 
+#ifndef OSWRAPPER_AUDIO_ENC__GET_WIN_TYPES_FLAGS
+#define OSWRAPPER_AUDIO_ENC__GET_WIN_TYPES_FLAGS ((MFT_ENUM_FLAG_ALL & (~MFT_ENUM_FLAG_FIELDOFUSE)) | MFT_ENUM_FLAG_SORTANDFILTER)
+#endif
+
+/* TODO This code is not good */
+static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__find_media_type_for_output_format(IMFMediaType** output_media_type, OSWrapper_audio_enc_format_spec* audio_spec, OSWrapper_audio_enc_output_type output_type, unsigned int bitrate) {
+    IMFCollection* available_types;
+    IMFMediaType* best_candidate;
+    HRESULT result;
+    DWORD available_types_amount;
+    int found_best;
+    int is_lossy;
+    GUID output_format_guid = oswrapper_audio_enc__get_guid_from_enum(output_type);
+    available_types = NULL;
+    best_candidate = NULL;
+    available_types_amount = 0;
+    found_best = 0;
+    is_lossy = oswrapper_audio_enc__is_format_lossy(output_type) == OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS;
+
+    if (!is_lossy) {
+        bitrate = 0;
+    } else if (bitrate == 0) {
+        /* Default to 128000 */
+        bitrate = 128000;
+    }
+
+    /* Get all supported output media types for this format */
+#ifdef __cplusplus
+    result = MFTranscodeGetAudioOutputAvailableTypes(output_format_guid, OSWRAPPER_AUDIO_ENC__GET_WIN_TYPES_FLAGS, NULL, &available_types);
+#else
+    result = MFTranscodeGetAudioOutputAvailableTypes(&output_format_guid, OSWRAPPER_AUDIO_ENC__GET_WIN_TYPES_FLAGS, NULL, &available_types);
+#endif
+
+    if (FAILED(result)) {
+        goto end_cleanup;
+    }
+
+    result = IMFCollection_GetElementCount(available_types, &available_types_amount);
+
+    if (FAILED(result) || available_types_amount == 0) {
+        goto end_cleanup;
+    }
+
+    {
+        /* Track the best candidate format's properties */
+        UINT32 best_candidate_sample_rate;
+        UINT32 best_candidate_channels;
+        UINT32 best_candidate_bitrate;
+        UINT32 best_candidate_bits_per_sample;
+        DWORD i;
+        best_candidate_sample_rate = 0;
+        best_candidate_channels = 0;
+        best_candidate_bitrate = 0;
+        best_candidate_bits_per_sample = 0;
+
+        /* Loop over all supported output media types, and find the most similar format */
+        for (i = 0; i < available_types_amount; i++) {
+            IMFMediaType* candidate_media_type = NULL;
+            result = IMFCollection_GetElement(available_types, i, (IUnknown**) &candidate_media_type);
+
+            if (FAILED(result) || candidate_media_type == NULL) {
+                goto end_loop_cleanup;
+            }
+
+            /* Get current format properties */
+            {
+                UINT32 candidate_sample_rate;
+                UINT32 candidate_bits_per_sample;
+                UINT32 candidate_bitrate;
+                UINT32 candidate_channels;
+                candidate_sample_rate = 0;
+                candidate_bits_per_sample = 0;
+                candidate_bitrate = 0;
+                candidate_channels = 0;
+#ifdef __cplusplus
+                result = IMFMediaType_GetUINT32(candidate_media_type, MF_MT_AUDIO_SAMPLES_PER_SECOND, &candidate_sample_rate);
+#else
+                result = IMFMediaType_GetUINT32(candidate_media_type, &MF_MT_AUDIO_SAMPLES_PER_SECOND, &candidate_sample_rate);
+#endif
+
+                if (FAILED(result)) {
+                    candidate_sample_rate = 0;
+                }
+
+#ifdef __cplusplus
+                result = IMFMediaType_GetUINT32(candidate_media_type, MF_MT_AUDIO_BITS_PER_SAMPLE, &candidate_bits_per_sample);
+#else
+                result = IMFMediaType_GetUINT32(candidate_media_type, &MF_MT_AUDIO_BITS_PER_SAMPLE, &candidate_bits_per_sample);
+#endif
+
+                if (FAILED(result)) {
+                    /* TODO Document */
+                    if (output_type == OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_MP3) {
+                        candidate_bits_per_sample = audio_spec->bits_per_channel;
+                    } else {
+                        candidate_bits_per_sample = 0;
+                    }
+                }
+
+                if (is_lossy) {
+#ifdef __cplusplus
+                    result = IMFMediaType_GetUINT32(candidate_media_type, MF_MT_AUDIO_AVG_BYTES_PER_SECOND, &candidate_bitrate);
+#else
+                    result = IMFMediaType_GetUINT32(candidate_media_type, &MF_MT_AUDIO_AVG_BYTES_PER_SECOND, &candidate_bitrate);
+#endif
+
+                    if (FAILED(result)) {
+                        candidate_bitrate = 0;
+                    } else {
+                        candidate_bitrate *= 8;
+                    }
+                }
+
+#ifdef __cplusplus
+                result = IMFMediaType_GetUINT32(candidate_media_type, MF_MT_AUDIO_NUM_CHANNELS, &candidate_channels);
+#else
+                result = IMFMediaType_GetUINT32(candidate_media_type, &MF_MT_AUDIO_NUM_CHANNELS, &candidate_channels);
+#endif
+
+                if (FAILED(result)) {
+                    candidate_channels = 0;
+                }
+
+                {
+                    /* TODO This code is awful, I forgot why I wrote it this way */
+                    int does_channels_match;
+                    int does_sample_rate_match;
+                    int does_bits_per_sample_match;
+                    int does_bitrate_match;
+                    int already_has_channels_match;
+                    int already_has_sample_rate_match;
+                    int already_has_bits_per_sample_match;
+                    int already_has_bitrate_match;
+                    int should_replace_best = 0;
+                    does_channels_match = candidate_channels == audio_spec->channel_count;
+                    does_sample_rate_match = candidate_sample_rate == audio_spec->sample_rate;
+                    does_bits_per_sample_match = candidate_bits_per_sample == audio_spec->bits_per_channel;
+                    does_bitrate_match = candidate_bitrate == bitrate;
+                    already_has_channels_match = best_candidate_channels == audio_spec->channel_count;
+                    already_has_sample_rate_match = best_candidate_sample_rate == audio_spec->sample_rate;
+                    already_has_bits_per_sample_match = best_candidate_bits_per_sample == audio_spec->bits_per_channel;
+                    already_has_bitrate_match = best_candidate_bitrate == bitrate;
+
+                    /* Try to figure out if we should replace the current best candidate format */
+                    if (does_channels_match && does_sample_rate_match && does_bits_per_sample_match && does_bitrate_match) {
+                        should_replace_best = 1;
+                        found_best = 1;
+                    } else {
+                        if (best_candidate == NULL) {
+                            should_replace_best = 1;
+                        } else if (!already_has_channels_match && does_channels_match) {
+                            should_replace_best = 1;
+                        } else if ((already_has_channels_match && does_channels_match) || (!already_has_channels_match && candidate_channels >= best_candidate_channels && candidate_channels <= audio_spec->channel_count)) {
+                            if (!already_has_bits_per_sample_match && does_bits_per_sample_match) {
+                                should_replace_best = 1;
+                            } else if ((already_has_bits_per_sample_match && does_bits_per_sample_match) || (!already_has_bits_per_sample_match && candidate_bits_per_sample >= best_candidate_bits_per_sample && candidate_bits_per_sample <= audio_spec->bits_per_channel)) {
+                                if (!already_has_sample_rate_match && does_sample_rate_match) {
+                                    should_replace_best = 1;
+                                } else if ((already_has_sample_rate_match && does_sample_rate_match) || (!already_has_sample_rate_match && candidate_sample_rate >= best_candidate_sample_rate && candidate_sample_rate <= audio_spec->sample_rate)) {
+                                    if ((!already_has_bitrate_match && does_bitrate_match) || (!already_has_bitrate_match && candidate_bitrate > best_candidate_bitrate && candidate_bitrate <= bitrate)) {
+                                        should_replace_best = 1;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if (should_replace_best) {
+                        if (best_candidate != NULL) {
+                            IMFMediaType_Release(best_candidate);
+                        }
+
+                        best_candidate = candidate_media_type;
+                        IMFMediaType_AddRef(best_candidate);
+                        best_candidate_sample_rate = candidate_sample_rate;
+                        best_candidate_channels = candidate_channels;
+                        best_candidate_bitrate = candidate_bitrate;
+                        best_candidate_bits_per_sample = candidate_bits_per_sample;
+                    }
+                }
+            }
+end_loop_cleanup:
+
+            if (candidate_media_type != NULL) {
+                IMFMediaType_Release(candidate_media_type);
+            }
+
+            if (found_best) {
+                break;
+            }
+        }
+    }
+
+end_cleanup:
+
+    if (available_types != NULL) {
+        IMFCollection_Release(available_types);
+    }
+
+    if (best_candidate != NULL) {
+        *output_media_type = best_candidate;
+        return OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS;
+    }
+
+    return OSWRAPPER_AUDIO_ENC_RESULT_FAILURE;
+}
+
 OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_init(void) {
 #ifdef OSWRAPPER_AUDIO_ENC_MANAGE_COINIT
     HRESULT result = CoInitializeEx(NULL, OSWRAPPER_AUDIO_ENC_COINIT_VALUE);
@@ -865,7 +1087,7 @@ OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_make
         /* Output stream format */
         IMFMediaType* output_media_type;
 
-        if (oswrapper_audio_enc__make_media_type_for_output_format(&output_media_type, &audio->output_data, audio->output_type, audio->bitrate) == OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS) {
+        if (oswrapper_audio_enc__find_media_type_for_output_format(&output_media_type, &audio->output_data, audio->output_type, audio->bitrate) == OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS || oswrapper_audio_enc__make_media_type_for_output_format(&output_media_type, &audio->output_data, audio->output_type, audio->bitrate) == OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS) {
             DWORD audio_stream_index;
             HRESULT result = IMFSinkWriter_AddStream(writer, output_media_type, &audio_stream_index);
             IMFMediaType_Release(output_media_type);

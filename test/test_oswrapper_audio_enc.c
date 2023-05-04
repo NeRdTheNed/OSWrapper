@@ -19,6 +19,7 @@ https://github.com/NeRdTheNed/OSWrapper/blob/main/test/test_oswrapper_audio_enc.
 
 #if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
 #include <objbase.h>
+#pragma comment(lib, "mf.lib")
 #pragma comment(lib, "mfplat.lib")
 #pragma comment(lib, "mfreadwrite.lib")
 #pragma comment(lib, "shlwapi.lib")

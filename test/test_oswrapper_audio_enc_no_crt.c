@@ -57,6 +57,7 @@ static int impl_memcmp(const void* ptr1, const void* ptr2, size_t amount) {
 #include "oswrapper_audio_enc.h"
 
 #include <objbase.h>
+#pragma comment(lib, "mf.lib")
 #pragma comment(lib, "mfplat.lib")
 #pragma comment(lib, "mfreadwrite.lib")
 #pragma comment(lib, "shlwapi.lib")
