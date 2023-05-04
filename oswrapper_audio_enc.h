@@ -67,6 +67,7 @@ typedef enum {
     OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_SND,
     OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC,
     OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC_HE,
+    OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_MPEG,
     OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_MP3,
     OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_ALAC,
     OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_FLAC
@@ -165,6 +166,7 @@ static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__is_format_lossy(OSWr
     switch (type) {
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC:
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC_HE:
+    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_MPEG:
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_MP3:
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_PREFERRED_LOSSY:
         return OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS;
@@ -272,6 +274,7 @@ typedef struct oswrapper_audio_enc__internal_data_mac {
 static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__is_format_supported_on_macos(OSWrapper_audio_enc_output_type type) {
     /* TODO Check macOS version & return results based on supported formats */
     switch (type) {
+    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_MPEG:
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_MP3:
         return OSWRAPPER_AUDIO_ENC_RESULT_FAILURE;
 
@@ -710,6 +713,9 @@ static GUID oswrapper_audio_enc__get_guid_from_enum(OSWrapper_audio_enc_output_t
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_PREFERRED_LOSSY:
         return MFAudioFormat_AAC;
 
+    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_MPEG:
+        return MFAudioFormat_MPEG;
+
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_MP3:
         return MFAudioFormat_MP3;
 
@@ -898,7 +904,7 @@ static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__find_media_type_for_
 
                 if (FAILED(result)) {
                     /* TODO Document */
-                    if (output_type == OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_MP3) {
+                    if (output_type == OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_MPEG || output_type == OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_MP3) {
                         candidate_bits_per_sample = audio_spec->bits_per_channel;
                     } else {
                         candidate_bits_per_sample = 0;

@@ -58,6 +58,8 @@ static OSWrapper_audio_enc_output_type demo_get_enum_for_str(const char* type) {
         return OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC;
     } else if (strcmp(type, "aac-he") == 0) {
         return OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC_HE;
+    } else if (strcmp(type, "mp2") == 0 || strcmp(type, "mpg") == 0) {
+        return OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_MPEG;
     } else if (strcmp(type, "mp3") == 0) {
         return OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_MP3;
     } else {
@@ -74,6 +76,9 @@ static const char* demo_get_ext_for_enum(OSWrapper_audio_enc_output_type type) {
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC_HE:
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_ALAC:
         return ".m4a";
+
+    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_MPEG:
+        return ".mpg";
 
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_MP3:
         return ".mp3";
