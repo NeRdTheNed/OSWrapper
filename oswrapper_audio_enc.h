@@ -274,6 +274,9 @@ static void oswrapper_audio_enc__fill_output_from_input(OSWrapper_audio_enc_spec
 #ifndef kAudioFormatFLAC
 #define kAudioFormatFLAC 'flac'
 #endif
+#ifndef kAudioFormatOpus
+#define kAudioFormatOpus 'opus'
+#endif
 #endif
 
 typedef struct oswrapper_audio_enc__internal_data_mac {
@@ -289,7 +292,6 @@ static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__is_format_supported_
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_WMA_V9:
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_WMA_LOSSLESS:
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_WMA_SPEECH:
-    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_OPUS:
         return OSWRAPPER_AUDIO_ENC_RESULT_FAILURE;
 
     default:
@@ -309,6 +311,9 @@ static OSWRAPPER_AUDIO_ENC__AUDIO_FORMAT_ID_TYPE oswrapper_audio_enc__get_audio_
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_ALAC:
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_PREFERRED_LOSSLESS:
         return kAudioFormatAppleLossless;
+
+    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_OPUS:
+        return kAudioFormatOpus;
 
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_FLAC:
         return kAudioFormatFLAC;
