@@ -1029,16 +1029,16 @@ static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__find_media_type_for_
                     } else {
                         if (best_candidate == NULL) {
                             should_replace_best = 1;
-                        } else if ((!already_has_channels_match && does_channels_match) || (!already_has_channels_match && is_canidate_channel_delta_smaller)) {
+                        } else if (!already_has_channels_match && (does_channels_match || is_canidate_channel_delta_smaller)) {
                             should_replace_best = 1;
                         } else if ((already_has_channels_match && does_channels_match) || (!already_has_channels_match && is_canidate_channel_delta_smaller_equals)) {
-                            if ((!already_has_bits_per_sample_match && does_bits_per_sample_match) || (!already_has_bits_per_sample_match && is_canidate_bits_per_sample_delta_smaller)) {
+                            if (!already_has_bits_per_sample_match && (does_bits_per_sample_match || is_canidate_bits_per_sample_delta_smaller)) {
                                 should_replace_best = 1;
                             } else if ((already_has_bits_per_sample_match && does_bits_per_sample_match) || (!already_has_bits_per_sample_match && is_canidate_bits_per_sample_delta_smaller_equals)) {
-                                if ((!already_has_sample_rate_match && does_sample_rate_match) || (!already_has_sample_rate_match && is_canidate_sample_rate_delta_smaller)) {
+                                if (!already_has_sample_rate_match && (does_sample_rate_match || is_canidate_sample_rate_delta_smaller)) {
                                     should_replace_best = 1;
                                 } else if ((already_has_sample_rate_match && does_sample_rate_match) || (!already_has_sample_rate_match && is_canidate_sample_rate_delta_smaller_equals)) {
-                                    if ((!already_has_bitrate_match && does_bitrate_match) || (!already_has_bitrate_match && is_canidate_bitrate_delta_smaller)) {
+                                    if (!already_has_bitrate_match && (does_bitrate_match || is_canidate_bitrate_delta_smaller)) {
                                         should_replace_best = 1;
                                     }
                                 }
