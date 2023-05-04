@@ -1022,23 +1022,27 @@ static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__find_media_type_for_
                     already_has_bits_per_sample_match = best_candidate_bits_per_sample == audio_spec->bits_per_channel;
                     already_has_bitrate_match = best_candidate_bitrate == bitrate;
 
-                    /* Try to figure out if we should replace the current best candidate format */
+                    /* Try to figure out if we should replace the current best candidate format.
+                       Prioritise formats with the closest channel count, bits per sample, sample rate, and bitrate, in that order.
+                       If there isn't already an exact match for a value,
+                       use the new format if the value is closer to the current match, or equally as close but higher
+                       (e.g. when a format asks for 12 bits per sample, choose 16 over 8). */
                     if (does_channels_match && does_sample_rate_match && does_bits_per_sample_match && does_bitrate_match) {
                         should_replace_best = 1;
                         found_best = 1;
                     } else {
                         if (best_candidate == NULL) {
                             should_replace_best = 1;
-                        } else if (!already_has_channels_match && (does_channels_match || is_canidate_channel_delta_smaller)) {
+                        } else if (!already_has_channels_match && (does_channels_match || is_canidate_channel_delta_smaller || (is_canidate_channel_delta_smaller_equals && (candidate_channels > best_candidate_channels)))) {
                             should_replace_best = 1;
                         } else if ((already_has_channels_match && does_channels_match) || (!already_has_channels_match && is_canidate_channel_delta_smaller_equals)) {
-                            if (!already_has_bits_per_sample_match && (does_bits_per_sample_match || is_canidate_bits_per_sample_delta_smaller)) {
+                            if (!already_has_bits_per_sample_match && (does_bits_per_sample_match || is_canidate_bits_per_sample_delta_smaller || (is_canidate_bits_per_sample_delta_smaller_equals && (candidate_bits_per_sample > best_candidate_bits_per_sample)))) {
                                 should_replace_best = 1;
                             } else if ((already_has_bits_per_sample_match && does_bits_per_sample_match) || (!already_has_bits_per_sample_match && is_canidate_bits_per_sample_delta_smaller_equals)) {
-                                if (!already_has_sample_rate_match && (does_sample_rate_match || is_canidate_sample_rate_delta_smaller)) {
+                                if (!already_has_sample_rate_match && (does_sample_rate_match || is_canidate_sample_rate_delta_smaller || (is_canidate_sample_rate_delta_smaller_equals && (candidate_sample_rate > best_candidate_sample_rate)))) {
                                     should_replace_best = 1;
                                 } else if ((already_has_sample_rate_match && does_sample_rate_match) || (!already_has_sample_rate_match && is_canidate_sample_rate_delta_smaller_equals)) {
-                                    if (!already_has_bitrate_match && (does_bitrate_match || is_canidate_bitrate_delta_smaller)) {
+                                    if (!already_has_bitrate_match && (does_bitrate_match || is_canidate_bitrate_delta_smaller || (is_canidate_bitrate_delta_smaller_equals && (candidate_bitrate > best_candidate_bitrate)))) {
                                         should_replace_best = 1;
                                     }
                                 }
