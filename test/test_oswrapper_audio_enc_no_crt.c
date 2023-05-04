@@ -51,6 +51,7 @@ static int impl_memcmp(const void* ptr1, const void* ptr2, size_t amount) {
 #define OSWRAPPER_AUDIO_ENC_MALLOC(x) HeapAlloc(GetProcessHeap(), 0, x)
 #define OSWRAPPER_AUDIO_ENC_FREE(x) HeapFree(GetProcessHeap(), 0, x)
 #define OSWRAPPER_AUDIO_ENC_MEMCPY(x, y, amount) bad_memcpy(x, y, amount)
+#define OSWRAPPER_AUDIO_ENC_MEMCMP(ptr1, ptr2, amount) impl_memcmp(ptr1, ptr2, amount)
 #define OSWRAPPER_AUDIO_ENC_STATIC
 #define OSWRAPPER_AUDIO_ENC_IMPLEMENTATION
 #include "oswrapper_audio_enc.h"
