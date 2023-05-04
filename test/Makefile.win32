@@ -7,7 +7,7 @@ CXXFLAGS = $(WINVER_FLAGS) /TP /O1 /MT /W4
 CFLAGS_NO_CRT = $(WINVER_FLAGS) /O1 /W4 /Zl /GS- /Gs100000 /D_VC_NODEFAULTLIB
 LDFLAGS_NO_CRT = /NODEFAULTLIB /STACK:0x100000,0x100000
 IMAGE_LIBS = windowscodecs.lib Ole32.lib kernel32.lib user32.lib shell32.lib
-AUDIO_LIBS = mfplat.lib mfreadwrite.lib shlwapi.lib Ole32.lib kernel32.lib user32.lib shell32.lib
+AUDIO_LIBS = mf.lib mfplat.lib mfreadwrite.lib shlwapi.lib Ole32.lib kernel32.lib user32.lib shell32.lib
 
 all:
 	$(CC) $(INCLUDES) $(CFLAGS) $(LDFLAGS) test_oswrapper_image.c -o test_oswrapper_image.exe
