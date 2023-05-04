@@ -1154,7 +1154,7 @@ OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_fina
 OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_make_file_from_path(const char* path, OSWrapper_audio_enc_spec* audio) {
     IMFSinkWriter* writer;
 
-    if (oswrapper_audio_enc__is_format_supported_on_windows(audio->output_type) == OSWRAPPER_AUDIO_ENC_RESULT_FAILURE) {
+    if (audio->input_data.pcm_endianness_type == OSWRAPPER_AUDIO_ENC_ENDIANNESS_BIG || oswrapper_audio_enc__is_format_supported_on_windows(audio->output_type) == OSWRAPPER_AUDIO_ENC_RESULT_FAILURE) {
         return OSWRAPPER_AUDIO_ENC_RESULT_FAILURE;
     }
 
