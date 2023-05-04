@@ -680,6 +680,9 @@ typedef struct oswrapper_audio_enc__internal_data_win {
 static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__is_format_supported_on_windows(OSWrapper_audio_enc_output_type type) {
     /* TODO Check Windows version & return results based on supported formats */
     switch (type) {
+    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_SND:
+        return OSWRAPPER_AUDIO_ENC_RESULT_FAILURE;
+
     default:
         return OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS;
     }
