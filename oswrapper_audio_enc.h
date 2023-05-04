@@ -614,6 +614,9 @@ OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_enco
 /* End macOS AudioToolbox implementation */
 #elif defined(OSWRAPPER_AUDIO_ENC_USE_WIN_MF_IMPL)
 /* Start Win32 MF implementation */
+/* This code assumes that WMF uses little-endian data,
+   and the code is running on a little-endian platform.
+   If this isn't the case, please let me know, and I'll try to fix it. */
 #ifndef COBJMACROS
 #define COBJMACROS
 #endif
