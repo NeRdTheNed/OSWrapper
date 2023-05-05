@@ -21,7 +21,7 @@ all:
 	$(CC) $(INCLUDES) $(CFLAGS) $(LDFLAGS) test_oswrapper_audio_enc.c -o test_oswrapper_audio_enc.exe
 	$(CXX) $(INCLUDES) $(CXXFLAGS) $(LDFLAGS) test_oswrapper_audio_enc.c -o test_oswrapper_audio_enc_cpp.exe
 	$(CC) $(INCLUDES) $(CFLAGS_NO_CRT) test_oswrapper_audio_enc_no_crt.c
-	$(LINK) /OUT:test_oswrapper_audio_enc_no_crt.exe $(LDFLAGS_NO_CRT) $(AUDIO_LIBS) test_oswrapper_audio_enc_no_crt.obj
+	$(LINK) /OUT:test_oswrapper_audio_enc_no_crt.exe $(LDFLAGS_NO_CRT) uuid.lib $(AUDIO_LIBS) test_oswrapper_audio_enc_no_crt.obj
 	$(CC) $(INCLUDES) $(CFLAGS) $(LDFLAGS) test_oswrapper_audio_enc_mod.c -o test_oswrapper_audio_enc_mod.exe
 	$(CXX) $(INCLUDES) $(CXXFLAGS) $(LDFLAGS) test_oswrapper_audio_enc_mod.c -o test_oswrapper_audio_enc_mod_cpp.exe
 	$(CC) $(INCLUDES) $(CFLAGS) $(LDFLAGS) test_oswrapper_audio_win_encoder.c -o test_oswrapper_audio_win_encoder.exe
