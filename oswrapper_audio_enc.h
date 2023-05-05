@@ -640,6 +640,12 @@ DEFINE_MEDIATYPE_GUID(MFAudioFormat_Opus, 0x704F);
 
 /* Using CINTERFACE breaks some headers, so we have to define these ourselves */
 #if defined(__cplusplus) && !defined(CINTERFACE) && !defined(OSWRAPPER_AUDIO_ENC_NO_DEFINE_WINMF_C_INTERFACE)
+#ifndef IMFAttributes_Release
+#define IMFAttributes_Release(attributes) attributes->Release()
+#endif
+#ifndef IMFAttributes_SetGUID
+#define IMFAttributes_SetGUID(attributes, ...) attributes->SetGUID(__VA_ARGS__)
+#endif
 #ifndef IMFCollection_GetElement
 #define IMFCollection_GetElement(collection, ...) collection->GetElement(__VA_ARGS__)
 #endif
@@ -1132,14 +1138,65 @@ OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_unin
 }
 
 #ifndef OSWRAPPER_AUDIO_ENC_NO_PATH
-static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__make_sink_writer_from_path(const char* path, IMFSinkWriter** writer) {
+static GUID oswrapper_audio_enc__get_container_guid_from_enum(OSWrapper_audio_enc_output_type type) {
+    switch (type) {
+    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC:
+    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC_HE:
+        return MFTranscodeContainerType_MPEG4;
+
+    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_MPEG:
+        return MFTranscodeContainerType_MPEG2;
+
+    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_MP3:
+        return MFTranscodeContainerType_MP3;
+
+    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_WMA_V8:
+    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_WMA_V9:
+    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_WMA_LOSSLESS:
+    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_WMA_SPEECH:
+        return MFTranscodeContainerType_ASF;
+
+    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_WAV:
+        return MFTranscodeContainerType_WAVE;
+
+    default:
+        return GUID_NULL;
+    }
+}
+
+static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__does_format_need_attrib(OSWrapper_audio_enc_output_type type) {
+    GUID container_guid = oswrapper_audio_enc__get_container_guid_from_enum(type);
+    return OSWRAPPER_AUDIO_ENC_MEMCMP(&container_guid, &GUID_NULL, sizeof(GUID)) ? OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS : OSWRAPPER_AUDIO_ENC_RESULT_FAILURE;
+}
+
+static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__make_sink_writer_from_path(const char* path, IMFSinkWriter** writer, OSWrapper_audio_enc_output_type output_type) {
     HRESULT result;
     /* TODO Ugly hack */
     wchar_t path_buffer[OSWRAPPER_AUDIO_ENC_PATH_MAX];
     result = MultiByteToWideChar(CP_UTF8, 0, path, -1, path_buffer, OSWRAPPER_AUDIO_ENC_PATH_MAX);
 
     if (SUCCEEDED(result)) {
-        result = MFCreateSinkWriterFromURL(path_buffer, NULL, NULL, writer);
+        IMFAttributes* attributes = NULL;
+
+        if (oswrapper_audio_enc__does_format_need_attrib(output_type)) {
+            if (SUCCEEDED(MFCreateAttributes(&attributes, 1))) {
+                GUID container_guid = oswrapper_audio_enc__get_container_guid_from_enum(output_type);
+
+                if (OSWRAPPER_AUDIO_ENC_MEMCMP(&container_guid, &GUID_NULL, sizeof(GUID))) {
+#ifdef __cplusplus
+                    IMFAttributes_SetGUID(attributes, MF_TRANSCODE_CONTAINERTYPE, container_guid);
+#else
+                    IMFAttributes_SetGUID(attributes, &MF_TRANSCODE_CONTAINERTYPE, &container_guid);
+#endif
+                }
+            }
+        }
+
+        result = MFCreateSinkWriterFromURL(path_buffer, NULL, attributes, writer);
+
+        if (attributes != NULL) {
+            IMFAttributes_Release(attributes);
+        }
 
         if (SUCCEEDED(result)) {
             return OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS;
@@ -1167,7 +1224,7 @@ OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_make
 
     oswrapper_audio_enc__fill_output_from_input(audio);
 
-    if (oswrapper_audio_enc__make_sink_writer_from_path(path, &writer)) {
+    if (oswrapper_audio_enc__make_sink_writer_from_path(path, &writer, audio->output_type)) {
         /* Output stream format */
         IMFMediaType* output_media_type;
 
