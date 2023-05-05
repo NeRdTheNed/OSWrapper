@@ -743,7 +743,7 @@ static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__is_format_supported_
     }
 }
 
-static GUID oswrapper_audio_enc__get_guid_from_enum(OSWrapper_audio_enc_output_type type) {
+static GUID oswrapper_audio_enc__get_guid_from_enum(OSWrapper_audio_enc_output_type type, OSWrapper_audio_enc_pcm_type pcm_type) {
     switch (type) {
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC:
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC_HE:
@@ -777,8 +777,12 @@ static GUID oswrapper_audio_enc__get_guid_from_enum(OSWrapper_audio_enc_output_t
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_FLAC:
         return MFAudioFormat_FLAC;
 
-    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_PREFERRED_LOSSLESS:
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_WAV:
+        if (pcm_type == OSWRAPPER_AUDIO_ENC_PCM_FLOAT) {
+            return MFAudioFormat_Float;
+        }
+
+    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_PREFERRED_LOSSLESS:
     default:
         return MFAudioFormat_PCM;
     }
@@ -820,7 +824,7 @@ static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__make_media_type_for_
     if (SUCCEEDED(MFCreateMediaType(output_media_type))) {
         GUID output_format_guid;
         IMFMediaType* media_type = *output_media_type;
-        output_format_guid = oswrapper_audio_enc__get_guid_from_enum(output_type);
+        output_format_guid = oswrapper_audio_enc__get_guid_from_enum(output_type, audio_spec->pcm_type);
 #ifdef __cplusplus
         OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetGUID(media_type, MF_MT_MAJOR_TYPE, MFMediaType_Audio));
         OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetGUID(media_type, MF_MT_SUBTYPE, output_format_guid));
@@ -878,7 +882,7 @@ static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__find_media_type_for_
     DWORD available_types_amount;
     int found_best;
     int is_lossy;
-    GUID output_format_guid = oswrapper_audio_enc__get_guid_from_enum(output_type);
+    GUID output_format_guid = oswrapper_audio_enc__get_guid_from_enum(output_type, audio_spec->pcm_type);
     available_types = NULL;
     best_candidate = NULL;
     available_types_amount = 0;
