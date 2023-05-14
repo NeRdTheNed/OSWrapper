@@ -907,11 +907,17 @@ cleanup:
 #define OSWRAPPER_AUDIO_ENC__CHECK_SAME(already_has_type_match, does_type_match, is_canidate_type_delta_smaller_equals) ((already_has_type_match && does_type_match) || (!already_has_type_match && is_canidate_type_delta_smaller_equals))
 
 /* TODO This code is not good */
-static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__find_media_type_for_output_format(IMFMediaType** output_media_type, OSWrapper_audio_enc_format_spec* audio_spec, OSWrapper_audio_enc_output_type output_type, unsigned int bitrate) {
+static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__find_media_type_for_output_format(IMFMediaType** output_media_type, OSWrapper_audio_enc_format_spec* audio_spec, OSWrapper_audio_enc_output_type output_type, unsigned int* input_bitrate_pointer) {
     IMFCollection* available_types;
     IMFMediaType* best_candidate;
+    /* Track the best candidate format's properties */
+    UINT32 best_candidate_sample_rate;
+    UINT32 best_candidate_channels;
+    UINT32 best_candidate_bitrate;
+    UINT32 best_candidate_bits_per_sample;
     HRESULT result;
     DWORD available_types_amount;
+    unsigned int bitrate;
     int found_best;
     int is_lossy;
     GUID output_format_guid = oswrapper_audio_enc__get_guid_from_enum(output_type, audio_spec->pcm_type);
@@ -920,6 +926,7 @@ static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__find_media_type_for_
     available_types_amount = 0;
     found_best = 0;
     is_lossy = oswrapper_audio_enc__is_format_lossy(output_type) == OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS;
+    bitrate = *input_bitrate_pointer;
 
     if (!is_lossy) {
         bitrate = 0;
@@ -928,6 +935,10 @@ static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__find_media_type_for_
         bitrate = 128000;
     }
 
+    best_candidate_sample_rate = 0;
+    best_candidate_channels = 0;
+    best_candidate_bitrate = 0;
+    best_candidate_bits_per_sample = 0;
     /* Get all supported output media types for this format */
 #ifdef __cplusplus
     result = MFTranscodeGetAudioOutputAvailableTypes(output_format_guid, OSWRAPPER_AUDIO_ENC__GET_WIN_TYPES_FLAGS, NULL, &available_types);
@@ -946,16 +957,7 @@ static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__find_media_type_for_
     }
 
     {
-        /* Track the best candidate format's properties */
-        UINT32 best_candidate_sample_rate;
-        UINT32 best_candidate_channels;
-        UINT32 best_candidate_bitrate;
-        UINT32 best_candidate_bits_per_sample;
         DWORD i;
-        best_candidate_sample_rate = 0;
-        best_candidate_channels = 0;
-        best_candidate_bitrate = 0;
-        best_candidate_bits_per_sample = 0;
 
         /* Loop over all supported output media types, and find the most similar format */
         for (i = 0; i < available_types_amount; i++) {
@@ -1123,6 +1125,23 @@ end_cleanup:
 
     if (best_candidate != NULL) {
         *output_media_type = best_candidate;
+
+        if (best_candidate_channels != 0) {
+            audio_spec->channel_count = best_candidate_channels;
+        }
+
+        if (best_candidate_sample_rate != 0) {
+            audio_spec->sample_rate = best_candidate_sample_rate;
+        }
+
+        if (best_candidate_bits_per_sample != 0) {
+            audio_spec->bits_per_channel = best_candidate_bits_per_sample;
+        }
+
+        if (is_lossy && best_candidate_bitrate != 0) {
+            *input_bitrate_pointer = best_candidate_bitrate;
+        }
+
         return OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS;
     }
 
@@ -1254,7 +1273,7 @@ OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_make
         /* Output stream format */
         IMFMediaType* output_media_type;
 
-        if (oswrapper_audio_enc__find_media_type_for_output_format(&output_media_type, &audio->output_data, audio->output_type, audio->bitrate) == OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS || oswrapper_audio_enc__make_media_type_for_output_format(&output_media_type, &audio->output_data, audio->output_type, audio->bitrate) == OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS) {
+        if (oswrapper_audio_enc__find_media_type_for_output_format(&output_media_type, &audio->output_data, audio->output_type, &audio->bitrate) == OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS || oswrapper_audio_enc__make_media_type_for_output_format(&output_media_type, &audio->output_data, audio->output_type, audio->bitrate) == OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS) {
             DWORD audio_stream_index;
             HRESULT result = IMFSinkWriter_AddStream(writer, output_media_type, &audio_stream_index);
             IMFMediaType_Release(output_media_type);
