@@ -520,11 +520,12 @@ static OSStatus oswrapper_audio_enc__create_from_path(const char* path, AudioStr
 }
 
 OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_finalise_file_context(OSWrapper_audio_enc_spec* audio) {
-    /* TODO Error checking */
+    /* TODO Better error handling? */
+    OSStatus error;
     oswrapper_audio_enc__internal_data_mac* internal_data = (oswrapper_audio_enc__internal_data_mac*) audio->internal_data;
-    ExtAudioFileDispose(internal_data->audio_file_ext);
+    error = ExtAudioFileDispose(internal_data->audio_file_ext);
     OSWRAPPER_AUDIO_ENC_FREE(audio->internal_data);
-    return OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS;
+    return !error ? OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS : OSWRAPPER_AUDIO_ENC_RESULT_FAILURE;
 }
 
 OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_make_file_from_path(const char* path, OSWrapper_audio_enc_spec* audio) {
