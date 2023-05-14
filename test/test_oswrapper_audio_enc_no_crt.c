@@ -217,9 +217,10 @@ static OSWrapper_audio_enc_output_type demo_get_enum_for_str(const char* type) {
         return OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_MP3;
     } else if (strcmp_impl(type, "wma-speech") == 0) {
         return OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_WMA_SPEECH;
-    } else if (strcmp_impl(type, "wma-lossless") == 0) {
+    } /* else if (strcmp_impl(type, "wma-lossless") == 0) {
+
         return OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_WMA_LOSSLESS;
-    } else if (strcmp_impl(type, "wma-v9") == 0) {
+    } */ else if (strcmp_impl(type, "wma-v9") == 0) {
         return OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_WMA_V9;
     } else if (strcmp_impl(type, "wma-v8") == 0 || strcmp_impl(type, "wma") == 0) {
         return OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_WMA_V8;
@@ -246,9 +247,9 @@ static const char* demo_get_ext_for_enum(OSWrapper_audio_enc_output_type type) {
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_MP3:
         return ".mp3";
 
+    /* case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_WMA_LOSSLESS: */
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_WMA_V8:
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_WMA_V9:
-    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_WMA_LOSSLESS:
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_WMA_SPEECH:
         return ".wma";
 
