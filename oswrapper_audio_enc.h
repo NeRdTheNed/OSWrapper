@@ -588,7 +588,12 @@ OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_make
                         }
 
                         /* Failure is mostly harmless */
-                        AudioConverterSetProperty(converter, kAudioConverterEncodeBitRate, sizeof(bitrate), &bitrate);
+                        error = AudioConverterSetProperty(converter, kAudioConverterEncodeBitRate, sizeof(bitrate), &bitrate);
+
+                        if (!error) {
+                            audio->bitrate = bitrate;
+                        }
+
                         CFArrayRef converter_config = NULL;
                         ExtAudioFileSetProperty(audio_file_ext, kExtAudioFileProperty_ConverterConfig, sizeof(CFArrayRef), &converter_config);
                     }
