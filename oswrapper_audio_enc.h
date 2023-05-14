@@ -600,6 +600,16 @@ OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_make
                             audio->bitrate = bitrate;
                         }
 
+                        if (audio->output_data.sample_rate == 0) {
+                            AudioStreamBasicDescription converter_output_format;
+                            property_size = sizeof(converter_output_format);
+                            error = AudioConverterGetProperty(converter, kAudioConverterCurrentOutputStreamDescription, &property_size, &converter_output_format);
+
+                            if (!error) {
+                                audio->output_data.sample_rate = converter_output_format.mSampleRate;
+                            }
+                        }
+
                         CFArrayRef converter_config = NULL;
                         ExtAudioFileSetProperty(audio_file_ext, kExtAudioFileProperty_ConverterConfig, sizeof(CFArrayRef), &converter_config);
                     }
