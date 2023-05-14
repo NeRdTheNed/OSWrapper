@@ -880,6 +880,9 @@ cleanup:
 
 #define OSWRAPPER_AUDIO_ENC__ABS(X) ((X) < 0 ? -(X) : (X))
 
+#define OSWRAPPER_AUDIO_ENC__CHECK_DELTA_SMALLER(candidate_type, best_candidate_type, wanted_type) (OSWRAPPER_AUDIO_ENC__ABS((int) candidate_type - (int) wanted_type) < OSWRAPPER_AUDIO_ENC__ABS((int) best_candidate_type - (int) wanted_type))
+#define OSWRAPPER_AUDIO_ENC__CHECK_DELTA_SMALLER_EQUALS(candidate_type, best_candidate_type, wanted_type) (OSWRAPPER_AUDIO_ENC__ABS((int) candidate_type - (int) wanted_type) <= OSWRAPPER_AUDIO_ENC__ABS((int) best_candidate_type - (int) wanted_type))
+
 #define OSWRAPPER_AUDIO_ENC__CHECK_BETTER(already_has_type_match, does_type_match, is_canidate_type_delta_smaller, is_canidate_type_delta_smaller_equals, candidate_type, best_candidate_type) (!already_has_type_match && (does_type_match || is_canidate_type_delta_smaller || (is_canidate_type_delta_smaller_equals && (candidate_type > best_candidate_type))))
 #define OSWRAPPER_AUDIO_ENC__CHECK_SAME(already_has_type_match, does_type_match, is_canidate_type_delta_smaller_equals) ((already_has_type_match && does_type_match) || (!already_has_type_match && is_canidate_type_delta_smaller_equals))
 
@@ -1025,14 +1028,14 @@ static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__find_media_type_for_
                     does_sample_rate_match = candidate_sample_rate == audio_spec->sample_rate;
                     does_bits_per_sample_match = candidate_bits_per_sample == audio_spec->bits_per_channel;
                     does_bitrate_match = candidate_bitrate == bitrate;
-                    is_canidate_channel_delta_smaller = OSWRAPPER_AUDIO_ENC__ABS((int) candidate_channels - (int) audio_spec->channel_count) < OSWRAPPER_AUDIO_ENC__ABS((int) best_candidate_channels - (int) audio_spec->channel_count);
-                    is_canidate_sample_rate_delta_smaller = OSWRAPPER_AUDIO_ENC__ABS((int) candidate_sample_rate - (int) audio_spec->sample_rate) < OSWRAPPER_AUDIO_ENC__ABS((int) best_candidate_sample_rate - (int) audio_spec->sample_rate);
-                    is_canidate_bits_per_sample_delta_smaller = OSWRAPPER_AUDIO_ENC__ABS((int) candidate_bits_per_sample - (int) audio_spec->bits_per_channel) < OSWRAPPER_AUDIO_ENC__ABS((int) best_candidate_bits_per_sample - (int) audio_spec->bits_per_channel);
-                    is_canidate_bitrate_delta_smaller = OSWRAPPER_AUDIO_ENC__ABS((int) candidate_bitrate - (int) bitrate) < OSWRAPPER_AUDIO_ENC__ABS((int) best_candidate_bitrate - (int) bitrate);
-                    is_canidate_channel_delta_smaller_equals = OSWRAPPER_AUDIO_ENC__ABS((int) candidate_channels - (int) audio_spec->channel_count) <= OSWRAPPER_AUDIO_ENC__ABS((int) best_candidate_channels - (int) audio_spec->channel_count);
-                    is_canidate_sample_rate_delta_smaller_equals = OSWRAPPER_AUDIO_ENC__ABS((int) candidate_sample_rate - (int) audio_spec->sample_rate) <= OSWRAPPER_AUDIO_ENC__ABS((int) best_candidate_sample_rate - (int) audio_spec->sample_rate);
-                    is_canidate_bits_per_sample_delta_smaller_equals = OSWRAPPER_AUDIO_ENC__ABS((int) candidate_bits_per_sample - (int) audio_spec->bits_per_channel) <= OSWRAPPER_AUDIO_ENC__ABS((int) best_candidate_bits_per_sample - (int) audio_spec->bits_per_channel);
-                    is_canidate_bitrate_delta_smaller_equals = OSWRAPPER_AUDIO_ENC__ABS((int) candidate_bitrate - (int) bitrate) <= OSWRAPPER_AUDIO_ENC__ABS((int) best_candidate_bitrate - (int) bitrate);
+                    is_canidate_channel_delta_smaller = OSWRAPPER_AUDIO_ENC__CHECK_DELTA_SMALLER(candidate_channels, best_candidate_channels, audio_spec->channel_count);
+                    is_canidate_sample_rate_delta_smaller = OSWRAPPER_AUDIO_ENC__CHECK_DELTA_SMALLER(candidate_sample_rate, best_candidate_sample_rate, audio_spec->sample_rate);
+                    is_canidate_bits_per_sample_delta_smaller = OSWRAPPER_AUDIO_ENC__CHECK_DELTA_SMALLER(candidate_bits_per_sample, best_candidate_bits_per_sample, audio_spec->bits_per_channel);
+                    is_canidate_bitrate_delta_smaller = OSWRAPPER_AUDIO_ENC__CHECK_DELTA_SMALLER(candidate_bitrate, best_candidate_bitrate, bitrate);
+                    is_canidate_channel_delta_smaller_equals = OSWRAPPER_AUDIO_ENC__CHECK_DELTA_SMALLER_EQUALS(candidate_channels, best_candidate_channels, audio_spec->channel_count);
+                    is_canidate_sample_rate_delta_smaller_equals = OSWRAPPER_AUDIO_ENC__CHECK_DELTA_SMALLER_EQUALS(candidate_sample_rate, best_candidate_sample_rate, audio_spec->sample_rate);
+                    is_canidate_bits_per_sample_delta_smaller_equals = OSWRAPPER_AUDIO_ENC__CHECK_DELTA_SMALLER_EQUALS(candidate_bits_per_sample, best_candidate_bits_per_sample, audio_spec->bits_per_channel);
+                    is_canidate_bitrate_delta_smaller_equals = OSWRAPPER_AUDIO_ENC__CHECK_DELTA_SMALLER_EQUALS(candidate_bitrate, best_candidate_bitrate, bitrate);
                     already_has_channels_match = best_candidate_channels == audio_spec->channel_count;
                     already_has_sample_rate_match = best_candidate_sample_rate == audio_spec->sample_rate;
                     already_has_bits_per_sample_match = best_candidate_bits_per_sample == audio_spec->bits_per_channel;
