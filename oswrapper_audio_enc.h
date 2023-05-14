@@ -570,25 +570,31 @@ OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_make
                     AudioConverterRef converter = NULL;
                     property_size = sizeof(AudioConverterRef);
 
-                    if (audio->bitrate != 0 && oswrapper_audio_enc__is_format_lossy(audio->output_type) == OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS && !ExtAudioFileGetProperty(audio_file_ext, kExtAudioFileProperty_AudioConverter, &property_size, &converter) && converter != NULL) {
-                        Float64 minimum;
-                        Float64 maximum;
-                        /* Set encoding bitrate */
+                    if (oswrapper_audio_enc__is_format_lossy(audio->output_type) == OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS && !ExtAudioFileGetProperty(audio_file_ext, kExtAudioFileProperty_AudioConverter, &property_size, &converter) && converter != NULL) {
                         UInt32 bitrate = audio->bitrate;
+                        property_size = sizeof(bitrate);
 
-                        if (oswrapper_audio_enc__get_bitrates(converter, &minimum, &maximum) == OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS) {
-                            /* Clamp bitrate to allowed values */
-                            if (bitrate > (UInt32) maximum) {
-                                bitrate = (UInt32) maximum;
+                        if (audio->bitrate != 0) {
+                            Float64 minimum;
+                            Float64 maximum;
+                            /* Set encoding bitrate */
+
+                            if (oswrapper_audio_enc__get_bitrates(converter, &minimum, &maximum) == OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS) {
+                                /* Clamp bitrate to allowed values */
+                                if (bitrate > (UInt32) maximum) {
+                                    bitrate = (UInt32) maximum;
+                                }
+
+                                if (bitrate < (UInt32) minimum) {
+                                    bitrate = (UInt32) minimum;
+                                }
                             }
 
-                            if (bitrate < (UInt32) minimum) {
-                                bitrate = (UInt32) minimum;
-                            }
+                            /* Failure is mostly harmless */
+                            AudioConverterSetProperty(converter, kAudioConverterEncodeBitRate, property_size, &bitrate);
                         }
 
-                        /* Failure is mostly harmless */
-                        error = AudioConverterSetProperty(converter, kAudioConverterEncodeBitRate, sizeof(bitrate), &bitrate);
+                        error = AudioConverterGetProperty(converter, kAudioConverterEncodeBitRate, &property_size, &bitrate);
 
                         if (!error) {
                             audio->bitrate = bitrate;
