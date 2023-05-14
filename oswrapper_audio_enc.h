@@ -880,6 +880,9 @@ cleanup:
 
 #define OSWRAPPER_AUDIO_ENC__ABS(X) ((X) < 0 ? -(X) : (X))
 
+#define OSWRAPPER_AUDIO_ENC__CHECK_BETTER(already_has_type_match, does_type_match, is_canidate_type_delta_smaller, is_canidate_type_delta_smaller_equals, candidate_type, best_candidate_type) (!already_has_type_match && (does_type_match || is_canidate_type_delta_smaller || (is_canidate_type_delta_smaller_equals && (candidate_type > best_candidate_type))))
+#define OSWRAPPER_AUDIO_ENC__CHECK_SAME(already_has_type_match, does_type_match, is_canidate_type_delta_smaller_equals) ((already_has_type_match && does_type_match) || (!already_has_type_match && is_canidate_type_delta_smaller_equals))
+
 /* TODO This code is not good */
 static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__find_media_type_for_output_format(IMFMediaType** output_media_type, OSWrapper_audio_enc_format_spec* audio_spec, OSWrapper_audio_enc_output_type output_type, unsigned int bitrate) {
     IMFCollection* available_types;
@@ -1046,16 +1049,16 @@ static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__find_media_type_for_
                     } else {
                         if (best_candidate == NULL) {
                             should_replace_best = 1;
-                        } else if (!already_has_channels_match && (does_channels_match || is_canidate_channel_delta_smaller || (is_canidate_channel_delta_smaller_equals && (candidate_channels > best_candidate_channels)))) {
+                        } else if (OSWRAPPER_AUDIO_ENC__CHECK_BETTER(already_has_channels_match, does_channels_match, is_canidate_channel_delta_smaller, is_canidate_channel_delta_smaller_equals, candidate_channels, best_candidate_channels)) {
                             should_replace_best = 1;
-                        } else if ((already_has_channels_match && does_channels_match) || (!already_has_channels_match && is_canidate_channel_delta_smaller_equals)) {
-                            if (!already_has_bits_per_sample_match && (does_bits_per_sample_match || is_canidate_bits_per_sample_delta_smaller || (is_canidate_bits_per_sample_delta_smaller_equals && (candidate_bits_per_sample > best_candidate_bits_per_sample)))) {
+                        } else if (OSWRAPPER_AUDIO_ENC__CHECK_SAME(already_has_channels_match, does_channels_match, is_canidate_channel_delta_smaller_equals)) {
+                            if (OSWRAPPER_AUDIO_ENC__CHECK_BETTER(already_has_bits_per_sample_match, does_bits_per_sample_match, is_canidate_bits_per_sample_delta_smaller, is_canidate_bits_per_sample_delta_smaller_equals, candidate_bits_per_sample, best_candidate_bits_per_sample)) {
                                 should_replace_best = 1;
-                            } else if ((already_has_bits_per_sample_match && does_bits_per_sample_match) || (!already_has_bits_per_sample_match && is_canidate_bits_per_sample_delta_smaller_equals)) {
-                                if (!already_has_sample_rate_match && (does_sample_rate_match || is_canidate_sample_rate_delta_smaller || (is_canidate_sample_rate_delta_smaller_equals && (candidate_sample_rate > best_candidate_sample_rate)))) {
+                            } else if (OSWRAPPER_AUDIO_ENC__CHECK_SAME(already_has_bits_per_sample_match, does_bits_per_sample_match, is_canidate_bits_per_sample_delta_smaller_equals)) {
+                                if (OSWRAPPER_AUDIO_ENC__CHECK_BETTER(already_has_sample_rate_match, does_sample_rate_match, is_canidate_sample_rate_delta_smaller, is_canidate_sample_rate_delta_smaller_equals, candidate_sample_rate, best_candidate_sample_rate)) {
                                     should_replace_best = 1;
-                                } else if ((already_has_sample_rate_match && does_sample_rate_match) || (!already_has_sample_rate_match && is_canidate_sample_rate_delta_smaller_equals)) {
-                                    if (!already_has_bitrate_match && (does_bitrate_match || is_canidate_bitrate_delta_smaller || (is_canidate_bitrate_delta_smaller_equals && (candidate_bitrate > best_candidate_bitrate)))) {
+                                } else if (OSWRAPPER_AUDIO_ENC__CHECK_SAME(already_has_sample_rate_match, does_sample_rate_match, is_canidate_sample_rate_delta_smaller_equals)) {
+                                    if (OSWRAPPER_AUDIO_ENC__CHECK_BETTER(already_has_bitrate_match, does_bitrate_match, is_canidate_bitrate_delta_smaller, is_canidate_bitrate_delta_smaller_equals, candidate_bitrate, best_candidate_bitrate)) {
                                         should_replace_best = 1;
                                     }
                                 }
