@@ -227,6 +227,12 @@ static void oswrapper_audio_enc__fill_output_from_input(OSWrapper_audio_enc_spec
 #endif
     }
 
+    if (audio->output_type == OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_PREFERRED_LOSSLESS) {
+        audio->output_type = OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_WAV;
+    } else if (audio->output_type == OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_PREFERRED_LOSSY) {
+        audio->output_type = OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC;
+    }
+
 #ifdef __APPLE__
 
     if (!oswrapper_audio_enc__is_format_lossy(audio->output_type))
