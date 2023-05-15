@@ -283,6 +283,18 @@ static void oswrapper_audio_enc__fill_output_from_input(OSWrapper_audio_enc_spec
         audio->output_data.pcm_type = audio->input_data.pcm_type;
     }
 
+    if (oswrapper_audio_enc__is_format_uncompressed(audio->output_type) == OSWRAPPER_AUDIO_ENC_RESULT_FAILURE) {
+        switch (audio->output_data.pcm_type) {
+        case OSWRAPPER_AUDIO_ENC_PCM_ALAW:
+        case OSWRAPPER_AUDIO_ENC_PCM_ULAW:
+            audio->output_data.pcm_type = OSWRAPPER_AUDIO_ENC_PCM_INTEGER;
+            break;
+
+        default:
+            break;
+        }
+    }
+
     if (audio->output_data.bits_per_channel == 0) {
         audio->output_data.bits_per_channel = audio->input_data.bits_per_channel;
 
