@@ -52,7 +52,8 @@ typedef enum {
     OSWRAPPER_AUDIO_ENC_PCM_INTEGER,
     OSWRAPPER_AUDIO_ENC_PCM_FLOAT,
     OSWRAPPER_AUDIO_ENC_PCM_ALAW,
-    OSWRAPPER_AUDIO_ENC_PCM_ULAW
+    OSWRAPPER_AUDIO_ENC_PCM_ULAW,
+    OSWRAPPER_AUDIO_ENC_PCM_APPLE_IMA4
 } OSWrapper_audio_enc_pcm_type;
 
 /* PCM endianness type.
@@ -449,6 +450,9 @@ static OSWRAPPER_AUDIO_ENC__AUDIO_FORMAT_ID_TYPE oswrapper_audio_enc__get_audio_
 
         case OSWRAPPER_AUDIO_ENC_PCM_ULAW:
             return kAudioFormatULaw;
+
+        case OSWRAPPER_AUDIO_ENC_PCM_APPLE_IMA4:
+            return kAudioFormatAppleIMA4;
 
         default:
             break;
