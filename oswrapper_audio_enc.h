@@ -237,7 +237,7 @@ static void oswrapper_audio_enc__fill_output_from_input(OSWrapper_audio_enc_spec
 
 #ifdef __APPLE__
 
-    if (!oswrapper_audio_enc__is_format_lossy(audio->output_type))
+    if (oswrapper_audio_enc__is_format_lossy(audio->output_type) == OSWRAPPER_AUDIO_ENC_RESULT_FAILURE)
 #endif
     {
         if (audio->output_data.sample_rate == 0) {
@@ -1235,7 +1235,7 @@ static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__make_sink_writer_fro
     if (SUCCEEDED(result)) {
         IMFAttributes* attributes = NULL;
 
-        if (oswrapper_audio_enc__does_format_need_attrib(output_type)) {
+        if (oswrapper_audio_enc__does_format_need_attrib(output_type) == OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS) {
             if (SUCCEEDED(MFCreateAttributes(&attributes, 1))) {
                 GUID container_guid = oswrapper_audio_enc__get_container_guid_from_enum(output_type);
 
@@ -1281,7 +1281,7 @@ OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_make
 
     oswrapper_audio_enc__fill_output_from_input(audio);
 
-    if (oswrapper_audio_enc__make_sink_writer_from_path(path, &writer, audio->output_type)) {
+    if (oswrapper_audio_enc__make_sink_writer_from_path(path, &writer, audio->output_type) == OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS) {
         /* Output stream format */
         IMFMediaType* output_media_type;
 
