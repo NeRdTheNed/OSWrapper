@@ -287,12 +287,12 @@ static void oswrapper_audio_enc__fill_output_from_input(OSWrapper_audio_enc_spec
 
     if (oswrapper_audio_enc__is_format_uncompressed(audio->output_type) == OSWRAPPER_AUDIO_ENC_RESULT_FAILURE) {
         switch (audio->output_data.pcm_type) {
-        case OSWRAPPER_AUDIO_ENC_PCM_ALAW:
-        case OSWRAPPER_AUDIO_ENC_PCM_ULAW:
-            audio->output_data.pcm_type = OSWRAPPER_AUDIO_ENC_PCM_INTEGER;
+        case OSWRAPPER_AUDIO_ENC_PCM_INTEGER:
+        case OSWRAPPER_AUDIO_ENC_PCM_FLOAT:
             break;
 
         default:
+            audio->output_data.pcm_type = OSWRAPPER_AUDIO_ENC_PCM_INTEGER;
             break;
         }
     }
