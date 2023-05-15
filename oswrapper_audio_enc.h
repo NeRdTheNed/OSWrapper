@@ -51,7 +51,8 @@ typedef enum {
     OSWRAPPER_AUDIO_ENC_PCM_FLOAT
 } OSWrapper_audio_enc_pcm_type;
 
-/* PCM endianness type. */
+/* PCM endianness type.
+Audio must always be little-endian on Windows. */
 typedef enum {
     OSWRAPPER_AUDIO_ENC_ENDIANNESS_DEFAULT = 0,
     OSWRAPPER_AUDIO_ENC_ENDIANNESS_LITTLE,
