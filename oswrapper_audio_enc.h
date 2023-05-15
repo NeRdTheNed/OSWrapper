@@ -124,17 +124,19 @@ Returns 1 on success, or 0 on failure. */
 OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_finalise_file_context(OSWrapper_audio_enc_spec* audio);
 
 /* Create a sound file encoding context from the given path.
-You must set these values on the passed OSWrapper_audio_enc_spec:
+You must set all values on the input_data field in the passed OSWrapper_audio_enc_spec:
 - sample_rate: the input PCM sample rate.
 - channel_count: the input PCM channel count.
 - bits_per_channel: the input PCM bits per channel.
-- input_pcm_type: what format the input PCM data is in (integer PCM, floating point PCM).
-- input_pcm_endianness_type: the endianness of the input PCM data.
-You should also set output_type to the wanted output encoding type.
+- pcm_type: what format the input PCM data is in (integer PCM, floating point PCM).
+- pcm_endianness_type: the endianness of the input PCM data.
+Values can be set on the output_data field to hint the wanted output properties,
+or be left blank to use default values.
+You should also set the output_type field to the wanted output encoding type.
 Note that not all encoding types are supported on every platform,
 and some may only be supported at certain sample rates / bits per channel ect.
 You can use the preferred lossless or lossy enum cases to use a format
-that the current platform should support.
+that the current platform may support.
 Bitrate is only used for lossy formats, and may be treated as a suggestion.
 Returns 1 on success, or 0 on failure. */
 OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_make_file_from_path(const char* path, OSWrapper_audio_enc_spec* audio);
