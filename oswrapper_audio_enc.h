@@ -1089,6 +1089,10 @@ cleanup:
     return OSWRAPPER_AUDIO_ENC_RESULT_FAILURE;
 }
 
+#ifndef SWRAPPER_AUDIO_ENC__DEFAULT_BITRATE
+#define SWRAPPER_AUDIO_ENC__DEFAULT_BITRATE 128000
+#endif
+
 #ifndef OSWRAPPER_AUDIO_ENC__GET_WIN_TYPES_FLAGS
 #define OSWRAPPER_AUDIO_ENC__GET_WIN_TYPES_FLAGS ((MFT_ENUM_FLAG_ALL & (~MFT_ENUM_FLAG_FIELDOFUSE)) | MFT_ENUM_FLAG_SORTANDFILTER)
 #endif
@@ -1126,8 +1130,8 @@ static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__find_media_type_for_
     if (!is_lossy) {
         bitrate = 0;
     } else if (bitrate == 0) {
-        /* Default to 128000 */
-        bitrate = 128000;
+        /* Use default bitrate */
+        bitrate = SWRAPPER_AUDIO_ENC__DEFAULT_BITRATE;
     }
 
     best_candidate_sample_rate = 0;
