@@ -44,11 +44,15 @@ https://github.com/NeRdTheNed/OSWrapper/blob/main/oswrapper_audio_enc.h
 
 /* Stable-ish API */
 
-/* PCM format enum. */
+/* PCM format enum.
+Input PCM data must be uncompressed integer or floating point.
+ALAW and ULAW only work on macOS. */
 typedef enum {
     OSWRAPPER_AUDIO_ENC_PCM_DEFAULT = 0,
     OSWRAPPER_AUDIO_ENC_PCM_INTEGER,
-    OSWRAPPER_AUDIO_ENC_PCM_FLOAT
+    OSWRAPPER_AUDIO_ENC_PCM_FLOAT,
+    OSWRAPPER_AUDIO_ENC_PCM_ALAW,
+    OSWRAPPER_AUDIO_ENC_PCM_ULAW
 } OSWrapper_audio_enc_pcm_type;
 
 /* PCM endianness type.
@@ -188,6 +192,17 @@ OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_enco
 #endif /* !defined(OSWRAPPER_AUDIO_ENC_USE_WIN_MF_IMPL) && !defined(OSWRAPPER_AUDIO_ENC_NO_USE_WIN_MF_IMPL) */
 #endif
 
+static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__is_pcm_input_format_supported(OSWrapper_audio_enc_pcm_type format) {
+    switch (format) {
+    case OSWRAPPER_AUDIO_ENC_PCM_INTEGER:
+    case OSWRAPPER_AUDIO_ENC_PCM_FLOAT:
+        return OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS;
+
+    default:
+        return OSWRAPPER_AUDIO_ENC_RESULT_FAILURE;
+    }
+}
+
 static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__is_format_lossy(OSWrapper_audio_enc_output_type type) {
     switch (type) {
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC:
@@ -260,7 +275,8 @@ static void oswrapper_audio_enc__fill_output_from_input(OSWrapper_audio_enc_spec
     if (audio->output_data.bits_per_channel == 0) {
         audio->output_data.bits_per_channel = audio->input_data.bits_per_channel;
 
-        if (audio->output_data.pcm_type == OSWRAPPER_AUDIO_ENC_PCM_INTEGER) {
+        switch (audio->output_data.pcm_type) {
+        case OSWRAPPER_AUDIO_ENC_PCM_INTEGER:
             switch (audio->output_data.bits_per_channel) {
             case 8:
             case 16:
@@ -272,7 +288,10 @@ static void oswrapper_audio_enc__fill_output_from_input(OSWrapper_audio_enc_spec
                 audio->output_data.bits_per_channel = 16;
                 break;
             }
-        } else if (audio->output_data.pcm_type == OSWRAPPER_AUDIO_ENC_PCM_FLOAT) {
+
+            break;
+
+        case OSWRAPPER_AUDIO_ENC_PCM_FLOAT:
             switch (audio->output_data.bits_per_channel) {
             case 32:
             case 64:
@@ -282,6 +301,16 @@ static void oswrapper_audio_enc__fill_output_from_input(OSWrapper_audio_enc_spec
                 audio->output_data.bits_per_channel = 32;
                 break;
             }
+
+            break;
+
+        case OSWRAPPER_AUDIO_ENC_PCM_ALAW:
+        case OSWRAPPER_AUDIO_ENC_PCM_ULAW:
+            audio->output_data.bits_per_channel = 8;
+            break;
+
+        default:
+            break;
         }
     }
 
@@ -356,7 +385,7 @@ static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__is_format_supported_
     }
 }
 
-static OSWRAPPER_AUDIO_ENC__AUDIO_FORMAT_ID_TYPE oswrapper_audio_enc__get_audio_format_id_from_enum(OSWrapper_audio_enc_output_type type) {
+static OSWRAPPER_AUDIO_ENC__AUDIO_FORMAT_ID_TYPE oswrapper_audio_enc__get_audio_format_id_from_enum(OSWrapper_audio_enc_output_type type, OSWrapper_audio_enc_pcm_type pcm_type) {
     switch (type) {
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC:
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_PREFERRED_LOSSY:
@@ -380,6 +409,17 @@ static OSWRAPPER_AUDIO_ENC__AUDIO_FORMAT_ID_TYPE oswrapper_audio_enc__get_audio_
 
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_WAV:
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_SND:
+        switch (pcm_type) {
+        case OSWRAPPER_AUDIO_ENC_PCM_ALAW:
+            return kAudioFormatALaw;
+
+        case OSWRAPPER_AUDIO_ENC_PCM_ULAW:
+            return kAudioFormatULaw;
+
+        default:
+            break;
+        }
+
     default:
         return kAudioFormatLinearPCM;
     }
@@ -588,6 +628,10 @@ OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_make
 
     oswrapper_audio_enc__fill_output_from_input(audio);
 
+    if (oswrapper_audio_enc__is_pcm_input_format_supported(audio->input_data.pcm_type) == OSWRAPPER_AUDIO_ENC_RESULT_FAILURE) {
+        return OSWRAPPER_AUDIO_ENC_RESULT_FAILURE;
+    }
+
     if (oswrapper_audio_enc__create_desc(&input_format, kAudioFormatLinearPCM, &audio->input_data) == OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS) {
 #ifdef __cplusplus
         AudioStreamBasicDescription output_format = { };
@@ -595,7 +639,7 @@ OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_make
         AudioStreamBasicDescription output_format = { 0 };
 #endif
 
-        if (oswrapper_audio_enc__create_desc(&output_format, oswrapper_audio_enc__get_audio_format_id_from_enum(audio->output_type), &audio->output_data) == OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS) {
+        if (oswrapper_audio_enc__create_desc(&output_format, oswrapper_audio_enc__get_audio_format_id_from_enum(audio->output_type, audio->output_data.pcm_type), &audio->output_data) == OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS) {
             OSStatus error;
             ExtAudioFileRef audio_file_ext = NULL;
             error = oswrapper_audio_enc__create_from_path(path, &output_format, &audio_file_ext, oswrapper_audio_enc__get_audio_file_type_id_from_enum(audio->output_type));
@@ -698,8 +742,16 @@ OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_enco
 #include <mfapi.h>
 #include <mfidl.h>
 #include <mfreadwrite.h>
+#ifdef OSWRAPPER_AUDIO_ENC__WINDOWS_WIP_ALAW_ULAW
+#include <mmreg.h>
+#endif
 #include <shlwapi.h>
 #include <stdio.h>
+
+#ifdef OSWRAPPER_AUDIO_ENC__WINDOWS_WIP_ALAW_ULAW
+DEFINE_MEDIATYPE_GUID(OSWrapperAudioEncFormat_PCM_ALAW, WAVE_FORMAT_ALAW);
+DEFINE_MEDIATYPE_GUID(OSWrapperAudioEncFormat_PCM_MULAW, WAVE_FORMAT_MULAW);
+#endif
 
 #if WINVER < 0x0A00
 DEFINE_MEDIATYPE_GUID(MFAudioFormat_FLAC, 0xF1AC);
@@ -818,6 +870,19 @@ static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__is_format_supported_
     }
 }
 
+#ifndef OSWRAPPER_AUDIO_ENC__WINDOWS_WIP_ALAW_ULAW
+static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__is_pcm_output_format_supported_on_windows(OSWrapper_audio_enc_pcm_type format) {
+    switch (format) {
+    case OSWRAPPER_AUDIO_ENC_PCM_INTEGER:
+    case OSWRAPPER_AUDIO_ENC_PCM_FLOAT:
+        return OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS;
+
+    default:
+        return OSWRAPPER_AUDIO_ENC_RESULT_FAILURE;
+    }
+}
+#endif
+
 static GUID oswrapper_audio_enc__get_guid_from_enum(OSWrapper_audio_enc_output_type type, OSWrapper_audio_enc_pcm_type pcm_type) {
     switch (type) {
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC:
@@ -854,8 +919,20 @@ static GUID oswrapper_audio_enc__get_guid_from_enum(OSWrapper_audio_enc_output_t
         return MFAudioFormat_FLAC;
 
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_WAV:
-        if (pcm_type == OSWRAPPER_AUDIO_ENC_PCM_FLOAT) {
+        switch (pcm_type) {
+        case OSWRAPPER_AUDIO_ENC_PCM_FLOAT:
             return MFAudioFormat_Float;
+#ifdef OSWRAPPER_AUDIO_ENC__WINDOWS_WIP_ALAW_ULAW
+
+        case OSWRAPPER_AUDIO_ENC_PCM_ALAW:
+            return OSWrapperAudioEncFormat_PCM_ALAW;
+
+        case OSWRAPPER_AUDIO_ENC_PCM_ULAW:
+            return OSWrapperAudioEncFormat_PCM_MULAW;
+#endif
+
+        default:
+            break;
         }
 
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_PREFERRED_LOSSLESS:
@@ -904,6 +981,18 @@ static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__is_guid_uncom_pcm(GU
 
     return OSWRAPPER_AUDIO_ENC_RESULT_FAILURE;
 }
+
+#ifdef OSWRAPPER_AUDIO_ENC__WINDOWS_WIP_ALAW_ULAW
+static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__is_guid_pcm(GUID* guid) {
+    if (oswrapper_audio_enc__is_guid_uncom_pcm(guid) == OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS
+            || !OSWRAPPER_AUDIO_ENC_MEMCMP(guid, &OSWrapperAudioEncFormat_PCM_ALAW, sizeof(GUID))
+            || !OSWRAPPER_AUDIO_ENC_MEMCMP(guid, &OSWrapperAudioEncFormat_PCM_MULAW, sizeof(GUID))) {
+        return OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS;
+    }
+
+    return OSWRAPPER_AUDIO_ENC_RESULT_FAILURE;
+}
+#endif
 
 static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__make_media_type_for_output_format(IMFMediaType** output_media_type, OSWrapper_audio_enc_format_spec* audio_spec, OSWrapper_audio_enc_output_type output_type, unsigned int bitrate) {
     if (SUCCEEDED(MFCreateMediaType(output_media_type))) {
@@ -1328,6 +1417,18 @@ OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_make
     }
 
     oswrapper_audio_enc__fill_output_from_input(audio);
+
+    if (oswrapper_audio_enc__is_pcm_input_format_supported(audio->input_data.pcm_type) == OSWRAPPER_AUDIO_ENC_RESULT_FAILURE) {
+        return OSWRAPPER_AUDIO_ENC_RESULT_FAILURE;
+    }
+
+#ifndef OSWRAPPER_AUDIO_ENC__WINDOWS_WIP_ALAW_ULAW
+
+    if (oswrapper_audio_enc__is_pcm_output_format_supported_on_windows(audio->output_data.pcm_type) == OSWRAPPER_AUDIO_ENC_RESULT_FAILURE) {
+        return OSWRAPPER_AUDIO_ENC_RESULT_FAILURE;
+    }
+
+#endif
 
     if (oswrapper_audio_enc__make_sink_writer_from_path(path, &writer, audio->output_type) == OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS) {
         /* Output stream format */
