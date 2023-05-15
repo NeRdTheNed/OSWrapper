@@ -895,6 +895,15 @@ cleanup:
     return OSWRAPPER_AUDIO_ENC_RESULT_FAILURE;
 }
 
+static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__is_guid_uncom_pcm(GUID* guid) {
+    if (!OSWRAPPER_AUDIO_ENC_MEMCMP(guid, &MFAudioFormat_PCM, sizeof(GUID))
+            || !OSWRAPPER_AUDIO_ENC_MEMCMP(guid, &MFAudioFormat_Float, sizeof(GUID))) {
+        return OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS;
+    }
+
+    return OSWRAPPER_AUDIO_ENC_RESULT_FAILURE;
+}
+
 static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__make_media_type_for_output_format(IMFMediaType** output_media_type, OSWrapper_audio_enc_format_spec* audio_spec, OSWrapper_audio_enc_output_type output_type, unsigned int bitrate) {
     if (SUCCEEDED(MFCreateMediaType(output_media_type))) {
         GUID output_format_guid;
@@ -911,7 +920,7 @@ static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__make_media_type_for_
             OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, MF_MT_AUDIO_AVG_BYTES_PER_SECOND, bitrate / 8));
         }
 
-        if (!OSWRAPPER_AUDIO_ENC_MEMCMP(&output_format_guid, &MFAudioFormat_PCM, sizeof(GUID)) || !OSWRAPPER_AUDIO_ENC_MEMCMP(&output_format_guid, &MFAudioFormat_Float, sizeof(GUID))) {
+        if (oswrapper_audio_enc__is_guid_uncom_pcm(&output_format_guid) == OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS) {
             OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, MF_MT_ALL_SAMPLES_INDEPENDENT, TRUE));
             OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, MF_MT_AUDIO_BLOCK_ALIGNMENT, audio_spec->channel_count * audio_spec->bits_per_channel / 8));
             OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, MF_MT_AUDIO_AVG_BYTES_PER_SECOND, audio_spec->sample_rate * audio_spec->channel_count * audio_spec->bits_per_channel / 8));
@@ -928,7 +937,7 @@ static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__make_media_type_for_
             OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, &MF_MT_AUDIO_AVG_BYTES_PER_SECOND, bitrate / 8));
         }
 
-        if (!OSWRAPPER_AUDIO_ENC_MEMCMP(&output_format_guid, &MFAudioFormat_PCM, sizeof(GUID)) || !OSWRAPPER_AUDIO_ENC_MEMCMP(&output_format_guid, &MFAudioFormat_Float, sizeof(GUID))) {
+        if (oswrapper_audio_enc__is_guid_uncom_pcm(&output_format_guid) == OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS) {
             OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, &MF_MT_ALL_SAMPLES_INDEPENDENT, TRUE));
             OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, &MF_MT_AUDIO_BLOCK_ALIGNMENT, audio_spec->channel_count * audio_spec->bits_per_channel / 8));
             OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, &MF_MT_AUDIO_AVG_BYTES_PER_SECOND, audio_spec->sample_rate * audio_spec->channel_count * audio_spec->bits_per_channel / 8));
