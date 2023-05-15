@@ -230,6 +230,8 @@ static OSWrapper_audio_enc_output_type demo_get_enum_for_str(const char* type) {
         return OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_OPUS;
     } else if (strcmp_impl(type, "ilbc") == 0) {
         return OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_ILBC;
+    } else if (strcmp_impl(type, "caf-pcm") == 0) {
+        return OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_CAF_PCM;
     } else {
         return OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_WAV;
     }
@@ -266,6 +268,9 @@ static const char* demo_get_ext_for_enum(OSWrapper_audio_enc_output_type type) {
 
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_ILBC:
         return ".lbc";
+
+    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_CAF_PCM:
+        return ".caf";
 
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_WAV:
     default:
