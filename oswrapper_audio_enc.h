@@ -252,12 +252,36 @@ static void oswrapper_audio_enc__fill_output_from_input(OSWrapper_audio_enc_spec
         audio->output_data.channel_count = audio->input_data.channel_count;
     }
 
-    if (audio->output_data.bits_per_channel == 0) {
-        audio->output_data.bits_per_channel = audio->input_data.bits_per_channel;
-    }
-
     if (audio->output_data.pcm_type == OSWRAPPER_AUDIO_ENC_PCM_DEFAULT) {
         audio->output_data.pcm_type = audio->input_data.pcm_type;
+    }
+
+    if (audio->output_data.bits_per_channel == 0) {
+        audio->output_data.bits_per_channel = audio->input_data.bits_per_channel;
+
+        if (audio->output_data.pcm_type == OSWRAPPER_AUDIO_ENC_PCM_INTEGER) {
+            switch (audio->output_data.bits_per_channel) {
+            case 8:
+            case 16:
+            case 24:
+            case 32:
+                break;
+
+            default:
+                audio->output_data.bits_per_channel = 16;
+                break;
+            }
+        } else if (audio->output_data.pcm_type == OSWRAPPER_AUDIO_ENC_PCM_FLOAT) {
+            switch (audio->output_data.bits_per_channel) {
+            case 32:
+            case 64:
+                break;
+
+            default:
+                audio->output_data.bits_per_channel = 32;
+                break;
+            }
+        }
     }
 
     if (audio->output_data.pcm_endianness_type == OSWRAPPER_AUDIO_ENC_ENDIANNESS_DEFAULT) {
