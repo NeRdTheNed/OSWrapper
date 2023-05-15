@@ -374,6 +374,10 @@ static void oswrapper_audio_enc__fill_output_from_input(OSWrapper_audio_enc_spec
 #endif
 #endif
 
+#if (!defined(MAC_OS_X_VERSION_10_6) || MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_6) && !defined(kAudioFormatiLBC)
+#define kAudioFormatiLBC 'ilbc'
+#endif
+
 #if !defined(MAC_OS_X_VERSION_10_10) || MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_10
 #define OSWRAPPER_AUDIO_ENC__AUDIO_FORMAT_ID_TYPE UInt32
 #else
