@@ -222,6 +222,17 @@ static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__is_format_lossy(OSWr
     }
 }
 
+static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__is_format_uncompressed(OSWrapper_audio_enc_output_type type) {
+    switch (type) {
+    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_WAV:
+    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_SND:
+        return OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS;
+
+    default:
+        return OSWRAPPER_AUDIO_ENC_RESULT_FAILURE;
+    }
+}
+
 static OSWrapper_audio_enc_pcm_endianness_type oswrapper_audio_enc__get_endianness_for_format(OSWrapper_audio_enc_output_type type) {
     switch (type) {
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_WAV:
@@ -275,42 +286,44 @@ static void oswrapper_audio_enc__fill_output_from_input(OSWrapper_audio_enc_spec
     if (audio->output_data.bits_per_channel == 0) {
         audio->output_data.bits_per_channel = audio->input_data.bits_per_channel;
 
-        switch (audio->output_data.pcm_type) {
-        case OSWRAPPER_AUDIO_ENC_PCM_INTEGER:
-            switch (audio->output_data.bits_per_channel) {
-            case 8:
-            case 16:
-            case 24:
-            case 32:
+        if (oswrapper_audio_enc__is_format_uncompressed(audio->output_type) == OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS) {
+            switch (audio->output_data.pcm_type) {
+            case OSWRAPPER_AUDIO_ENC_PCM_INTEGER:
+                switch (audio->output_data.bits_per_channel) {
+                case 8:
+                case 16:
+                case 24:
+                case 32:
+                    break;
+
+                default:
+                    audio->output_data.bits_per_channel = 16;
+                    break;
+                }
+
+                break;
+
+            case OSWRAPPER_AUDIO_ENC_PCM_FLOAT:
+                switch (audio->output_data.bits_per_channel) {
+                case 32:
+                case 64:
+                    break;
+
+                default:
+                    audio->output_data.bits_per_channel = 32;
+                    break;
+                }
+
+                break;
+
+            case OSWRAPPER_AUDIO_ENC_PCM_ALAW:
+            case OSWRAPPER_AUDIO_ENC_PCM_ULAW:
+                audio->output_data.bits_per_channel = 8;
                 break;
 
             default:
-                audio->output_data.bits_per_channel = 16;
                 break;
             }
-
-            break;
-
-        case OSWRAPPER_AUDIO_ENC_PCM_FLOAT:
-            switch (audio->output_data.bits_per_channel) {
-            case 32:
-            case 64:
-                break;
-
-            default:
-                audio->output_data.bits_per_channel = 32;
-                break;
-            }
-
-            break;
-
-        case OSWRAPPER_AUDIO_ENC_PCM_ALAW:
-        case OSWRAPPER_AUDIO_ENC_PCM_ULAW:
-            audio->output_data.bits_per_channel = 8;
-            break;
-
-        default:
-            break;
         }
     }
 
@@ -875,6 +888,7 @@ static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__is_pcm_output_format
     switch (format) {
     case OSWRAPPER_AUDIO_ENC_PCM_INTEGER:
     case OSWRAPPER_AUDIO_ENC_PCM_FLOAT:
+    case OSWRAPPER_AUDIO_ENC_PCM_DEFAULT:
         return OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS;
 
     default:
@@ -1416,19 +1430,18 @@ OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_make
         return OSWRAPPER_AUDIO_ENC_RESULT_FAILURE;
     }
 
+#ifndef OSWRAPPER_AUDIO_ENC__WINDOWS_WIP_ALAW_ULAW
+
+    if (oswrapper_audio_enc__is_pcm_output_format_supported_on_windows(audio->output_data.pcm_type) == OSWRAPPER_AUDIO_ENC_RESULT_FAILURE) {
+        audio->output_data.pcm_type = OSWRAPPER_AUDIO_ENC_PCM_INTEGER;
+    }
+
+#endif
     oswrapper_audio_enc__fill_output_from_input(audio);
 
     if (oswrapper_audio_enc__is_pcm_input_format_supported(audio->input_data.pcm_type) == OSWRAPPER_AUDIO_ENC_RESULT_FAILURE) {
         return OSWRAPPER_AUDIO_ENC_RESULT_FAILURE;
     }
-
-#ifndef OSWRAPPER_AUDIO_ENC__WINDOWS_WIP_ALAW_ULAW
-
-    if (oswrapper_audio_enc__is_pcm_output_format_supported_on_windows(audio->output_data.pcm_type) == OSWRAPPER_AUDIO_ENC_RESULT_FAILURE) {
-        return OSWRAPPER_AUDIO_ENC_RESULT_FAILURE;
-    }
-
-#endif
 
     if (oswrapper_audio_enc__make_sink_writer_from_path(path, &writer, audio->output_type) == OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS) {
         /* Output stream format */
