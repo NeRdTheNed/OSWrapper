@@ -46,7 +46,7 @@ https://github.com/NeRdTheNed/OSWrapper/blob/main/oswrapper_audio_enc.h
 
 /* PCM format enum.
 Input PCM data must be uncompressed integer or floating point.
-ALAW and ULAW only work on macOS. */
+ALAW, ULAW, and Apple IMA4 only work on macOS. */
 typedef enum {
     OSWRAPPER_AUDIO_ENC_PCM_DEFAULT = 0,
     OSWRAPPER_AUDIO_ENC_PCM_INTEGER,
@@ -77,6 +77,7 @@ OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_WMA_V8: Windows Vista
 OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_WMA_V9: Windows Vista
 OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_WMA_SPEECH: Windows Vista
 OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_OPUS: macOS 10.13 (uses CAF as a container format)
+OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_ILBC: macOS 10.6
 OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_ALAC: macOS, Windows 10
 OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_FLAC: macOS 10.13, Windows 10
 
