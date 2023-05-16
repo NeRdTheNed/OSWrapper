@@ -240,6 +240,7 @@ static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__is_format_uncompress
     }
 }
 
+#ifdef OSWRAPPER_AUDIO_ENC_USE_AUDIOTOOLBOX_IMPL
 static OSWrapper_audio_enc_pcm_endianness_type oswrapper_audio_enc__get_endianness_for_format(OSWrapper_audio_enc_output_type type) {
     switch (type) {
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_WAV:
@@ -252,6 +253,7 @@ static OSWrapper_audio_enc_pcm_endianness_type oswrapper_audio_enc__get_endianne
         return OSWRAPPER_AUDIO_ENC_ENDIANNESS_DEFAULT;
     }
 }
+#endif
 
 static void oswrapper_audio_enc__fill_output_from_input(OSWrapper_audio_enc_spec* audio) {
     if (audio->input_data.pcm_type == OSWRAPPER_AUDIO_ENC_PCM_DEFAULT) {
@@ -272,7 +274,7 @@ static void oswrapper_audio_enc__fill_output_from_input(OSWrapper_audio_enc_spec
         audio->output_type = OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC;
     }
 
-#ifdef __APPLE__
+#ifdef OSWRAPPER_AUDIO_ENC_USE_AUDIOTOOLBOX_IMPL
 
     if (oswrapper_audio_enc__is_format_lossy(audio->output_type) == OSWRAPPER_AUDIO_ENC_RESULT_FAILURE)
 #endif
@@ -347,9 +349,12 @@ static void oswrapper_audio_enc__fill_output_from_input(OSWrapper_audio_enc_spec
     }
 
     if (audio->output_data.pcm_endianness_type == OSWRAPPER_AUDIO_ENC_ENDIANNESS_DEFAULT) {
+#ifdef OSWRAPPER_AUDIO_ENC_USE_AUDIOTOOLBOX_IMPL
         audio->output_data.pcm_endianness_type = oswrapper_audio_enc__get_endianness_for_format(audio->output_type);
 
-        if (audio->output_data.pcm_endianness_type == OSWRAPPER_AUDIO_ENC_ENDIANNESS_DEFAULT) {
+        if (audio->output_data.pcm_endianness_type == OSWRAPPER_AUDIO_ENC_ENDIANNESS_DEFAULT)
+#endif
+        {
 #if defined(__ppc64__) || defined(__ppc__)
             audio->output_data.pcm_endianness_type = OSWRAPPER_AUDIO_ENC_ENDIANNESS_BIG;
 #else
