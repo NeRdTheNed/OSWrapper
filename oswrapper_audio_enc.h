@@ -704,6 +704,8 @@ OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_make
                         if (audio->bitrate != 0) {
                             Float64 minimum;
                             Float64 maximum;
+                            minimum = bitrate;
+                            maximum = bitrate;
                             /* Set encoding bitrate */
 
                             if (oswrapper_audio_enc__get_bitrates(converter, &minimum, &maximum) == OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS) {
