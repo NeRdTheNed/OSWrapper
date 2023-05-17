@@ -8,6 +8,7 @@
 - test\_oswrapper\_audio.c - demonstrates how to use oswrapper\_audio to decode an audio file to PCM data, and write the PCM data to another file.
 - test\_oswrapper\_audio\_no\_crt.c - same as above, but without using the C runtime on Windows.
 - test\_oswrapper\_audio\_enc.c - decodes an audio file with oswrapper\_audio, and encodes the PCM data to a variety of formats using oswrapper\_audio\_enc.
+- test\_oswrapper\_audio\_enc\_no\_crt.c - same as above, but without using the C runtime on Windows.
 - test\_oswrapper\_audio\_enc\_mod.c - decodes a ProTracker MOD file with pocketmod, and encodes the PCM data to a variety of formats using oswrapper\_audio\_enc.
 - test\_oswrapper\_audio\_mac\_encoder.c - decodes an audio file with oswrapper\_audio, and encodes the PCM data to M4A using macOS APIs.
 - test\_oswrapper\_audio\_win\_encoder.c - decodes an audio file with oswrapper\_audio, and encodes the PCM data to WAV using Windows APIs.
