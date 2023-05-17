@@ -21,7 +21,7 @@ https://github.com/NeRdTheNed/OSWrapper/blob/main/test/test_oswrapper_audio_win_
 /* Forward memcpy. Not optimised. */
 static void* bad_memcpy(void* destination, const void* source, size_t num) {
     unsigned char* dest_cast = (unsigned char*) destination;
-    unsigned char* source_cast = (unsigned char*) source;
+    const unsigned char* source_cast = (const unsigned char*) source;
     size_t i;
 
     for (i = 0; i < num; i++) {
