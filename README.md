@@ -27,11 +27,11 @@ link against a system library to use these libraries,
 or perform some platform-specific initialisation action before using them.
 Here's the requirements:
 
-| Library               | macOS                             | Windows                                                                              | Emscripten            |
-| --------------------- | --------------------------------- | ------------------------------------------------------------------------------------ | --------------------- |
-| oswrapper_image.h     | Link with -framework AppKit       | Initialise the COM library, link with windowscodecs.lib                              | Compile with Asyncify |
-| oswrapper_audio.h     | Link with -framework AudioToolbox | Initialise the COM library, link with mfplat.lib, mfreadwrite.lib, and shlwapi.lib   | N/A                   |
-| oswrapper_audio_enc.h | Link with -framework AudioToolbox | Initialise the COM library, link with mfplat.lib, mfreadwrite.lib, and shlwapi.lib   | N/A                   |
+| Library               | macOS                             | Windows                                                                                      | Emscripten            |
+| --------------------- | --------------------------------- | -------------------------------------------------------------------------------------------- | --------------------- |
+| oswrapper_image.h     | Link with -framework AppKit       | Initialise the COM library, link with windowscodecs.lib                                      | Compile with Asyncify |
+| oswrapper_audio.h     | Link with -framework AudioToolbox | Initialise the COM library, link with mfplat.lib, mfreadwrite.lib, and shlwapi.lib           | N/A                   |
+| oswrapper_audio_enc.h | Link with -framework AudioToolbox | Initialise the COM library, link with mf.lib, mfplat.lib, mfreadwrite.lib, and shlwapi.lib   | N/A                   |
 
 Full examples of linking and using OSWrapper libraries can be found in the test folder.
 

@@ -7,7 +7,8 @@ CXXFLAGS = $(WINVER_FLAGS) /TP /O1 /MT /W4
 CFLAGS_NO_CRT = $(WINVER_FLAGS) /O1 /W4 /Zl /GS- /Gs100000 /D_VC_NODEFAULTLIB
 LDFLAGS_NO_CRT = /NODEFAULTLIB /STACK:0x100000,0x100000
 IMAGE_LIBS = windowscodecs.lib Ole32.lib kernel32.lib user32.lib shell32.lib
-AUDIO_LIBS = mf.lib mfplat.lib mfreadwrite.lib shlwapi.lib Ole32.lib kernel32.lib user32.lib shell32.lib
+AUDIO_LIBS = mfplat.lib mfreadwrite.lib shlwapi.lib Ole32.lib kernel32.lib user32.lib shell32.lib
+AUDIO_ENC_LIBS = mf.lib $(AUDIO_LIBS)
 
 all:
 	$(CC) $(INCLUDES) $(CFLAGS) $(LDFLAGS) test_oswrapper_image.c -o test_oswrapper_image.exe
@@ -21,7 +22,7 @@ all:
 	$(CC) $(INCLUDES) $(CFLAGS) $(LDFLAGS) test_oswrapper_audio_enc.c -o test_oswrapper_audio_enc.exe
 	$(CXX) $(INCLUDES) $(CXXFLAGS) $(LDFLAGS) test_oswrapper_audio_enc.c -o test_oswrapper_audio_enc_cpp.exe
 	$(CC) $(INCLUDES) $(CFLAGS_NO_CRT) test_oswrapper_audio_enc_no_crt.c
-	$(LINK) /OUT:test_oswrapper_audio_enc_no_crt.exe $(LDFLAGS_NO_CRT) uuid.lib $(AUDIO_LIBS) test_oswrapper_audio_enc_no_crt.obj
+	$(LINK) /OUT:test_oswrapper_audio_enc_no_crt.exe $(LDFLAGS_NO_CRT) uuid.lib $(AUDIO_ENC_LIBS) test_oswrapper_audio_enc_no_crt.obj
 	$(CC) $(INCLUDES) $(CFLAGS) $(LDFLAGS) test_oswrapper_audio_enc_mod.c -o test_oswrapper_audio_enc_mod.exe
 	$(CXX) $(INCLUDES) $(CXXFLAGS) $(LDFLAGS) test_oswrapper_audio_enc_mod.c -o test_oswrapper_audio_enc_mod_cpp.exe
 	$(CC) $(INCLUDES) $(CFLAGS) $(LDFLAGS) test_oswrapper_audio_win_encoder.c -o test_oswrapper_audio_win_encoder.exe
