@@ -3,11 +3,8 @@ OSWrapper audio encoder: Encode audio files with the built in OS audio encoders.
 
 Usage:
 
-TODO
-
-Example:
-
-TODO
+TODO, see test_oswrapper_audio_enc and test_oswrapper_audio_enc_mod
+for examples of how to use this library.
 
 Platform requirements:
 - On macOS, link with AudioToolbox
@@ -116,8 +113,7 @@ typedef struct OSWrapper_audio_enc_format_spec {
     OSWrapper_audio_enc_pcm_endianness_type pcm_endianness_type;
 } OSWrapper_audio_enc_format_spec;
 
-/* The created audio context.
-TODO */
+/* The created audio context. */
 typedef struct OSWrapper_audio_enc_spec {
     void* internal_data;
     OSWrapper_audio_enc_format_spec input_data;
@@ -1232,13 +1228,20 @@ cleanup:
 
 #define OSWRAPPER_AUDIO_ENC__ABS(X) ((X) < 0 ? -(X) : (X))
 
+/* Check if the delta of a candidate field is better than the delta of the current best candidate field */
 #define OSWRAPPER_AUDIO_ENC__CHECK_DELTA_SMALLER(candidate_type, best_candidate_type, wanted_type) (OSWRAPPER_AUDIO_ENC__ABS((int) candidate_type - (int) wanted_type) < OSWRAPPER_AUDIO_ENC__ABS((int) best_candidate_type - (int) wanted_type))
+/* Check if the delta of a candidate field is better or equal than the delta of the current best candidate field */
 #define OSWRAPPER_AUDIO_ENC__CHECK_DELTA_SMALLER_EQUALS(candidate_type, best_candidate_type, wanted_type) (OSWRAPPER_AUDIO_ENC__ABS((int) candidate_type - (int) wanted_type) <= OSWRAPPER_AUDIO_ENC__ABS((int) best_candidate_type - (int) wanted_type))
 
+/* Compare if the values for a field are better */
 #define OSWRAPPER_AUDIO_ENC__CHECK_BETTER(already_has_type_match, does_type_match, is_candidate_type_delta_smaller, is_candidate_type_delta_smaller_equals, candidate_type, best_candidate_type) (!already_has_type_match && (does_type_match || is_candidate_type_delta_smaller || (is_candidate_type_delta_smaller_equals && (candidate_type > best_candidate_type))))
+/* Compare if the values for a field are better or equal */
 #define OSWRAPPER_AUDIO_ENC__CHECK_SAME(already_has_type_match, does_type_match, is_candidate_type_delta_smaller_equals) ((already_has_type_match && does_type_match) || (!already_has_type_match && is_candidate_type_delta_smaller_equals))
 
-/* TODO This code is not good */
+/* Find the most similar audio media type for a given output format based on the desired audio specifications.
+ If no format is found, return OSWRAPPER_AUDIO_ENC_RESULT_FAILURE.
+ Otherwise, set the set the fields of the output format spec to the best found format,
+ and return OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS. */
 static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__find_media_type_for_output_format(IMFMediaType** output_media_type, OSWrapper_audio_enc_format_spec* audio_spec, OSWrapper_audio_enc_output_type output_type, unsigned int* input_bitrate_pointer) {
     IMFCollection* available_types;
     IMFMediaType* best_candidate;
