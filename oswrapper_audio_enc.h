@@ -1070,6 +1070,94 @@ static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__is_aac(OSWrapper_aud
     return type == OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC ? OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS : oswrapper_audio_enc__is_specific_aac(type);
 }
 
+static UINT32 oswrapper_audio_enc__win_get_aac_profile_from_type(OSWrapper_audio_enc_output_type type, OSWrapper_audio_enc_format_spec* audio_spec) {
+    switch (type) {
+    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC_LC:
+        if (audio_spec->channel_count <= 2) {
+            return 0x29;
+        }
+
+        if (audio_spec->sample_rate <= 48000) {
+            return 0x2A;
+        }
+
+        return 0x2B;
+
+    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC_HE:
+        if (audio_spec->channel_count <= 2) {
+            return 0x2C;
+        }
+
+        if (audio_spec->sample_rate <= 48000) {
+            return 0x2E;
+        }
+
+        return 0x2F;
+
+    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC_HE_V2:
+        if (audio_spec->channel_count <= 2) {
+            /*if (audio_spec->sample_rate <= 24000) {
+                return 0x30;
+            }
+
+            return 0x31;*/
+            return 0x30;
+        }
+
+        if (audio_spec->sample_rate <= 48000) {
+            return 0x32;
+        }
+
+        return 0x33;
+
+    default:
+        return 0xFE;
+    }
+}
+
+static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__win_match_aac_profile_from_type(OSWrapper_audio_enc_output_type type, UINT32 profile) {
+    switch (type) {
+    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC_LC:
+        switch (profile) {
+        case 0x28:
+        case 0x29:
+        case 0x2A:
+        case 0x2B:
+            return OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS;
+
+        default:
+            return OSWRAPPER_AUDIO_ENC_RESULT_FAILURE;
+        }
+
+    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC_HE:
+        switch (profile) {
+        case 0x2C:
+        case 0x2D:
+        case 0x2E:
+        case 0x2F:
+            return OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS;
+
+        default:
+            return OSWRAPPER_AUDIO_ENC_RESULT_FAILURE;
+        }
+
+    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC_HE_V2:
+        switch (profile) {
+        case 0x30:
+        case 0x31:
+        case 0x32:
+        case 0x33:
+            return OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS;
+
+        default:
+            return OSWRAPPER_AUDIO_ENC_RESULT_FAILURE;
+        }
+
+    default:
+        return OSWRAPPER_AUDIO_ENC_RESULT_FAILURE;
+    }
+}
+
 static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__make_media_type_for_output_format(IMFMediaType** output_media_type, OSWrapper_audio_enc_format_spec* audio_spec, OSWrapper_audio_enc_output_type output_type, unsigned int bitrate) {
     if (SUCCEEDED(MFCreateMediaType(output_media_type))) {
         GUID output_format_guid;
@@ -1096,6 +1184,10 @@ static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__make_media_type_for_
             OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, MF_MT_AUDIO_AVG_BYTES_PER_SECOND, audio_spec->sample_rate * audio_spec->channel_count * audio_spec->bits_per_channel / 8));
         }
 
+        if (oswrapper_audio_enc__is_specific_aac(output_type) == OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS) {
+            OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, MF_MT_AAC_AUDIO_PROFILE_LEVEL_INDICATION, oswrapper_audio_enc__win_get_aac_profile_from_type(output_type, audio_spec)));
+        }
+
 #else
         OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetGUID(media_type, &MF_MT_MAJOR_TYPE, &MFMediaType_Audio));
         OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetGUID(media_type, &MF_MT_SUBTYPE, &output_format_guid));
@@ -1115,6 +1207,10 @@ static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__make_media_type_for_
             OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, &MF_MT_ALL_SAMPLES_INDEPENDENT, TRUE));
             OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, &MF_MT_AUDIO_BLOCK_ALIGNMENT, audio_spec->channel_count * audio_spec->bits_per_channel / 8));
             OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, &MF_MT_AUDIO_AVG_BYTES_PER_SECOND, audio_spec->sample_rate * audio_spec->channel_count * audio_spec->bits_per_channel / 8));
+        }
+
+        if (oswrapper_audio_enc__is_specific_aac(output_type) == OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS) {
+            OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, &MF_MT_AAC_AUDIO_PROFILE_LEVEL_INDICATION, oswrapper_audio_enc__win_get_aac_profile_from_type(output_type, audio_spec)));
         }
 
 #endif
@@ -1202,6 +1298,19 @@ static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__find_media_type_for_
 
             if (FAILED(result) || candidate_media_type == NULL) {
                 goto end_loop_cleanup;
+            }
+
+            if (oswrapper_audio_enc__is_specific_aac(output_type) == OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS) {
+                UINT32 candidate_aac_profile_level;
+#ifdef __cplusplus
+                result = IMFMediaType_GetUINT32(candidate_media_type, MF_MT_AAC_AUDIO_PROFILE_LEVEL_INDICATION, &candidate_aac_profile_level);
+#else
+                result = IMFMediaType_GetUINT32(candidate_media_type, &MF_MT_AAC_AUDIO_PROFILE_LEVEL_INDICATION, &candidate_aac_profile_level);
+#endif
+
+                if (FAILED(result) || oswrapper_audio_enc__win_match_aac_profile_from_type(output_type, candidate_aac_profile_level) == OSWRAPPER_AUDIO_ENC_RESULT_FAILURE) {
+                    goto end_loop_cleanup;
+                }
             }
 
             /* Get current format properties */
