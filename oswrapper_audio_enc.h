@@ -1054,6 +1054,22 @@ static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__is_guid_pcm(GUID* gu
 }
 #endif
 
+static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__is_specific_aac(OSWrapper_audio_enc_output_type type) {
+    switch (type) {
+    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC_LC:
+    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC_HE:
+    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC_HE_V2:
+        return OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS;
+
+    default:
+        return OSWRAPPER_AUDIO_ENC_RESULT_FAILURE;
+    }
+}
+
+static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__is_aac(OSWrapper_audio_enc_output_type type) {
+    return type == OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC ? OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS : oswrapper_audio_enc__is_specific_aac(type);
+}
+
 static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__make_media_type_for_output_format(IMFMediaType** output_media_type, OSWrapper_audio_enc_format_spec* audio_spec, OSWrapper_audio_enc_output_type output_type, unsigned int bitrate) {
     if (SUCCEEDED(MFCreateMediaType(output_media_type))) {
         GUID output_format_guid;
@@ -1067,6 +1083,10 @@ static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__make_media_type_for_
         OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, MF_MT_AUDIO_NUM_CHANNELS, audio_spec->channel_count));
 
         if (bitrate != 0 && oswrapper_audio_enc__is_format_lossy(output_type) == OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS) {
+            if (oswrapper_audio_enc__is_aac(output_type) && audio_spec->channel_count > 2) {
+                bitrate *= audio_spec->channel_count;
+            }
+
             OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, MF_MT_AUDIO_AVG_BYTES_PER_SECOND, bitrate / 8));
         }
 
@@ -1084,6 +1104,10 @@ static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__make_media_type_for_
         OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, &MF_MT_AUDIO_NUM_CHANNELS, audio_spec->channel_count));
 
         if (bitrate != 0 && oswrapper_audio_enc__is_format_lossy(output_type) == OSWRAPPER_AUDIO_ENC_RESULT_SUCCESS) {
+            if (oswrapper_audio_enc__is_aac(output_type) && audio_spec->channel_count > 2) {
+                bitrate *= audio_spec->channel_count;
+            }
+
             OSWRAPPER_AUDIO_ENC__MAKE_MEDIA_HELPER(IMFMediaType_SetUINT32(media_type, &MF_MT_AUDIO_AVG_BYTES_PER_SECOND, bitrate / 8));
         }
 
