@@ -209,6 +209,8 @@ static OSWrapper_audio_enc_output_type demo_get_enum_for_str(const char* type) {
         return OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_SND;
     } else if (strcmp_impl(type, "m4a") == 0 || strcmp_impl(type, "aac") == 0) {
         return OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC;
+    } else if (strcmp_impl(type, "aac-lc") == 0) {
+        return OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC_LC;
     } else if (strcmp_impl(type, "aac-he") == 0) {
         return OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC_HE;
     } else if (strcmp_impl(type, "aac-he-v2") == 0) {
@@ -243,6 +245,7 @@ static const char* demo_get_ext_for_enum(OSWrapper_audio_enc_output_type type) {
         return ".snd";
 
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC:
+    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC_LC:
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC_HE:
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC_HE_V2:
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_ALAC:

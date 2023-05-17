@@ -69,6 +69,7 @@ Platform support for each format:
 OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_WAV: macOS, Windows 7
 OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_SND: macOS
 OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC: macOS, Windows 7
+OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC_LC: macOS, Windows 7
 OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC_HE: macOS 10.5, Windows 7
 OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC_HE_V2: macOS 10.5, Windows 7
 OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_MPEG: Windows 8
@@ -91,6 +92,7 @@ typedef enum {
     OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_WAV,
     OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_SND,
     OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC,
+    OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC_LC,
     OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC_HE,
     OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC_HE_V2,
     OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_MPEG,
@@ -211,6 +213,7 @@ static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__is_pcm_input_format_
 static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__is_format_lossy(OSWrapper_audio_enc_output_type type) {
     switch (type) {
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC:
+    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC_LC:
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC_HE:
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC_HE_V2:
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_MPEG:
@@ -429,6 +432,7 @@ static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__is_format_supported_
 static OSWRAPPER_AUDIO_ENC__AUDIO_FORMAT_ID_TYPE oswrapper_audio_enc__get_audio_format_id_from_enum(OSWrapper_audio_enc_output_type type, OSWrapper_audio_enc_pcm_type pcm_type) {
     switch (type) {
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC:
+    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC_LC:
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_PREFERRED_LOSSY:
         return kAudioFormatMPEG4AAC;
 
@@ -485,6 +489,7 @@ static AudioFileTypeID oswrapper_audio_enc__get_audio_file_type_id_from_enum(OSW
         return kAudioFileNextType;
 
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC:
+    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC_LC:
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC_HE:
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC_HE_V2:
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_ALAC:
@@ -940,6 +945,7 @@ static OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc__is_pcm_output_format
 static GUID oswrapper_audio_enc__get_guid_from_enum(OSWrapper_audio_enc_output_type type, OSWrapper_audio_enc_pcm_type pcm_type) {
     switch (type) {
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC:
+    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC_LC:
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC_HE:
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC_HE_V2:
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_PREFERRED_LOSSY:
@@ -1392,6 +1398,7 @@ OSWRAPPER_AUDIO_ENC_DEF OSWRAPPER_AUDIO_ENC_RESULT_TYPE oswrapper_audio_enc_unin
 static GUID oswrapper_audio_enc__get_container_guid_from_enum(OSWrapper_audio_enc_output_type type) {
     switch (type) {
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC:
+    case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC_LC:
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC_HE:
     case OSWRAPPER_AUDIO_ENC_OUPUT_FORMAT_AAC_HE_V2:
         return MFTranscodeContainerType_MPEG4;
