@@ -87,7 +87,7 @@ jobs:
       - name: Setup Emscripten SDK
         uses: mymindstorm/setup-emsdk@v12
         with:
-          version: 3.1.38
+          version: 3.1.41
           actions-cache-folder: 'emsdk-cache'
       - name: Build examples
         working-directory: test
