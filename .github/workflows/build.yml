@@ -2,6 +2,10 @@ name: Build
 
 on: [ push, pull_request ]
 
+env:
+  EM_VERSION: 3.1.44
+  EM_CACHE_FOLDER: 'emsdk-cache'
+
 jobs:
   build_macOS:
     strategy:
@@ -84,11 +88,17 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+      - name: Setup cache
+        id: cache-system-libraries
+        uses: actions/cache@v3
+        with:
+          path: ${{env.EM_CACHE_FOLDER}}
+          key: ${{env.EM_VERSION}}-${{ runner.os }}
       - name: Setup Emscripten SDK
         uses: mymindstorm/setup-emsdk@v12
         with:
-          version: 3.1.44
-          actions-cache-folder: 'emsdk-cache'
+          version: ${{env.EM_VERSION}}
+          actions-cache-folder: ${{env.EM_CACHE_FOLDER}}
       - name: Build examples
         working-directory: test
         run: make -f Makefile.em
