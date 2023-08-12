@@ -53,12 +53,29 @@ static int audio_done = 0;
 
 static OSStatus Callback(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags, const AudioTimeStamp *inTimeStamp, UInt32 inBusNumber, UInt32 inNumberFrames, AudioBufferList *ioData) {
     int amount_done;
+    UInt32 out_size;
     OSWrapper_audio_spec* audio_spec = (OSWrapper_audio_spec*)inRefCon;
     (void)ioActionFlags;
     (void)inTimeStamp;
     (void)inBusNumber;
 
+    // This will probably never happen
+    if (!ioData || (ioData->mNumberBuffers != 1)) {
+        return -50;
+    }
+
+    out_size = ioData->mBuffers[0].mDataByteSize;
+
+    // This will probably never happen
+    if (out_size == 0) {
+        *ioActionFlags |= kAudioUnitRenderAction_OutputIsSilence;
+        return 0;
+    }
+
     if (audio_spec == NULL) {
+        memset(ioData->mBuffers[0].mData, 0, out_size);
+        ioData->mBuffers[0].mDataByteSize = 0;
+        *ioActionFlags |= kAudioUnitRenderAction_OutputIsSilence;
         return 0;
     }
 
@@ -66,8 +83,18 @@ static OSStatus Callback(void *inRefCon, AudioUnitRenderActionFlags *ioActionFla
     amount_done = oswrapper_audio_get_samples(audio_spec, (short*)ioData->mBuffers[0].mData, inNumberFrames);
 
     if (amount_done == 0) {
+        memset(ioData->mBuffers[0].mData, 0, out_size);
+        ioData->mBuffers[0].mDataByteSize = 0;
+        *ioActionFlags |= kAudioUnitRenderAction_OutputIsSilence;
         audio_done = 1;
         pthread_cond_signal(&pthread_condition);
+    } else {
+        UInt32 mult_done = (amount_done * ((audio_spec->bits_per_channel / 8) * (audio_spec->channel_count)));
+
+        if (out_size > mult_done) {
+            memset((unsigned char*)ioData->mBuffers[0].mData + mult_done, 0, out_size - mult_done);
+            ioData->mBuffers[0].mDataByteSize = mult_done;
+        }
     }
 
     return 0;
