@@ -455,9 +455,9 @@ static unsigned char* oswrapper__setup_image_from_decoder(IWICBitmapDecoder* dec
         if (SUCCEEDED(result)) {
             /* TODO Get original format / bit depth */
 #ifdef __cplusplus
-            result = IWICFormatConverter_Initialize(converter, (IWICBitmapSource*) frame, GUID_WICPixelFormat32bppPRGBA, WICBitmapDitherTypeNone, NULL, 0.0f, WICBitmapPaletteTypeCustom);
+            result = IWICFormatConverter_Initialize(converter, (IWICBitmapSource*) frame, GUID_WICPixelFormat32bppRGBA, WICBitmapDitherTypeNone, NULL, 0.0f, WICBitmapPaletteTypeCustom);
 #else
-            result = IWICFormatConverter_Initialize(converter, (IWICBitmapSource*) frame, &GUID_WICPixelFormat32bppPRGBA, WICBitmapDitherTypeNone, NULL, 0.0f, WICBitmapPaletteTypeCustom);
+            result = IWICFormatConverter_Initialize(converter, (IWICBitmapSource*) frame, &GUID_WICPixelFormat32bppRGBA, WICBitmapDitherTypeNone, NULL, 0.0f, WICBitmapPaletteTypeCustom);
 #endif
 
             if (SUCCEEDED(result)) {
